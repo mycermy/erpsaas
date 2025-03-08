@@ -45,6 +45,11 @@ return [
                 'multi_currency' => true,
                 'base_code' => '1200',
                 'inverse_cash_flow' => true,
+                'accounts' => [
+                    'Inventory' => [
+                        'description' => 'Use this to track the value of physical items you have in storage or in a retail store that are waiting to be sold/completed.',
+                    ],
+                ],
             ],
             'Prepaid and Deferred Charges' => [
                 'description' => 'Payments made in advance for future goods or services, such as insurance premiums, rent, and prepaid taxes.',
@@ -330,6 +335,11 @@ return [
                 'multi_currency' => false,
                 'base_code' => '5000',
                 'inverse_cash_flow' => true,
+                'accounts' => [
+                    'Cost of Goods Sold' => [
+                        'description' => 'Use this to track expenses that are directly attributable to the product or service you are selling. If there is a type of expense that cannot be attributable to sales, then you should create an Operating Expense category instead.',
+                    ],
+                ],
             ],
             'Payroll and Employee Benefits' => [
                 'description' => 'Expenses related to employee compensation, including salaries, wages, bonuses, commissions, and payroll taxes.',
