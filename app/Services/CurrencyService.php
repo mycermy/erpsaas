@@ -21,6 +21,10 @@ class CurrencyService implements CurrencyHandler
      */
     public function isEnabled(): bool
     {
+        if (is_demo_environment()) {
+            return false;
+        }
+
         return filled($this->apiKey) && filled($this->baseUrl);
     }
 

@@ -2,9 +2,10 @@
 
 namespace App\Filament\Company\Resources\Sales\ClientResource\Pages;
 
-use App\Concerns\RedirectToListPage;
+use App\Concerns\HandlePageRedirect;
 use App\Enums\Common\AddressType;
 use App\Filament\Company\Resources\Sales\ClientResource;
+use App\Models\Common\Address;
 use App\Models\Common\Client;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Enums\MaxWidth;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateClient extends CreateRecord
 {
-    use RedirectToListPage;
+    use HandlePageRedirect;
 
     protected static string $resource = ClientResource::class;
 
@@ -27,6 +28,7 @@ class CreateClient extends CreateRecord
         $record = parent::handleRecordCreation($data);
 
         // Create billing address first
+        /** @var Address $billingAddress */
         $billingAddress = $record->addresses()->create([
             ...$data['billingAddress'],
             'type' => AddressType::Billing,

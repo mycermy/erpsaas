@@ -13,6 +13,8 @@ use App\Enums\Setting\PaymentTerms;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\RecurringInvoice;
 use App\Models\Common\Client;
+use App\Models\Company;
+use App\Utilities\Currency\CurrencyConverter;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
@@ -35,13 +37,19 @@ class RecurringInvoiceFactory extends Factory
     {
         return [
             'company_id' => 1,
-            'client_id' => Client::inRandomOrder()->value('id'),
+            'client_id' => fn (array $attributes) => Client::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id'),
             'header' => 'Invoice',
             'subheader' => 'Invoice',
             'order_number' => $this->faker->unique()->numerify('ORD-####'),
             'payment_terms' => PaymentTerms::Net30,
             'status' => RecurringInvoiceStatus::Draft,
-            'currency_code' => 'USD',
+            'currency_code' => function (array $attributes) {
+                $client = Client::find($attributes['client_id']);
+
+                return $client->currency_code ??
+                    Company::find($attributes['company_id'])->default->currency_code ??
+                    'USD';
+            },
             'terms' => $this->faker->sentence,
             'footer' => $this->faker->sentence,
             'created_by' => 1,
@@ -291,16 +299,18 @@ class RecurringInvoiceFactory extends Factory
             return;
         }
 
-        $subtotal = $recurringInvoice->lineItems()->sum('subtotal') / 100;
-        $taxTotal = $recurringInvoice->lineItems()->sum('tax_total') / 100;
-        $discountTotal = $recurringInvoice->lineItems()->sum('discount_total') / 100;
-        $grandTotal = $subtotal + $taxTotal - $discountTotal;
+        $subtotalCents = $recurringInvoice->lineItems()->sum('subtotal');
+        $taxTotalCents = $recurringInvoice->lineItems()->sum('tax_total');
+        $discountTotalCents = $recurringInvoice->lineItems()->sum('discount_total');
+
+        $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
+        $currencyCode = $recurringInvoice->currency_code;
 
         $recurringInvoice->update([
-            'subtotal' => $subtotal,
-            'tax_total' => $taxTotal,
-            'discount_total' => $discountTotal,
-            'total' => $grandTotal,
+            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
+            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
+            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
+            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
         ]);
     }
 }

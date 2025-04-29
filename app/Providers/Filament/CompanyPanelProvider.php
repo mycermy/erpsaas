@@ -25,6 +25,7 @@ use App\Filament\Company\Pages\ManageCompany;
 use App\Filament\Company\Pages\Reports;
 use App\Filament\Company\Pages\Service\ConnectedAccount;
 use App\Filament\Company\Pages\Service\LiveCurrency;
+use App\Filament\Company\Resources\Accounting\BudgetResource;
 use App\Filament\Company\Resources\Banking\AccountResource;
 use App\Filament\Company\Resources\Common\OfferingResource;
 use App\Filament\Company\Resources\Purchases\BillResource;
@@ -34,11 +35,13 @@ use App\Filament\Company\Resources\Sales\EstimateResource;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Filament\Company\Resources\Sales\RecurringInvoiceResource;
 use App\Filament\Components\PanelShiftDropdown;
+use App\Filament\Pages\Auth\Login;
 use App\Filament\User\Clusters\Account;
 use App\Http\Middleware\ConfigureCurrentCompany;
 use App\Livewire\UpdatePassword;
 use App\Livewire\UpdateProfileInformation;
 use App\Models\Company;
+use App\Services\CompanySettingsService;
 use App\Support\FilamentComponentConfigurator;
 use Exception;
 use Filament\Actions;
@@ -50,7 +53,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -68,7 +70,6 @@ use Wallo\FilamentCompanies\Actions\GenerateRedirectForProvider;
 use Wallo\FilamentCompanies\Enums\Feature;
 use Wallo\FilamentCompanies\Enums\Provider;
 use Wallo\FilamentCompanies\FilamentCompanies;
-use Wallo\FilamentCompanies\Pages\Auth\Login;
 use Wallo\FilamentCompanies\Pages\Auth\Register;
 
 class CompanyPanelProvider extends PanelProvider
@@ -78,13 +79,18 @@ class CompanyPanelProvider extends PanelProvider
      */
     public function panel(Panel $panel): Panel
     {
+        $isDemoEnvironment = is_demo_environment();
+
         return $panel
             ->default()
             ->id('company')
             ->path('company')
             ->login(Login::class)
-            ->registration(Register::class)
-            ->passwordReset()
+            ->when(! $isDemoEnvironment, function (Panel $panel) {
+                return $panel
+                    ->registration(Register::class)
+                    ->passwordReset();
+            })
             ->tenantMenu(false)
             ->plugin(
                 FilamentCompanies::make()
@@ -104,6 +110,7 @@ class CompanyPanelProvider extends PanelProvider
                     ->notifications()
                     ->modals()
                     ->socialite(
+                        condition: ! $isDemoEnvironment,
                         providers: [Provider::Github],
                         features: [Feature::RememberSession, Feature::ProviderAvatars],
                     ),
@@ -123,7 +130,6 @@ class CompanyPanelProvider extends PanelProvider
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
                     ->items([
-                        ...Dashboard::getNavigationItems(),
                         ...Reports::getNavigationItems(),
                         ...Settings::getNavigationItems(),
                         ...OfferingResource::getNavigationItems(),
@@ -133,10 +139,10 @@ class CompanyPanelProvider extends PanelProvider
                             ->label('Sales')
                             ->icon('heroicon-o-currency-dollar')
                             ->items([
+                                ...ClientResource::getNavigationItems(),
+                                ...EstimateResource::getNavigationItems(),
                                 ...InvoiceResource::getNavigationItems(),
                                 ...RecurringInvoiceResource::getNavigationItems(),
-                                ...EstimateResource::getNavigationItems(),
-                                ...ClientResource::getNavigationItems(),
                             ]),
                         NavigationGroup::make('Purchases')
                             ->label('Purchases')
@@ -150,6 +156,7 @@ class CompanyPanelProvider extends PanelProvider
                             ->icon('heroicon-o-clipboard-document-list')
                             ->extraSidebarAttributes(['class' => 'es-sidebar-group'])
                             ->items([
+                                // ...BudgetResource::getNavigationItems(),
                                 ...AccountChart::getNavigationItems(),
                                 ...Transactions::getNavigationItems(),
                             ]),
@@ -176,13 +183,13 @@ class CompanyPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Company/Pages'), for: 'App\\Filament\\Company\\Pages')
             ->discoverClusters(in: app_path('Filament/Company/Clusters'), for: 'App\\Filament\\Company\\Clusters')
             ->pages([
-                Pages\Dashboard::class,
+                // Pages\Dashboard::class,
             ])
             ->authGuard('web')
             ->discoverWidgets(in: app_path('Filament/Company/Widgets'), for: 'App\\Filament\\Company\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -272,11 +279,13 @@ class CompanyPanelProvider extends PanelProvider
         });
 
         Tables\Table::configureUsing(static function (Tables\Table $table): void {
+            $table::$defaultDateDisplayFormat = CompanySettingsService::getDefaultDateFormat(session('current_company_id') ?? auth()->user()->current_company_id);
+
             $table
                 ->paginationPageOptions([5, 10, 25, 50, 100])
                 ->filtersFormWidth(MaxWidth::Small)
                 ->filtersTriggerAction(fn (Tables\Actions\Action $action) => $action->slideOver());
-        }, isImportant: true);
+        });
 
         Tables\Columns\TextColumn::configureUsing(function (Tables\Columns\TextColumn $column): void {
             $column->placeholder('–');
@@ -294,7 +303,7 @@ class CompanyPanelProvider extends PanelProvider
             $select
                 ->native(false)
                 ->selectablePlaceholder($isSelectable);
-        }, isImportant: true);
+        });
     }
 
     protected function hasRequiredRule(Select $component): bool

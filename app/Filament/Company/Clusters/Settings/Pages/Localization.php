@@ -69,7 +69,7 @@ class Localization extends Page
     public function mount(): void
     {
         $this->record = LocalizationModel::firstOrNew([
-            'company_id' => auth()->user()->currentCompany->id,
+            'company_id' => auth()->user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -126,6 +126,7 @@ class Localization extends Page
                     ->softRequired()
                     ->localizeLabel()
                     ->options(LocalizationModel::getAllLanguages())
+                    ->disabled(is_demo_environment())
                     ->searchable(),
                 Select::make('timezone')
                     ->softRequired()

@@ -164,7 +164,7 @@ class Bill extends Document
         return ! in_array($this->status, [
             BillStatus::Paid,
             BillStatus::Void,
-        ]) && $this->currency_code === CurrencyAccessor::getDefaultCurrency();
+        ]);
     }
 
     public function hasPayments(): bool
@@ -227,8 +227,10 @@ class Bill extends Document
         $billCurrency = $this->currency_code;
         $requiresConversion = $billCurrency !== $bankAccountCurrency;
 
+        // Store the original payment amount in bill currency before any conversion
+        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($data['amount'], $billCurrency);
+
         if ($requiresConversion) {
-            $amountInBillCurrencyCents = CurrencyConverter::convertToCents($data['amount'], $billCurrency);
             $amountInBankCurrencyCents = CurrencyConverter::convertBalance(
                 $amountInBillCurrencyCents,
                 $billCurrency,
@@ -251,9 +253,13 @@ class Bill extends Document
             'amount' => $formattedAmountForBankCurrency,
             'payment_method' => $data['payment_method'],
             'bank_account_id' => $data['bank_account_id'],
-            'account_id' => Account::getAccountsPayableAccount()->id,
+            'account_id' => Account::getAccountsPayableAccount($this->company_id)->id,
             'description' => $transactionDescription,
             'notes' => $data['notes'] ?? null,
+            'meta' => [
+                'original_document_currency' => $billCurrency,
+                'amount_in_document_currency_cents' => $amountInBillCurrencyCents,
+            ],
         ]);
     }
 
@@ -276,7 +282,7 @@ class Bill extends Document
         $transaction->journalEntries()->create([
             'company_id' => $this->company_id,
             'type' => JournalEntryType::Credit,
-            'account_id' => Account::getAccountsPayableAccount()->id,
+            'account_id' => Account::getAccountsPayableAccount($this->company_id)->id,
             'amount' => $total,
             'description' => $baseDescription,
         ]);
@@ -336,7 +342,7 @@ class Bill extends Document
                     $transaction->journalEntries()->create([
                         'company_id' => $this->company_id,
                         'type' => JournalEntryType::Credit,
-                        'account_id' => Account::getPurchaseDiscountAccount()->id,
+                        'account_id' => Account::getPurchaseDiscountAccount($this->company_id)->id,
                         'amount' => CurrencyConverter::convertCentsToFormatSimple($lineItemDiscount),
                         'description' => "{$lineItemDescription} (Proportional Discount)",
                     ]);

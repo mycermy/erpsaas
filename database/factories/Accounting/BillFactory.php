@@ -8,6 +8,7 @@ use App\Models\Accounting\Bill;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Banking\BankAccount;
 use App\Models\Common\Vendor;
+use App\Models\Company;
 use App\Models\Setting\DocumentDefault;
 use App\Utilities\Currency\CurrencyConverter;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -42,13 +43,19 @@ class BillFactory extends Factory
 
         return [
             'company_id' => 1,
-            'vendor_id' => Vendor::inRandomOrder()->value('id'),
+            'vendor_id' => fn (array $attributes) => Vendor::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id'),
             'bill_number' => $this->faker->unique()->numerify('BILL-####'),
             'order_number' => $this->faker->unique()->numerify('PO-####'),
             'date' => $billDate,
             'due_date' => Carbon::parse($billDate)->addDays($dueDays),
             'status' => BillStatus::Open,
-            'currency_code' => 'USD',
+            'currency_code' => function (array $attributes) {
+                $vendor = Vendor::find($attributes['vendor_id']);
+
+                return $vendor->currency_code ??
+                    Company::find($attributes['company_id'])->default->currency_code ??
+                    'USD';
+            },
             'notes' => $this->faker->sentence,
             'created_by' => 1,
             'updated_by' => 1,
@@ -155,7 +162,7 @@ class BillFactory extends Factory
                     'posted_at' => $postedAt,
                     'amount' => CurrencyConverter::convertCentsToFormatSimple($amount, $bill->currency_code),
                     'payment_method' => $this->faker->randomElement(PaymentMethod::class),
-                    'bank_account_id' => BankAccount::inRandomOrder()->value('id'),
+                    'bank_account_id' => BankAccount::where('company_id', $bill->company_id)->inRandomOrder()->value('id'),
                     'notes' => $this->faker->sentence,
                 ];
 
@@ -217,16 +224,18 @@ class BillFactory extends Factory
             return;
         }
 
-        $subtotal = $bill->lineItems()->sum('subtotal') / 100;
-        $taxTotal = $bill->lineItems()->sum('tax_total') / 100;
-        $discountTotal = $bill->lineItems()->sum('discount_total') / 100;
-        $grandTotal = $subtotal + $taxTotal - $discountTotal;
+        $subtotalCents = $bill->lineItems()->sum('subtotal');
+        $taxTotalCents = $bill->lineItems()->sum('tax_total');
+        $discountTotalCents = $bill->lineItems()->sum('discount_total');
+
+        $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
+        $currencyCode = $bill->currency_code;
 
         $bill->update([
-            'subtotal' => $subtotal,
-            'tax_total' => $taxTotal,
-            'discount_total' => $discountTotal,
-            'total' => $grandTotal,
+            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
+            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
+            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
+            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
         ]);
     }
 }

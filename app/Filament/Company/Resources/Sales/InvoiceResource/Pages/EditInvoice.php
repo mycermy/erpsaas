@@ -2,8 +2,8 @@
 
 namespace App\Filament\Company\Resources\Sales\InvoiceResource\Pages;
 
+use App\Concerns\HandlePageRedirect;
 use App\Concerns\ManagesLineItems;
-use App\Concerns\RedirectToListPage;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Models\Accounting\Invoice;
 use Filament\Actions;
@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EditInvoice extends EditRecord
 {
+    use HandlePageRedirect;
     use ManagesLineItems;
-    use RedirectToListPage;
 
     protected static string $resource = InvoiceResource::class;
 
@@ -28,11 +28,6 @@ class EditInvoice extends EditRecord
     public function getMaxContentWidth(): MaxWidth | string | null
     {
         return MaxWidth::Full;
-    }
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model

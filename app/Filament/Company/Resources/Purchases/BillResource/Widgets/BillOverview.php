@@ -8,6 +8,7 @@ use App\Filament\Widgets\EnhancedStatsOverviewWidget;
 use App\Utilities\Currency\CurrencyAccessor;
 use App\Utilities\Currency\CurrencyConverter;
 use Filament\Widgets\Concerns\InteractsWithPageTable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
 
 class BillOverview extends EnhancedStatsOverviewWidget
@@ -21,8 +22,58 @@ class BillOverview extends EnhancedStatsOverviewWidget
 
     protected function getStats(): array
     {
+        $activeTab = $this->activeTab;
+
+        $averagePaymentTimeFormatted = '-';
+        $averagePaymentTimeSuffix = null;
+        $lastMonthTotal = '-';
+        $lastMonthTotalSuffix = null;
+
+        if ($activeTab !== 'unpaid') {
+            $driver = DB::getDriverName();
+
+            $query = $this->getPageTableQuery()
+                ->whereNotNull('paid_at');
+
+            if ($driver === 'pgsql') {
+                $query->selectRaw('AVG(EXTRACT(EPOCH FROM (paid_at - date)) / 86400) as avg_days');
+            } else {
+                $query->selectRaw('AVG(TIMESTAMPDIFF(DAY, date, paid_at)) as avg_days');
+            }
+
+            $averagePaymentTime = $query
+                ->groupBy('company_id')
+                ->reorder()
+                ->value('avg_days');
+
+            $averagePaymentTimeFormatted = Number::format($averagePaymentTime ?? 0, maxPrecision: 1);
+            $averagePaymentTimeSuffix = 'days';
+
+            $lastMonthPaid = $this->getPageTableQuery()
+                ->whereBetween('date', [
+                    today()->subMonth()->startOfMonth(),
+                    today()->subMonth()->endOfMonth(),
+                ])
+                ->get()
+                ->sumMoneyInDefaultCurrency('amount_paid');
+
+            $lastMonthTotal = CurrencyConverter::formatCentsToMoney($lastMonthPaid);
+            $lastMonthTotalSuffix = CurrencyAccessor::getDefaultCurrency();
+        }
+
+        if ($activeTab === 'paid') {
+            return [
+                EnhancedStatsOverviewWidget\EnhancedStat::make('Total To Pay', '-'),
+                EnhancedStatsOverviewWidget\EnhancedStat::make('Due Within 7 Days', '-'),
+                EnhancedStatsOverviewWidget\EnhancedStat::make('Average Payment Time', $averagePaymentTimeFormatted)
+                    ->suffix($averagePaymentTimeSuffix),
+                EnhancedStatsOverviewWidget\EnhancedStat::make('Paid Last Month', $lastMonthTotal)
+                    ->suffix($lastMonthTotalSuffix),
+            ];
+        }
+
         $unpaidBills = $this->getPageTableQuery()
-            ->whereIn('status', [BillStatus::Open, BillStatus::Partial, BillStatus::Overdue]);
+            ->unpaid();
 
         $amountToPay = $unpaidBills->get()->sumMoneyInDefaultCurrency('amount_due');
 
@@ -38,35 +89,16 @@ class BillOverview extends EnhancedStatsOverviewWidget
             ->get()
             ->sumMoneyInDefaultCurrency('amount_due');
 
-        $averagePaymentTime = $this->getPageTableQuery()
-            ->whereNotNull('paid_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(DAY, date, paid_at)) as avg_days')
-            ->value('avg_days');
-
-        $averagePaymentTimeFormatted = Number::format($averagePaymentTime ?? 0, maxPrecision: 1);
-
-        $lastMonthTotal = $this->getPageTableQuery()
-            ->where('status', BillStatus::Paid)
-            ->whereBetween('date', [
-                today()->subMonth()->startOfMonth(),
-                today()->subMonth()->endOfMonth(),
-            ])
-            ->get()
-            ->sumMoneyInDefaultCurrency('amount_paid');
-
         return [
             EnhancedStatsOverviewWidget\EnhancedStat::make('Total To Pay', CurrencyConverter::formatCentsToMoney($amountToPay))
                 ->suffix(CurrencyAccessor::getDefaultCurrency())
                 ->description('Includes ' . CurrencyConverter::formatCentsToMoney($amountOverdue) . ' overdue'),
-
             EnhancedStatsOverviewWidget\EnhancedStat::make('Due Within 7 Days', CurrencyConverter::formatCentsToMoney($amountDueWithin7Days))
                 ->suffix(CurrencyAccessor::getDefaultCurrency()),
-
             EnhancedStatsOverviewWidget\EnhancedStat::make('Average Payment Time', $averagePaymentTimeFormatted)
-                ->suffix('days'),
-
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Paid Last Month', CurrencyConverter::formatCentsToMoney($lastMonthTotal))
-                ->suffix(CurrencyAccessor::getDefaultCurrency()),
+                ->suffix($averagePaymentTimeSuffix),
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Paid Last Month', $lastMonthTotal)
+                ->suffix($lastMonthTotalSuffix),
         ];
     }
 }

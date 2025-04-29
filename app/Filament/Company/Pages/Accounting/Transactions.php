@@ -16,6 +16,7 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\Transaction;
 use App\Models\Banking\BankAccount;
 use App\Models\Company;
+use App\Services\PlaidService;
 use App\Utilities\Currency\CurrencyAccessor;
 use App\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Header;
@@ -36,7 +37,6 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Pages\Page;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Enums\IconSize;
@@ -111,6 +111,9 @@ class Transactions extends Page implements HasTable
                     ->label('Add journal transaction')
                     ->fillForm(fn (): array => $this->getFormDefaultsForType(TransactionType::Journal))
                     ->modalWidth(MaxWidth::Screen)
+                    ->extraModalWindowAttributes([
+                        'class' => 'journal-transaction-modal',
+                    ])
                     ->model(static::getModel())
                     ->form(fn (Form $form) => $this->journalTransactionForm($form))
                     ->modalSubmitAction(fn (Actions\StaticAction $action) => $action->disabled(! $this->isJournalEntryBalanced()))
@@ -121,6 +124,7 @@ class Transactions extends Page implements HasTable
                     ->after(fn (Transaction $transaction) => $transaction->updateAmountIfBalanced()),
                 Actions\Action::make('connectBank')
                     ->label('Connect your bank')
+                    ->visible(app(PlaidService::class)->isEnabled())
                     ->url(ConnectedAccount::getUrl()),
             ])
                 ->label('More')
@@ -343,34 +347,7 @@ class Transactions extends Page implements HasTable
                 $filters['posted_at'],
                 $filters['updated_at'],
             ])
-            ->deferFilters()
-            ->deferLoading()
             ->filtersFormWidth(MaxWidth::ThreeExtraLarge)
-            ->filtersTriggerAction(
-                fn (Tables\Actions\Action $action) => $action
-                    ->slideOver()
-                    ->modalFooterActionsAlignment(Alignment::End)
-                    ->modalCancelAction(false)
-                    ->extraModalFooterActions(function (Table $table) use ($action) {
-                        return [
-                            $table->getFiltersApplyAction()
-                                ->close(),
-                            Actions\StaticAction::make('cancel')
-                                ->label($action->getModalCancelActionLabel())
-                                ->button()
-                                ->close()
-                                ->color('gray'),
-                            Tables\Actions\Action::make('resetFilters')
-                                ->label(__('Clear all'))
-                                ->color('primary')
-                                ->link()
-                                ->extraAttributes([
-                                    'class' => 'me-auto',
-                                ])
-                                ->action('resetTableFiltersForm'),
-                        ];
-                    })
-            )
             ->actions([
                 Tables\Actions\Action::make('markAsReviewed')
                     ->label('Mark as reviewed')
@@ -623,7 +600,7 @@ class Transactions extends Page implements HasTable
                 ->label('Type')
                 ->options(JournalEntryType::class)
                 ->live()
-                ->afterStateUpdated(function (Get $get, Set $set, ?string $state, ?string $old) {
+                ->afterStateUpdated(function (Get $get, Set $set, $state, $old) {
                     $this->adjustJournalEntryAmountsForTypeChange(JournalEntryType::parse($state), JournalEntryType::parse($old), $get('amount'));
                 })
                 ->softRequired(),

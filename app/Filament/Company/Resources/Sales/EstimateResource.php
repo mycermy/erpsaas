@@ -2,11 +2,17 @@
 
 namespace App\Filament\Company\Resources\Sales;
 
+use App\Enums\Accounting\AdjustmentCategory;
+use App\Enums\Accounting\AdjustmentStatus;
+use App\Enums\Accounting\AdjustmentType;
 use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\DocumentType;
 use App\Enums\Accounting\EstimateStatus;
+use App\Enums\Setting\PaymentTerms;
+use App\Filament\Company\Resources\Sales\ClientResource\RelationManagers\EstimatesRelationManager;
 use App\Filament\Company\Resources\Sales\EstimateResource\Pages;
 use App\Filament\Company\Resources\Sales\EstimateResource\Widgets;
+use App\Filament\Forms\Components\CreateAdjustmentSelect;
 use App\Filament\Forms\Components\CreateCurrencySelect;
 use App\Filament\Forms\Components\DocumentFooterSection;
 use App\Filament\Forms\Components\DocumentHeaderSection;
@@ -15,6 +21,7 @@ use App\Filament\Tables\Actions\ReplicateBulkAction;
 use App\Filament\Tables\Columns;
 use App\Filament\Tables\Filters\DateRangeFilter;
 use App\Models\Accounting\Adjustment;
+use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Estimate;
 use App\Models\Common\Client;
 use App\Models\Common\Offering;
@@ -30,7 +37,9 @@ use Filament\Resources\Resource;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Guava\FilamentClusters\Forms\Cluster;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class EstimateResource extends Resource
@@ -77,18 +86,53 @@ class EstimateResource extends Resource
                                     ->default(static fn () => Estimate::getNextDocumentNumber()),
                                 Forms\Components\TextInput::make('reference_number')
                                     ->label('Reference number'),
-                                Forms\Components\DatePicker::make('date')
-                                    ->label('Estimate date')
-                                    ->live()
-                                    ->default(now())
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                                        $date = $state;
-                                        $expirationDate = $get('expiration_date');
+                                Cluster::make([
+                                    Forms\Components\DatePicker::make('date')
+                                        ->label('Estimate date')
+                                        ->live()
+                                        ->default(now())
+                                        ->columnSpan(2)
+                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                            $date = $state;
+                                            $expirationDate = $get('expiration_date');
 
-                                        if ($date && $expirationDate && $date > $expirationDate) {
-                                            $set('expiration_date', $date);
-                                        }
-                                    }),
+                                            if ($date && $expirationDate && $date > $expirationDate) {
+                                                $set('expiration_date', $date);
+                                            }
+
+                                            $paymentTerms = $get('payment_terms');
+                                            if ($date && $paymentTerms && $paymentTerms !== 'custom') {
+                                                $terms = PaymentTerms::parse($paymentTerms);
+                                                $set('expiration_date', Carbon::parse($date)->addDays($terms->getDays())->toDateString());
+                                            }
+                                        }),
+                                    Forms\Components\Select::make('payment_terms')
+                                        ->label('Payment terms')
+                                        ->options(function () {
+                                            return collect(PaymentTerms::cases())
+                                                ->mapWithKeys(function (PaymentTerms $paymentTerm) {
+                                                    return [$paymentTerm->value => $paymentTerm->getLabel()];
+                                                })
+                                                ->put('custom', 'Custom')
+                                                ->toArray();
+                                        })
+                                        ->selectablePlaceholder(false)
+                                        ->default($settings->payment_terms->value)
+                                        ->live()
+                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                            if (! $state || $state === 'custom') {
+                                                return;
+                                            }
+
+                                            $date = $get('date');
+                                            if ($date) {
+                                                $terms = PaymentTerms::parse($state);
+                                                $set('expiration_date', Carbon::parse($date)->addDays($terms->getDays())->toDateString());
+                                            }
+                                        }),
+                                ])
+                                    ->label('Estimate date')
+                                    ->columns(3),
                                 Forms\Components\DatePicker::make('expiration_date')
                                     ->label('Expiration date')
                                     ->default(function () use ($settings) {
@@ -96,6 +140,26 @@ class EstimateResource extends Resource
                                     })
                                     ->minDate(static function (Forms\Get $get) {
                                         return $get('date') ?? now();
+                                    })
+                                    ->live()
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        if (! $state) {
+                                            return;
+                                        }
+
+                                        $date = $get('date');
+                                        $paymentTerms = $get('payment_terms');
+
+                                        if (! $date || $paymentTerms === 'custom') {
+                                            return;
+                                        }
+
+                                        $term = PaymentTerms::parse($paymentTerms);
+                                        $expected = Carbon::parse($date)->addDays($term->getDays());
+
+                                        if (! Carbon::parse($state)->isSameDay($expected)) {
+                                            $set('payment_terms', 'custom');
+                                        }
                                     }),
                                 Forms\Components\Select::make('discount_method')
                                     ->label('Discount method')
@@ -123,17 +187,17 @@ class EstimateResource extends Resource
                                     Header::make($settings->resolveColumnLabel('item_name', 'Items'))
                                         ->width($hasDiscounts ? '15%' : '20%'),
                                     Header::make('Description')
-                                        ->width($hasDiscounts ? '25%' : '30%'),
+                                        ->width($hasDiscounts ? '15%' : '20%'),
                                     Header::make($settings->resolveColumnLabel('unit_name', 'Quantity'))
                                         ->width('10%'),
                                     Header::make($settings->resolveColumnLabel('price_name', 'Price'))
                                         ->width('10%'),
                                     Header::make('Taxes')
-                                        ->width($hasDiscounts ? '15%' : '20%'),
+                                        ->width($hasDiscounts ? '20%' : '30%'),
                                 ];
 
                                 if ($hasDiscounts) {
-                                    $headers[] = Header::make('Discounts')->width('15%');
+                                    $headers[] = Header::make('Discounts')->width('20%');
                                 }
 
                                 $headers[] = Header::make($settings->resolveColumnLabel('amount_name', 'Amount'))
@@ -149,19 +213,53 @@ class EstimateResource extends Resource
                                     ->searchable()
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state, ?DocumentLineItem $record) {
                                         $offeringId = $state;
-                                        $offeringRecord = Offering::with(['salesTaxes', 'salesDiscounts'])->find($offeringId);
+                                        $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
+                                        $isPerLineItem = $discountMethod->isPerLineItem();
 
-                                        if ($offeringRecord) {
-                                            $set('description', $offeringRecord->description);
-                                            $set('unit_price', $offeringRecord->price);
-                                            $set('salesTaxes', $offeringRecord->salesTaxes->pluck('id')->toArray());
+                                        $existingTaxIds = [];
+                                        $existingDiscountIds = [];
 
-                                            $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
-                                            if ($discountMethod->isPerLineItem()) {
-                                                $set('salesDiscounts', $offeringRecord->salesDiscounts->pluck('id')->toArray());
+                                        if ($record) {
+                                            $existingTaxIds = $record->salesTaxes()->pluck('adjustments.id')->toArray();
+                                            if ($isPerLineItem) {
+                                                $existingDiscountIds = $record->salesDiscounts()->pluck('adjustments.id')->toArray();
                                             }
+                                        }
+
+                                        $with = [
+                                            'salesTaxes' => static function ($query) use ($existingTaxIds) {
+                                                $query->where(static function ($query) use ($existingTaxIds) {
+                                                    $query->where('status', AdjustmentStatus::Active)
+                                                        ->orWhereIn('adjustments.id', $existingTaxIds);
+                                                });
+                                            },
+                                        ];
+
+                                        if ($isPerLineItem) {
+                                            $with['salesDiscounts'] = static function ($query) use ($existingDiscountIds) {
+                                                $query->where(static function ($query) use ($existingDiscountIds) {
+                                                    $query->where('status', AdjustmentStatus::Active)
+                                                        ->orWhereIn('adjustments.id', $existingDiscountIds);
+                                                });
+                                            };
+                                        }
+
+                                        $offeringRecord = Offering::with($with)->find($offeringId);
+
+                                        if (! $offeringRecord) {
+                                            return;
+                                        }
+
+                                        $unitPrice = CurrencyConverter::convertToFloat($offeringRecord->price, $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency());
+
+                                        $set('description', $offeringRecord->description);
+                                        $set('unit_price', $unitPrice);
+                                        $set('salesTaxes', $offeringRecord->salesTaxes->pluck('id')->toArray());
+
+                                        if ($isPerLineItem) {
+                                            $set('salesDiscounts', $offeringRecord->salesDiscounts->pluck('id')->toArray());
                                         }
                                     }),
                                 Forms\Components\TextInput::make('description'),
@@ -177,19 +275,24 @@ class EstimateResource extends Resource
                                     ->live()
                                     ->maxValue(9999999999.99)
                                     ->default(0),
-                                Forms\Components\Select::make('salesTaxes')
-                                    ->relationship('salesTaxes', 'name')
+                                CreateAdjustmentSelect::make('salesTaxes')
+                                    ->label('Taxes')
+                                    ->category(AdjustmentCategory::Tax)
+                                    ->type(AdjustmentType::Sales)
+                                    ->adjustmentsRelationship('salesTaxes')
                                     ->saveRelationshipsUsing(null)
                                     ->dehydrated(true)
                                     ->preload()
                                     ->multiple()
                                     ->live()
                                     ->searchable(),
-                                Forms\Components\Select::make('salesDiscounts')
-                                    ->relationship('salesDiscounts', 'name')
+                                CreateAdjustmentSelect::make('salesDiscounts')
+                                    ->label('Discounts')
+                                    ->category(AdjustmentCategory::Discount)
+                                    ->type(AdjustmentType::Sales)
+                                    ->adjustmentsRelationship('salesDiscounts')
                                     ->saveRelationshipsUsing(null)
                                     ->dehydrated(true)
-                                    ->preload()
                                     ->multiple()
                                     ->live()
                                     ->hidden(function (Forms\Get $get) {
@@ -271,7 +374,8 @@ class EstimateResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('client.name')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->hiddenOn(EstimatesRelationManager::class),
                 Tables\Columns\TextColumn::make('total')
                     ->currencyWithConversion(static fn (Estimate $record) => $record->currency_code)
                     ->sortable()
@@ -281,7 +385,8 @@ class EstimateResource extends Resource
                 Tables\Filters\SelectFilter::make('client')
                     ->relationship('client', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->hiddenOn(EstimatesRelationManager::class),
                 Tables\Filters\SelectFilter::make('status')
                     ->options(EstimateStatus::class)
                     ->native(false),
@@ -297,8 +402,10 @@ class EstimateResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ActionGroup::make([
-                        Tables\Actions\EditAction::make(),
-                        Tables\Actions\ViewAction::make(),
+                        Tables\Actions\EditAction::make()
+                            ->url(static fn (Estimate $record) => Pages\EditEstimate::getUrl(['record' => $record])),
+                        Tables\Actions\ViewAction::make()
+                            ->url(static fn (Estimate $record) => Pages\ViewEstimate::getUrl(['record' => $record])),
                         Estimate::getReplicateAction(Tables\Actions\ReplicateAction::class),
                         Estimate::getApproveDraftAction(Tables\Actions\Action::class),
                         Estimate::getMarkAsSentAction(Tables\Actions\Action::class),

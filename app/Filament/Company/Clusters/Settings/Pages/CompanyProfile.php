@@ -68,7 +68,7 @@ class CompanyProfile extends Page
     public function mount(): void
     {
         $this->record = CompanyProfileModel::firstOrNew([
-            'company_id' => auth()->user()->currentCompany->id,
+            'company_id' => auth()->user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -201,7 +201,8 @@ class CompanyProfile extends Page
                 Hidden::make('type')
                     ->default('general'),
                 AddressFields::make()
-                    ->softRequired(),
+                    ->softRequired()
+                    ->disabledCountry(is_demo_environment()),
             ])
             ->columns(2);
     }

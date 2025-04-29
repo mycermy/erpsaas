@@ -2,6 +2,7 @@
 
 namespace App\Filament\Company\Resources\Purchases\BillResource\Pages;
 
+use App\Concerns\HandlePageRedirect;
 use App\Concerns\ManagesLineItems;
 use App\Filament\Company\Resources\Purchases\BillResource;
 use App\Models\Accounting\Bill;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class EditBill extends EditRecord
 {
+    use HandlePageRedirect;
     use ManagesLineItems;
 
     protected static string $resource = BillResource::class;
@@ -26,11 +28,6 @@ class EditBill extends EditRecord
     public function getMaxContentWidth(): MaxWidth | string | null
     {
         return MaxWidth::Full;
-    }
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model

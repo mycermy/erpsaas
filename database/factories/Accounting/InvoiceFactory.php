@@ -8,6 +8,7 @@ use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Banking\BankAccount;
 use App\Models\Common\Client;
+use App\Models\Company;
 use App\Models\Setting\DocumentDefault;
 use App\Utilities\Currency\CurrencyConverter;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -34,7 +35,7 @@ class InvoiceFactory extends Factory
 
         return [
             'company_id' => 1,
-            'client_id' => Client::inRandomOrder()->value('id'),
+            'client_id' => fn (array $attributes) => Client::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id'),
             'header' => 'Invoice',
             'subheader' => 'Invoice',
             'invoice_number' => $this->faker->unique()->numerify('INV-####'),
@@ -42,7 +43,13 @@ class InvoiceFactory extends Factory
             'date' => $invoiceDate,
             'due_date' => Carbon::parse($invoiceDate)->addDays($this->faker->numberBetween(14, 60)),
             'status' => InvoiceStatus::Draft,
-            'currency_code' => 'USD',
+            'currency_code' => function (array $attributes) {
+                $client = Client::find($attributes['client_id']);
+
+                return $client->currency_code ??
+                    Company::find($attributes['company_id'])->default->currency_code ??
+                    'USD';
+            },
             'terms' => $this->faker->sentence,
             'footer' => $this->faker->sentence,
             'created_by' => 1,
@@ -173,7 +180,7 @@ class InvoiceFactory extends Factory
                     'posted_at' => $postedAt,
                     'amount' => CurrencyConverter::convertCentsToFormatSimple($amount, $invoice->currency_code),
                     'payment_method' => $this->faker->randomElement(PaymentMethod::class),
-                    'bank_account_id' => BankAccount::inRandomOrder()->value('id'),
+                    'bank_account_id' => BankAccount::where('company_id', $invoice->company_id)->inRandomOrder()->value('id'),
                     'notes' => $this->faker->sentence,
                 ];
 
@@ -242,16 +249,18 @@ class InvoiceFactory extends Factory
             return;
         }
 
-        $subtotal = $invoice->lineItems()->sum('subtotal') / 100;
-        $taxTotal = $invoice->lineItems()->sum('tax_total') / 100;
-        $discountTotal = $invoice->lineItems()->sum('discount_total') / 100;
-        $grandTotal = $subtotal + $taxTotal - $discountTotal;
+        $subtotalCents = $invoice->lineItems()->sum('subtotal');
+        $taxTotalCents = $invoice->lineItems()->sum('tax_total');
+        $discountTotalCents = $invoice->lineItems()->sum('discount_total');
+
+        $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
+        $currencyCode = $invoice->currency_code;
 
         $invoice->update([
-            'subtotal' => $subtotal,
-            'tax_total' => $taxTotal,
-            'discount_total' => $discountTotal,
-            'total' => $grandTotal,
+            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
+            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
+            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
+            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
         ]);
     }
 }
