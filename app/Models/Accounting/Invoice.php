@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
 
@@ -93,6 +94,17 @@ class Invoice extends Document
         'amount_paid' => MoneyCast::class,
         'amount_due' => MoneyCast::class,
     ];
+
+    protected $appends = [
+        'logo_url',
+    ];
+
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::get(static function (mixed $value, array $attributes): ?string {
+            return $attributes['logo'] ? Storage::disk('public')->url($attributes['logo']) : null;
+        });
+    }
 
     public function client(): BelongsTo
     {
@@ -227,6 +239,10 @@ class Invoice extends Document
 
     public function canRecordPayment(): bool
     {
+        if (! $this->client_id) {
+            return false;
+        }
+
         return ! in_array($this->status, [
             InvoiceStatus::Draft,
             InvoiceStatus::Paid,
@@ -236,12 +252,16 @@ class Invoice extends Document
 
     public function canBulkRecordPayment(): bool
     {
+        if (! $this->client_id || $this->currency_code !== CurrencyAccessor::getDefaultCurrency()) {
+            return false;
+        }
+
         return ! in_array($this->status, [
             InvoiceStatus::Draft,
             InvoiceStatus::Paid,
             InvoiceStatus::Void,
             InvoiceStatus::Overpaid,
-        ]) && $this->currency_code === CurrencyAccessor::getDefaultCurrency();
+        ]);
     }
 
     public function canBeOverdue(): bool

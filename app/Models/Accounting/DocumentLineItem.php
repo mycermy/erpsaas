@@ -36,6 +36,7 @@ class DocumentLineItem extends Model
         'unit_price',
         'tax_total',
         'discount_total',
+        'line_number',
         'created_by',
         'updated_by',
     ];
@@ -106,11 +107,15 @@ class DocumentLineItem extends Model
     public function calculateTaxTotal(): Money
     {
         $subtotal = money($this->subtotal, CurrencyAccessor::getDefaultCurrency());
+        $defaultCurrency = CurrencyAccessor::getDefaultCurrency();
 
-        return $this->taxes->reduce(
-            fn (Money $carry, Adjustment $tax) => $carry->add($subtotal->multiply($tax->rate / 100)),
-            money(0, CurrencyAccessor::getDefaultCurrency())
-        );
+        return $this->taxes->reduce(function (Money $carry, Adjustment $tax) use ($subtotal, $defaultCurrency) {
+            if ($tax->computation->isPercentage()) {
+                return $carry->add($subtotal->multiply($tax->rate / 100));
+            } else {
+                return $carry->add(money($tax->rate, $defaultCurrency));
+            }
+        }, money(0, $defaultCurrency));
     }
 
     public function calculateTaxTotalAmount(): int
@@ -131,11 +136,15 @@ class DocumentLineItem extends Model
     public function calculateDiscountTotal(): Money
     {
         $subtotal = money($this->subtotal, CurrencyAccessor::getDefaultCurrency());
+        $defaultCurrency = CurrencyAccessor::getDefaultCurrency();
 
-        return $this->discounts->reduce(
-            fn (Money $carry, Adjustment $discount) => $carry->add($subtotal->multiply($discount->rate / 100)),
-            money(0, CurrencyAccessor::getDefaultCurrency())
-        );
+        return $this->discounts->reduce(function (Money $carry, Adjustment $discount) use ($subtotal, $defaultCurrency) {
+            if ($discount->computation->isPercentage()) {
+                return $carry->add($subtotal->multiply($discount->rate / 100));
+            } else {
+                return $carry->add(money($discount->rate, $defaultCurrency));
+            }
+        }, money(0, $defaultCurrency));
     }
 
     public function calculateDiscountTotalAmount(): int

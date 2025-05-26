@@ -2,12 +2,14 @@
 
 namespace App\Filament\Company\Clusters\Settings\Resources;
 
+use App\Enums\Accounting\DocumentDiscountMethod;
 use App\Enums\Accounting\DocumentType;
 use App\Enums\Setting\Font;
 use App\Enums\Setting\PaymentTerms;
 use App\Enums\Setting\Template;
 use App\Filament\Company\Clusters\Settings;
 use App\Filament\Company\Clusters\Settings\Resources\DocumentDefaultResource\Pages;
+use App\Filament\Forms\Components\DocumentPreview;
 use App\Models\Setting\DocumentDefault;
 use Filament\Forms;
 use Filament\Forms\Components\Component;
@@ -17,8 +19,6 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class DocumentDefaultResource extends Resource
 {
@@ -51,6 +51,9 @@ class DocumentDefaultResource extends Resource
                     ->softRequired()
                     ->localizeLabel()
                     ->options(PaymentTerms::class),
+                Forms\Components\Select::make('discount_method')
+                    ->softRequired()
+                    ->options(DocumentDiscountMethod::class),
             ])->columns();
     }
 
@@ -83,27 +86,19 @@ class DocumentDefaultResource extends Resource
                 Forms\Components\Grid::make(1)
                     ->schema([
                         Forms\Components\FileUpload::make('logo')
-                            ->openable()
                             ->maxSize(1024)
                             ->localizeLabel()
-                            ->visibility('public')
-                            ->disk('public')
+                            ->openable()
                             ->directory('logos/document')
-                            ->imageResizeMode('contain')
+                            ->image()
                             ->imageCropAspectRatio('3:2')
                             ->panelAspectRatio('3:2')
-                            ->panelLayout('integrated')
-                            ->removeUploadedFileButtonPosition('center bottom')
-                            ->uploadButtonPosition('center bottom')
-                            ->uploadProgressIndicatorPosition('center bottom')
-                            ->getUploadedFileNameForStorageUsing(
-                                static fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
-                                    ->prepend(Auth::user()->currentCompany->id . '_'),
-                            )
+                            ->panelLayout('compact')
                             ->extraAttributes([
-                                'class' => 'aspect-[3/2] w-[9.375rem] max-w-full',
+                                'class' => 'es-file-upload document-logo-preview',
                             ])
-                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/gif']),
+                            ->loadingIndicatorPosition('left')
+                            ->removeUploadedFileButtonPosition('right'),
                         Forms\Components\Checkbox::make('show_logo')
                             ->localizeLabel(),
                         Forms\Components\ColorPicker::make('accent_color')
@@ -124,24 +119,12 @@ class DocumentDefaultResource extends Resource
                             ->options(Template::class),
                         ...static::getColumnLabelsSchema(),
                     ])->columnSpan(1),
-                Forms\Components\Grid::make()
-                    ->schema([
-                        Forms\Components\ViewField::make('preview.default')
-                            ->columnSpan(2)
-                            ->hiddenLabel()
-                            ->visible(static fn (Get $get) => $get('template') === 'default')
-                            ->view('filament.company.components.document-templates.default'),
-                        Forms\Components\ViewField::make('preview.modern')
-                            ->columnSpan(2)
-                            ->hiddenLabel()
-                            ->visible(static fn (Get $get) => $get('template') === 'modern')
-                            ->view('filament.company.components.document-templates.modern'),
-                        Forms\Components\ViewField::make('preview.classic')
-                            ->columnSpan(2)
-                            ->hiddenLabel()
-                            ->visible(static fn (Get $get) => $get('template') === 'classic')
-                            ->view('filament.company.components.document-templates.classic'),
-                    ])->columnSpan(2),
+                DocumentPreview::make()
+                    ->template(static fn (Get $get) => Template::parse($get('template')))
+                    ->preview()
+                    ->columnSpan([
+                        'lg' => 2,
+                    ]),
             ])->columns(3);
     }
 

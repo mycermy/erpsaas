@@ -18,19 +18,12 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconPosition;
-use Filament\Support\Enums\IconSize;
-use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class ViewRecurringInvoice extends ViewRecord
 {
     protected static string $resource = RecurringInvoiceResource::class;
-
-    public function getMaxContentWidth(): MaxWidth | string | null
-    {
-        return MaxWidth::SixExtraLarge;
-    }
 
     protected function getHeaderActions(): array
     {
@@ -50,8 +43,7 @@ class ViewRecurringInvoice extends ViewRecord
                 ->button()
                 ->outlined()
                 ->dropdownPlacement('bottom-end')
-                ->icon('heroicon-c-chevron-down')
-                ->iconSize(IconSize::Small)
+                ->icon('heroicon-m-chevron-down')
                 ->iconPosition(IconPosition::After),
         ];
     }
@@ -97,7 +89,7 @@ class ViewRecurringInvoice extends ViewRecord
                     ]),
                 BannerEntry::make('readyToApprove')
                     ->info()
-                    ->title('Ready to Approve')
+                    ->title('Ready to approve')
                     ->description('This recurring invoice is ready for approval. Review the details, and approve it when you’re ready to start generating invoices.')
                     ->visible(fn (RecurringInvoice $record) => $record->canBeApproved() && ! $record->hasInactiveAdjustments())
                     ->columnSpanFull()
@@ -116,7 +108,8 @@ class ViewRecurringInvoice extends ViewRecord
                                     ->label('Client')
                                     ->color('primary')
                                     ->weight(FontWeight::SemiBold)
-                                    ->url(static fn (RecurringInvoice $record) => ClientResource::getUrl('view', ['record' => $record->client_id])),
+                                    ->url(static fn (RecurringInvoice $record) => $record->client_id ? ClientResource::getUrl('view', ['record' => $record->client_id]) : null)
+                                    ->link(),
                                 TextEntry::make('last_date')
                                     ->label('Last invoice')
                                     ->date()

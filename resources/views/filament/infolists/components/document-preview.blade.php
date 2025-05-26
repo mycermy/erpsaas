@@ -1,6 +1,7 @@
 @php
     $document = \App\DTO\DocumentDTO::fromModel($getRecord());
     $template = $getTemplate();
+    $preview = $isPreview();
 @endphp
 
 {!! $document->getFontHtml() !!}
@@ -12,8 +13,8 @@
 </style>
 
 <div {{ $attributes }}>
-    @include("filament.infolists.components.document-templates.{$template->value}", [
+    @include("filament.company.components.document-templates.{$template->value}", [
         'document' => $document,
-        'preview' => false,
+        'preview' => $preview,
     ])
 </div>
