@@ -45,11 +45,7 @@ class EditBill extends EditRecord
 
         $record = parent::handleRecordUpdate($record, $data);
 
-        if (! $record->initialTransaction) {
-            $record->createInitialTransaction();
-        } else {
-            $record->updateInitialTransaction();
-        }
+        $record->updateInitialTransaction();
 
         return $record;
     }

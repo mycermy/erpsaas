@@ -2,20 +2,19 @@
 
 <a href="https://trendshift.io/repositories/4749" target="_blank"><img src="https://trendshift.io/api/badge/repositories/4749" alt="andrewdwallo%2Ferpsaas | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-<img width="1920" alt="Create Company" src="https://github.com/andrewdwallo/erpsaas/assets/104294090/5146c4db-dffc-4207-9095-2ebb80d452e1">
-<img width="1920" alt="Invoice" src="https://github.com/andrewdwallo/erpsaas/assets/104294090/d7115830-6912-4267-ab54-17f7dbcc21cd">
-<img width="1920" alt="Plaid" src="https://github.com/andrewdwallo/erpsaas/assets/104294090/c85862ac-62ff-4c0d-9b2a-f7393ad977ef">
-<img width="1920" alt="Connected Accounts" src="https://github.com/andrewdwallo/erpsaas/assets/104294090/3a4deebc-528c-4b84-91db-9f0515de883d">
-<img width="1920" alt="Transactions" src="https://github.com/andrewdwallo/erpsaas/assets/104294090/c50a899d-ee6f-4300-92a9-4a41c5433972">
-<img width="1906" alt="Screenshot 2024-12-08 at 3 05 30 AM" src="https://github.com/user-attachments/assets/360f652a-5c61-4ae5-9fa1-9d6f3627e229">
-<img width="1906" alt="Balance Sheet Report" src="https://github.com/user-attachments/assets/01b112d0-f9d6-4835-aca1-245c1a17830f">
-<img width="1906" alt="Trial Balance Report" src="https://github.com/user-attachments/assets/b43beb9d-7e2c-413c-a7c5-8ab987885cae">
-<img width="1906" alt="Account Transactions Report" src="https://github.com/user-attachments/assets/527bb3c9-4918-49c4-9be3-769e07e57a82">
-<img width="1906" alt="Account Balances Report" src="https://github.com/user-attachments/assets/d8b28fcd-a9e2-4805-937c-dfd4d3848ce4">
+![Screenshot 2025-06-05 at 16-26-36 Edit Invoice - ERPSAAS](https://github.com/user-attachments/assets/583f83eb-dda5-4174-a0a9-47fc145b4ea3)
+![Screenshot 2025-06-05 at 16-29-47 Connected Accounts - ERPSAAS](https://github.com/user-attachments/assets/86ffabb2-bb8c-4657-b473-d5c7ecdeef8b)
+![Screenshot 2025-06-05 at 16-33-00 Transactions - ERPSAAS](https://github.com/user-attachments/assets/b20a8114-8c1c-4305-b673-23c9e2aff2a4)
+![Screenshot 2025-06-05 at 16-33-31 Invoices - ERPSAAS](https://github.com/user-attachments/assets/9f604eb3-e548-40ba-8989-25c9c8bae4e4)
+![Screenshot 2025-06-05 at 16-34-05 Balance Sheet - ERPSAAS](https://github.com/user-attachments/assets/169e35db-db04-4d32-87ce-da67db2d04ac)
+![Screenshot 2025-06-05 at 16-34-35 Trial Balance - ERPSAAS](https://github.com/user-attachments/assets/883892f9-2147-4bc1-bcc1-6f2cae1af432)
+![Screenshot 2025-06-05 at 16-35-03 Account Transactions - ERPSAAS](https://github.com/user-attachments/assets/7801580f-4481-402d-8c57-e64ba2817f92)
+![Screenshot 2025-06-05 at 16-35-21 Account Balances - ERPSAAS](https://github.com/user-attachments/assets/b9f66e86-0981-43d8-8b73-c148c77cb263)
 
 
 
-A Laravel and Filament-powered accounting platform, crafting a modern and automated solution for financial management.
+
+A Laravel and Filament-powered accounting platform featuring full double-entry accrual accounting, delivering modern automation for professional financial management.
 
 # Demo
 
@@ -27,12 +26,8 @@ The demo environment provides a complete experience of the application with the 
 - **Multi-Company Setup**: 8 pre-configured companies with different currencies:
     - ERPSAAS (USD)
     - British Crown Analytics (GBP)
-    - Swiss Precision Group (CHF)
-    - Tokyo Future Technologies (JPY)
-    - Sydney Harbor Systems (AUD)
+    - Berlin Tech Solutions (EUR)
     - Mumbai Software Services (INR)
-    - Singapore Digital Hub (SGD)
-    - Dubai Business Consulting (AED)
 - **Feature Access**: Full accounting functionality with simplified user management
 - **Limitations**: Plaid, Live Currency, Profile customization, password reset, and registration are disabled
 
@@ -112,7 +107,7 @@ Open the DatabaseSeeder and set the property values as per your requirement
 
 Default login information:
 
-    email: admin@gmail.com
+    email: admin@erpsaas.com
     password: password
 
 Run the database seeder

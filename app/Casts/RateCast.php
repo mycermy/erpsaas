@@ -16,11 +16,11 @@ class RateCast implements CastsAttributes
             return '0';
         }
 
-        $currency_code = $this->getDefaultCurrencyCode();
+        $currencyCode = $attributes['currency_code'] ?? $this->getDefaultCurrencyCode();
         $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
 
         if ($computation?->isFixed()) {
-            return money($value, $currency_code)->formatSimple();
+            return money($value, $currencyCode)->formatSimple();
         }
 
         return RateCalculator::formatScaledRate($value);
@@ -38,10 +38,10 @@ class RateCast implements CastsAttributes
 
         $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
 
-        $currency_code = $this->getDefaultCurrencyCode();
+        $currencyCode = $attributes['currency_code'] ?? $this->getDefaultCurrencyCode();
 
         if ($computation?->isFixed()) {
-            return money($value, $currency_code, true)->getAmount();
+            return money($value, $currencyCode, true)->getAmount();
         }
 
         return RateCalculator::parseLocalizedRate($value);

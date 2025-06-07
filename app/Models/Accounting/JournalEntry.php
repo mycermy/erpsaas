@@ -2,7 +2,6 @@
 
 namespace App\Models\Accounting;
 
-use App\Casts\JournalEntryCast;
 use App\Collections\Accounting\JournalEntryCollection;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
@@ -32,7 +31,6 @@ class JournalEntry extends Model
 
     protected $casts = [
         'type' => JournalEntryType::class,
-        'amount' => JournalEntryCast::class,
     ];
 
     public function account(): BelongsTo

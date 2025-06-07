@@ -2,7 +2,6 @@
 
 namespace App\Models\Accounting;
 
-use App\Casts\TransactionAmountCast;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Accounting\AccountCategory;
@@ -60,7 +59,6 @@ class Transaction extends Model
     protected $casts = [
         'type' => TransactionType::class,
         'payment_method' => PaymentMethod::class,
-        'amount' => TransactionAmountCast::class,
         'pending' => 'boolean',
         'reviewed' => 'boolean',
         'posted_at' => 'date',
@@ -110,7 +108,7 @@ class Transaction extends Model
     public function updateAmountIfBalanced(): void
     {
         if ($this->journalEntries->areBalanced() && $this->journalEntries->sumDebits()->formatSimple() !== $this->getAttributeValue('amount')) {
-            $this->setAttribute('amount', $this->journalEntries->sumDebits()->formatSimple());
+            $this->setAttribute('amount', $this->journalEntries->sumDebits()->getAmount());
             $this->save();
         }
     }

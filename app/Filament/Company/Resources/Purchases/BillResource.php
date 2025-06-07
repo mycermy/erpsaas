@@ -152,7 +152,7 @@ class BillResource extends Resource
                                         $date = $get('date');
                                         $paymentTerms = $get('payment_terms');
 
-                                        if (! $date || $paymentTerms === 'custom') {
+                                        if (! $date || $paymentTerms === 'custom' || ! $paymentTerms) {
                                             return;
                                         }
 
@@ -261,7 +261,7 @@ class BillResource extends Resource
                                                 return;
                                             }
 
-                                            $unitPrice = CurrencyConverter::convertToFloat($offeringRecord->price, $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency());
+                                            $unitPrice = CurrencyConverter::convertCentsToFormatSimple($offeringRecord->price, 'USD');
 
                                             $set('description', $offeringRecord->description);
                                             $set('unit_price', $unitPrice);
@@ -282,11 +282,9 @@ class BillResource extends Resource
                                     ->maxValue(9999999999.99)
                                     ->default(1),
                                 Forms\Components\TextInput::make('unit_price')
-                                    ->label('Price')
                                     ->hiddenLabel()
-                                    ->numeric()
+                                    ->money(useAffix: false)
                                     ->live()
-                                    ->maxValue(9999999999.99)
                                     ->default(0),
                                 Forms\Components\Group::make([
                                     CreateAdjustmentSelect::make('purchaseTaxes')
@@ -327,7 +325,9 @@ class BillResource extends Resource
                                     ->extraAttributes(['class' => 'text-left sm:text-right'])
                                     ->content(function (Forms\Get $get) {
                                         $quantity = max((float) ($get('quantity') ?? 0), 0);
-                                        $unitPrice = max((float) ($get('unit_price') ?? 0), 0);
+                                        $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), 'USD')
+                                            ? CurrencyConverter::convertToFloat($get('unit_price'), 'USD')
+                                            : 0;
                                         $purchaseTaxes = $get('purchaseTaxes') ?? [];
                                         $purchaseDiscounts = $get('purchaseDiscounts') ?? [];
                                         $currencyCode = $get('../../currency_code') ?? CurrencyAccessor::getDefaultCurrency();
@@ -466,12 +466,12 @@ class BillResource extends Resource
                                     ->live(onBlur: true)
                                     ->helperText(function (Bill $record, $state) {
                                         $billCurrency = $record->currency_code;
-                                        if (! CurrencyConverter::isValidAmount($state, $billCurrency)) {
+                                        if (! CurrencyConverter::isValidAmount($state, 'USD')) {
                                             return null;
                                         }
 
-                                        $amountDue = $record->getRawOriginal('amount_due');
-                                        $amount = CurrencyConverter::convertToCents($state, $billCurrency);
+                                        $amountDue = $record->amount_due;
+                                        $amount = CurrencyConverter::convertToCents($state, 'USD');
 
                                         if ($amount <= 0) {
                                             return 'Please enter a valid positive amount';
@@ -486,8 +486,8 @@ class BillResource extends Resource
                                         };
                                     })
                                     ->rules([
-                                        static fn (Bill $record): Closure => static function (string $attribute, $value, Closure $fail) use ($record) {
-                                            if (! CurrencyConverter::isValidAmount($value, $record->currency_code)) {
+                                        static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
+                                            if (! CurrencyConverter::isValidAmount($value, 'USD')) {
                                                 $fail('Please enter a valid amount');
                                             }
                                         },
@@ -584,11 +584,11 @@ class BillResource extends Resource
                             }
                         })
                         ->mountUsing(function (Collection $records, Form $form) {
-                            $totalAmountDue = $records->sum(fn (Bill $bill) => $bill->getRawOriginal('amount_due'));
+                            $totalAmountDue = $records->sum('amount_due');
 
                             $form->fill([
                                 'posted_at' => now(),
-                                'amount' => CurrencyConverter::convertCentsToFormatSimple($totalAmountDue),
+                                'amount' => $totalAmountDue,
                             ]);
                         })
                         ->form([
@@ -624,8 +624,8 @@ class BillResource extends Resource
                                 ->label('Notes'),
                         ])
                         ->before(function (Collection $records, Tables\Actions\BulkAction $action, array $data) {
-                            $totalPaymentAmount = CurrencyConverter::convertToCents($data['amount']);
-                            $totalAmountDue = $records->sum(fn (Bill $bill) => $bill->getRawOriginal('amount_due'));
+                            $totalPaymentAmount = $data['amount'] ?? 0;
+                            $totalAmountDue = $records->sum('amount_due');
 
                             if ($totalPaymentAmount > $totalAmountDue) {
                                 $formattedTotalAmountDue = CurrencyConverter::formatCentsToMoney($totalAmountDue);
@@ -641,18 +641,18 @@ class BillResource extends Resource
                             }
                         })
                         ->action(function (Collection $records, Tables\Actions\BulkAction $action, array $data) {
-                            $totalPaymentAmount = CurrencyConverter::convertToCents($data['amount']);
+                            $totalPaymentAmount = $data['amount'] ?? 0;
                             $remainingAmount = $totalPaymentAmount;
 
                             $records->each(function (Bill $record) use (&$remainingAmount, $data) {
-                                $amountDue = $record->getRawOriginal('amount_due');
+                                $amountDue = $record->amount_due;
 
                                 if ($amountDue <= 0 || $remainingAmount <= 0) {
                                     return;
                                 }
 
                                 $paymentAmount = min($amountDue, $remainingAmount);
-                                $data['amount'] = CurrencyConverter::convertCentsToFormatSimple($paymentAmount);
+                                $data['amount'] = $paymentAmount;
 
                                 $record->recordPayment($data);
                                 $remainingAmount -= $paymentAmount;

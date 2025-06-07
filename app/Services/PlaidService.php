@@ -15,6 +15,8 @@ class PlaidService
 {
     public const API_VERSION = '2020-09-14';
 
+    public const TRANSACTION_DAYS_REQUESTED = 730;
+
     protected ?string $clientId;
 
     protected ?string $clientSecret;
@@ -204,6 +206,12 @@ class PlaidService
 
         if ($products) {
             $data['products'] = $products;
+
+            if (in_array('transactions', $products, true)) {
+                $data['transactions'] = [
+                    'days_requested' => self::TRANSACTION_DAYS_REQUESTED,
+                ];
+            }
         }
 
         if (! empty($this->webhookUrl)) {

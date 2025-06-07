@@ -9,7 +9,6 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\Transaction;
 use App\Models\Banking\BankAccount;
 use App\Utilities\Currency\CurrencyAccessor;
-use App\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Header;
 use Closure;
 use Filament\Forms;
@@ -91,17 +90,6 @@ trait HasTransactionAction
                     ->options(fn (?Transaction $transaction) => Transaction::getBankAccountOptions(currentBankAccountId: $transaction?->bank_account_id))
                     ->live()
                     ->searchable()
-                    ->afterStateUpdated(function (Forms\Set $set, $state, $old, Forms\Get $get) {
-                        $amount = CurrencyConverter::convertAndSet(
-                            BankAccount::find($state)->account->currency_code,
-                            BankAccount::find($old)->account->currency_code ?? CurrencyAccessor::getDefaultCurrency(),
-                            $get('amount')
-                        );
-
-                        if ($amount !== null) {
-                            $set('amount', $amount);
-                        }
-                    })
                     ->required(),
                 Forms\Components\Select::make('type')
                     ->label('Type')
@@ -144,17 +132,6 @@ trait HasTransactionAction
                     ->options(fn (Forms\Get $get, ?Transaction $transaction) => Transaction::getBankAccountOptions(excludedAccountId: $get('account_id'), currentBankAccountId: $transaction?->bank_account_id))
                     ->live()
                     ->searchable()
-                    ->afterStateUpdated(function (Forms\Set $set, $state, $old, Forms\Get $get) {
-                        $amount = CurrencyConverter::convertAndSet(
-                            BankAccount::find($state)->account->currency_code,
-                            BankAccount::find($old)->account->currency_code ?? CurrencyAccessor::getDefaultCurrency(),
-                            $get('amount')
-                        );
-
-                        if ($amount !== null) {
-                            $set('amount', $amount);
-                        }
-                    })
                     ->required(),
                 Forms\Components\Select::make('type')
                     ->label('Type')
@@ -350,7 +327,7 @@ trait HasTransactionAction
             Forms\Components\TextInput::make('amount')
                 ->label('Amount')
                 ->live()
-                ->mask(moneyMask(CurrencyAccessor::getDefaultCurrency()))
+                ->money()
                 ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, ?string $state, ?string $old) {
                     $this->updateJournalEntryAmount(JournalEntryType::parse($get('type')), $state, $old);
                 })

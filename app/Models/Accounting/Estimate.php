@@ -2,7 +2,6 @@
 
 namespace App\Models\Accounting;
 
-use App\Casts\MoneyCast;
 use App\Casts\RateCast;
 use App\Collections\Accounting\DocumentCollection;
 use App\Enums\Accounting\AdjustmentComputation;
@@ -78,10 +77,6 @@ class Estimate extends Document
         'discount_method' => DocumentDiscountMethod::class,
         'discount_computation' => AdjustmentComputation::class,
         'discount_rate' => RateCast::class,
-        'subtotal' => MoneyCast::class,
-        'tax_total' => MoneyCast::class,
-        'discount_total' => MoneyCast::class,
-        'total' => MoneyCast::class,
     ];
 
     protected $appends = [
@@ -135,11 +130,9 @@ class Estimate extends Document
         return $this->total;
     }
 
-    protected function isCurrentlyExpired(): Attribute
+    public function shouldBeExpired(): bool
     {
-        return Attribute::get(function () {
-            return $this->expiration_date?->isBefore(today());
-        });
+        return $this->expiration_date?->isBefore(today()) && $this->canBeExpired();
     }
 
     public function isDraft(): bool
@@ -471,7 +464,7 @@ class Estimate extends Document
             'currency_code' => $this->currency_code,
             'discount_method' => $this->discount_method,
             'discount_computation' => $this->discount_computation,
-            'discount_rate' => $this->discount_rate,
+            'discount_rate' => $this->getRawOriginal('discount_rate'),
             'subtotal' => $this->subtotal,
             'tax_total' => $this->tax_total,
             'discount_total' => $this->discount_total,

@@ -110,13 +110,14 @@ class ViewRecurringInvoice extends ViewRecord
                                     ->weight(FontWeight::SemiBold)
                                     ->url(static fn (RecurringInvoice $record) => $record->client_id ? ClientResource::getUrl('view', ['record' => $record->client_id]) : null)
                                     ->link(),
+                                TextEntry::make('total')
+                                    ->label('Total')
+                                    ->currency(static fn (RecurringInvoice $record) => $record->currency_code),
                                 TextEntry::make('last_date')
                                     ->label('Last invoice')
-                                    ->date()
-                                    ->placeholder('Not Created'),
+                                    ->date(),
                                 TextEntry::make('next_date')
                                     ->label('Next invoice')
-                                    ->placeholder('Not Scheduled')
                                     ->date(),
                                 TextEntry::make('schedule')
                                     ->label('Schedule')
@@ -141,15 +142,11 @@ class ViewRecurringInvoice extends ViewRecord
                                     ->visible(fn (RecurringInvoice $record) => $record->end_type?->isOn()),
                                 TextEntry::make('approved_at')
                                     ->label('Approved at')
-                                    ->placeholder('Not Approved')
                                     ->date(),
                                 TextEntry::make('ended_at')
                                     ->label('Ended at')
                                     ->date()
-                                    ->visible(fn (RecurringInvoice $record) => $record->ended_at),
-                                TextEntry::make('total')
-                                    ->label('Invoice amount')
-                                    ->currency(static fn (RecurringInvoice $record) => $record->currency_code),
+                                    ->visible(static fn (RecurringInvoice $record) => $record->ended_at),
                             ])->columnSpan(1),
                         DocumentPreview::make()
                             ->type(DocumentType::RecurringInvoice),

@@ -12,7 +12,6 @@ use App\Filament\Forms\Components\Banner;
 use App\Filament\Forms\Components\CreateAccountSelect;
 use App\Filament\Forms\Components\CreateAdjustmentSelect;
 use App\Models\Common\Offering;
-use App\Utilities\Currency\CurrencyAccessor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -103,7 +102,7 @@ class OfferingResource extends Resource
             ])->columns();
     }
 
-    public static function getSellableSection(bool $showByDefault = false): Forms\Components\Section
+    public static function getSellableSection(): Forms\Components\Section
     {
         return Forms\Components\Section::make('Sale Information')
             ->schema([
@@ -178,7 +177,7 @@ class OfferingResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('price')
-                    ->currency(CurrencyAccessor::getDefaultCurrency(), true)
+                    ->currency()
                     ->sortable()
                     ->description(function (Offering $record) {
                         $adjustments = $record->adjustments()

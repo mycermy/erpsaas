@@ -58,10 +58,10 @@ class ViewBill extends ViewRecord
                             ->link(),
                         TextEntry::make('total')
                             ->label('Total')
-                            ->currency(fn (Bill $record) => $record->currency_code),
+                            ->currency(static fn (Bill $record) => $record->currency_code),
                         TextEntry::make('amount_due')
                             ->label('Amount due')
-                            ->currency(fn (Bill $record) => $record->currency_code),
+                            ->currency(static fn (Bill $record) => $record->currency_code),
                         TextEntry::make('date')
                             ->label('Date')
                             ->date(),
@@ -70,7 +70,6 @@ class ViewBill extends ViewRecord
                             ->asRelativeDay(),
                         TextEntry::make('paid_at')
                             ->label('Paid at')
-                            ->placeholder('Not Paid')
                             ->date(),
                     ]),
             ]);

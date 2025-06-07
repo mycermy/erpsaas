@@ -7,6 +7,7 @@ use App\Filament\Company\Resources\Accounting\TransactionResource\Pages;
 use App\Filament\Forms\Components\DateRangeSelect;
 use App\Filament\Tables\Actions\EditTransactionAction;
 use App\Filament\Tables\Actions\ReplicateBulkAction;
+use App\Filament\Tables\Columns;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\Transaction;
 use App\Models\Common\Client;
@@ -55,6 +56,7 @@ class TransactionResource extends Resource
                     });
             })
             ->columns([
+                Columns::id(),
                 Tables\Columns\TextColumn::make('posted_at')
                     ->label('Date')
                     ->sortable()

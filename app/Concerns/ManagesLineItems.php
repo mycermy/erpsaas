@@ -73,9 +73,9 @@ trait ManagesLineItems
     protected function updateLineItemTotals(DocumentLineItem $lineItem, DocumentDiscountMethod $discountMethod): void
     {
         $lineItem->updateQuietly([
-            'tax_total' => $lineItem->calculateTaxTotal()->getAmount(),
+            'tax_total' => $lineItem->calculateTaxTotalAmount(),
             'discount_total' => $discountMethod->isPerLineItem()
-                ? $lineItem->calculateDiscountTotal()->getAmount()
+                ? $lineItem->calculateDiscountTotalAmount()
                 : 0,
         ]);
     }
@@ -97,10 +97,10 @@ trait ManagesLineItems
         $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
 
         return [
-            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
-            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
-            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
-            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
+            'subtotal' => $subtotalCents,
+            'tax_total' => $taxTotalCents,
+            'discount_total' => $discountTotalCents,
+            'total' => $grandTotalCents,
         ];
     }
 

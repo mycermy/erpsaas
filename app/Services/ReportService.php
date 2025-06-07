@@ -209,7 +209,7 @@ class ReportService
             foreach ($account->journalEntries as $journalEntry) {
                 $transaction = $journalEntry->transaction;
                 $signedAmount = $journalEntry->signed_amount;
-                $amount = $journalEntry->getRawOriginal('amount');
+                $amount = $journalEntry->amount;
 
                 if ($journalEntry->type->isDebit()) {
                     $periodDebitTotal += $amount;

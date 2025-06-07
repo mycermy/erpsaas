@@ -99,15 +99,12 @@ class ViewInvoice extends ViewRecord
                                     ->asRelativeDay(),
                                 TextEntry::make('approved_at')
                                     ->label('Approved at')
-                                    ->placeholder('Not Approved')
                                     ->date(),
                                 TextEntry::make('last_sent_at')
                                     ->label('Last sent')
-                                    ->placeholder('Never')
                                     ->date(),
                                 TextEntry::make('paid_at')
                                     ->label('Paid at')
-                                    ->placeholder('Not Paid')
                                     ->date(),
                             ])->columnSpan(1),
                         DocumentPreview::make()

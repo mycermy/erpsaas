@@ -12,10 +12,10 @@ use App\Models\Banking\BankAccount;
 use App\Models\Common\Client;
 use App\Models\Company;
 use App\Models\Setting\DocumentDefault;
-use App\Utilities\Currency\CurrencyConverter;
 use App\Utilities\RateCalculator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
+use Random\RandomException;
 
 /**
  * @extends Factory<Invoice>
@@ -34,17 +34,22 @@ class InvoiceFactory extends Factory
      */
     public function definition(): array
     {
-        $invoiceDate = $this->faker->dateTimeBetween('-1 year');
+        $invoiceDate = $this->faker->dateTimeBetween('-2 months', '-1 day');
 
         return [
             'company_id' => 1,
-            'client_id' => fn (array $attributes) => Client::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id'),
+            'client_id' => function (array $attributes) {
+                return Client::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id')
+                    ?? Client::factory()->state([
+                        'company_id' => $attributes['company_id'],
+                    ]);
+            },
             'header' => 'Invoice',
             'subheader' => 'Invoice',
             'invoice_number' => $this->faker->unique()->numerify('INV-####'),
             'order_number' => $this->faker->unique()->numerify('ORD-####'),
             'date' => $invoiceDate,
-            'due_date' => Carbon::parse($invoiceDate)->addDays($this->faker->numberBetween(14, 60)),
+            'due_date' => $this->faker->dateTimeInInterval($invoiceDate, '+3 months'),
             'status' => InvoiceStatus::Draft,
             'discount_method' => $this->faker->randomElement(DocumentDiscountMethod::class),
             'discount_computation' => AdjustmentComputation::Percentage,
@@ -74,6 +79,8 @@ class InvoiceFactory extends Factory
     public function withLineItems(int $count = 3): static
     {
         return $this->afterCreating(function (Invoice $invoice) use ($count) {
+            $invoice->lineItems()->delete();
+
             DocumentLineItem::factory()
                 ->count($count)
                 ->forInvoice($invoice)
@@ -86,58 +93,38 @@ class InvoiceFactory extends Factory
     public function approved(): static
     {
         return $this->afterCreating(function (Invoice $invoice) {
-            $this->ensureLineItems($invoice);
-
-            if (! $invoice->canBeApproved()) {
-                return;
-            }
-
-            $approvedAt = Carbon::parse($invoice->date)
-                ->addHours($this->faker->numberBetween(1, 24));
-
-            $invoice->approveDraft($approvedAt);
+            $this->performApproval($invoice);
         });
     }
 
     public function sent(): static
     {
         return $this->afterCreating(function (Invoice $invoice) {
-            $this->ensureApproved($invoice);
-
-            $sentAt = Carbon::parse($invoice->approved_at)
-                ->addHours($this->faker->numberBetween(1, 24));
-
-            $invoice->markAsSent($sentAt);
+            $this->performSent($invoice);
         });
     }
 
     public function partial(int $maxPayments = 4): static
     {
         return $this->afterCreating(function (Invoice $invoice) use ($maxPayments) {
-            $this->ensureSent($invoice);
-
-            $this->withPayments(max: $maxPayments, invoiceStatus: InvoiceStatus::Partial)
-                ->callAfterCreating(collect([$invoice]));
+            $this->performSent($invoice);
+            $this->performPayments($invoice, $maxPayments, InvoiceStatus::Partial);
         });
     }
 
     public function paid(int $maxPayments = 4): static
     {
         return $this->afterCreating(function (Invoice $invoice) use ($maxPayments) {
-            $this->ensureSent($invoice);
-
-            $this->withPayments(max: $maxPayments)
-                ->callAfterCreating(collect([$invoice]));
+            $this->performSent($invoice);
+            $this->performPayments($invoice, $maxPayments, InvoiceStatus::Paid);
         });
     }
 
     public function overpaid(int $maxPayments = 4): static
     {
         return $this->afterCreating(function (Invoice $invoice) use ($maxPayments) {
-            $this->ensureSent($invoice);
-
-            $this->withPayments(max: $maxPayments, invoiceStatus: InvoiceStatus::Overpaid)
-                ->callAfterCreating(collect([$invoice]));
+            $this->performSent($invoice);
+            $this->performPayments($invoice, $maxPayments, InvoiceStatus::Overpaid);
         });
     }
 
@@ -148,76 +135,119 @@ class InvoiceFactory extends Factory
                 'due_date' => now()->subDays($this->faker->numberBetween(1, 30)),
             ])
             ->afterCreating(function (Invoice $invoice) {
-                $this->ensureApproved($invoice);
+                $this->performApproval($invoice);
             });
     }
 
-    public function withPayments(?int $min = null, ?int $max = null, InvoiceStatus $invoiceStatus = InvoiceStatus::Paid): static
+    protected function performApproval(Invoice $invoice): void
     {
-        $min ??= 1;
+        if (! $invoice->canBeApproved()) {
+            throw new \InvalidArgumentException('Invoice cannot be approved. Current status: ' . $invoice->status->value);
+        }
 
-        return $this->afterCreating(function (Invoice $invoice) use ($invoiceStatus, $max, $min) {
-            $this->ensureSent($invoice);
+        $approvedAt = Carbon::parse($invoice->date)
+            ->addHours($this->faker->numberBetween(1, 24));
 
-            $invoice->refresh();
+        if ($approvedAt->isAfter(now())) {
+            $approvedAt = Carbon::parse($this->faker->dateTimeBetween($invoice->date, now()));
+        }
 
-            $amountDue = $invoice->getRawOriginal('amount_due');
+        $invoice->approveDraft($approvedAt);
+    }
 
-            $totalAmountDue = match ($invoiceStatus) {
-                InvoiceStatus::Overpaid => $amountDue + random_int(1000, 10000),
-                InvoiceStatus::Partial => (int) floor($amountDue * 0.5),
-                default => $amountDue,
-            };
+    protected function performSent(Invoice $invoice): void
+    {
+        if (! $invoice->wasApproved()) {
+            $this->performApproval($invoice);
+        }
 
-            if ($totalAmountDue <= 0 || empty($totalAmountDue)) {
-                return;
+        $sentAt = Carbon::parse($invoice->approved_at)
+            ->addHours($this->faker->numberBetween(1, 24));
+
+        if ($sentAt->isAfter(now())) {
+            $sentAt = Carbon::parse($this->faker->dateTimeBetween($invoice->approved_at, now()));
+        }
+
+        $invoice->markAsSent($sentAt);
+    }
+
+    /**
+     * @throws RandomException
+     */
+    protected function performPayments(Invoice $invoice, int $maxPayments, InvoiceStatus $invoiceStatus): void
+    {
+        $invoice->refresh();
+
+        $amountDue = $invoice->amount_due;
+
+        $totalAmountDue = match ($invoiceStatus) {
+            InvoiceStatus::Overpaid => $amountDue + random_int(1000, 10000),
+            InvoiceStatus::Partial => (int) floor($amountDue * 0.5),
+            default => $amountDue,
+        };
+
+        if ($totalAmountDue <= 0 || empty($totalAmountDue)) {
+            return;
+        }
+
+        $paymentCount = $this->faker->numberBetween(1, $maxPayments);
+        $paymentAmount = (int) floor($totalAmountDue / $paymentCount);
+        $remainingAmount = $totalAmountDue;
+
+        $initialPaymentDate = Carbon::parse($invoice->approved_at);
+        $maxPaymentDate = now();
+
+        $paymentDates = [];
+
+        for ($i = 0; $i < $paymentCount; $i++) {
+            $amount = $i === $paymentCount - 1 ? $remainingAmount : $paymentAmount;
+
+            if ($amount <= 0) {
+                break;
             }
 
-            $paymentCount = $max && $min ? $this->faker->numberBetween($min, $max) : $min;
-            $paymentAmount = (int) floor($totalAmountDue / $paymentCount);
-            $remainingAmount = $totalAmountDue;
-
-            $paymentDate = Carbon::parse($invoice->approved_at);
-            $paymentDates = [];
-
-            for ($i = 0; $i < $paymentCount; $i++) {
-                $amount = $i === $paymentCount - 1 ? $remainingAmount : $paymentAmount;
-
-                if ($amount <= 0) {
-                    break;
-                }
-
-                $postedAt = $paymentDate->copy()->addDays($this->faker->numberBetween(1, 30));
-                $paymentDates[] = $postedAt;
-
-                $data = [
-                    'posted_at' => $postedAt,
-                    'amount' => CurrencyConverter::convertCentsToFormatSimple($amount, $invoice->currency_code),
-                    'payment_method' => $this->faker->randomElement(PaymentMethod::class),
-                    'bank_account_id' => BankAccount::where('company_id', $invoice->company_id)->inRandomOrder()->value('id'),
-                    'notes' => $this->faker->sentence,
-                ];
-
-                $invoice->recordPayment($data);
-                $remainingAmount -= $amount;
+            if ($i === 0) {
+                $postedAt = $initialPaymentDate->copy()->addDays($this->faker->numberBetween(1, 15));
+            } else {
+                $postedAt = $paymentDates[$i - 1]->copy()->addDays($this->faker->numberBetween(1, 10));
             }
 
-            if ($invoiceStatus !== InvoiceStatus::Paid) {
-                return;
+            if ($postedAt->isAfter($maxPaymentDate)) {
+                $postedAt = Carbon::parse($this->faker->dateTimeBetween($initialPaymentDate, $maxPaymentDate));
             }
 
+            $paymentDates[] = $postedAt;
+
+            $data = [
+                'posted_at' => $postedAt,
+                'amount' => $amount,
+                'payment_method' => $this->faker->randomElement(PaymentMethod::class),
+                'bank_account_id' => BankAccount::where('company_id', $invoice->company_id)->inRandomOrder()->value('id'),
+                'notes' => $this->faker->sentence,
+            ];
+
+            $invoice->recordPayment($data);
+            $remainingAmount -= $amount;
+        }
+
+        if ($invoiceStatus === InvoiceStatus::Paid && ! empty($paymentDates)) {
             $latestPaymentDate = max($paymentDates);
             $invoice->updateQuietly([
                 'status' => $invoiceStatus,
                 'paid_at' => $latestPaymentDate,
             ]);
-        });
+        }
     }
 
     public function configure(): static
     {
         return $this->afterCreating(function (Invoice $invoice) {
-            $this->ensureLineItems($invoice);
+            DocumentLineItem::factory()
+                ->count(3)
+                ->forInvoice($invoice)
+                ->create();
+
+            $this->recalculateTotals($invoice);
 
             $number = DocumentDefault::getBaseNumber() + $invoice->id;
 
@@ -226,33 +256,12 @@ class InvoiceFactory extends Factory
                 'order_number' => "ORD-{$number}",
             ]);
 
-            if ($invoice->wasApproved() && $invoice->is_currently_overdue) {
+            if ($invoice->wasApproved() && $invoice->shouldBeOverdue()) {
                 $invoice->updateQuietly([
                     'status' => InvoiceStatus::Overdue,
                 ]);
             }
         });
-    }
-
-    protected function ensureLineItems(Invoice $invoice): void
-    {
-        if (! $invoice->hasLineItems()) {
-            $this->withLineItems()->callAfterCreating(collect([$invoice]));
-        }
-    }
-
-    protected function ensureApproved(Invoice $invoice): void
-    {
-        if (! $invoice->wasApproved()) {
-            $this->approved()->callAfterCreating(collect([$invoice]));
-        }
-    }
-
-    protected function ensureSent(Invoice $invoice): void
-    {
-        if (! $invoice->hasBeenSent()) {
-            $this->sent()->callAfterCreating(collect([$invoice]));
-        }
     }
 
     protected function recalculateTotals(Invoice $invoice): void
@@ -275,18 +284,17 @@ class InvoiceFactory extends Factory
                 $scaledRate = RateCalculator::parseLocalizedRate($invoice->discount_rate);
                 $discountTotalCents = RateCalculator::calculatePercentage($subtotalCents, $scaledRate);
             } else {
-                $discountTotalCents = CurrencyConverter::convertToCents($invoice->discount_rate, $invoice->currency_code);
+                $discountTotalCents = $invoice->getRawOriginal('discount_rate');
             }
         }
 
         $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
-        $currencyCode = $invoice->currency_code;
 
         $invoice->update([
-            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
-            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
-            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
-            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
+            'subtotal' => $subtotalCents,
+            'tax_total' => $taxTotalCents,
+            'discount_total' => $discountTotalCents,
+            'total' => $grandTotalCents,
         ]);
     }
 }

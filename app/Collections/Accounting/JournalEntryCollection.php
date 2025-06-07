@@ -4,7 +4,6 @@ namespace App\Collections\Accounting;
 
 use App\Models\Accounting\JournalEntry;
 use App\Utilities\Currency\CurrencyAccessor;
-use App\Utilities\Currency\CurrencyConverter;
 use App\ValueObjects\Money;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -14,7 +13,7 @@ class JournalEntryCollection extends Collection
     {
         $total = $this->reduce(static function ($carry, JournalEntry $item) {
             if ($item->type->isDebit()) {
-                $amountAsInteger = CurrencyConverter::convertToCents($item->amount);
+                $amountAsInteger = $item->amount;
 
                 return bcadd($carry, $amountAsInteger, 0);
             }
@@ -29,7 +28,7 @@ class JournalEntryCollection extends Collection
     {
         $total = $this->reduce(static function ($carry, JournalEntry $item) {
             if ($item->type->isCredit()) {
-                $amountAsInteger = CurrencyConverter::convertToCents($item->amount);
+                $amountAsInteger = $item->amount;
 
                 return bcadd($carry, $amountAsInteger, 0);
             }

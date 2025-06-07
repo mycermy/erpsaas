@@ -33,7 +33,7 @@ class OfferingFactory extends Factory
             'name' => $this->faker->words(3, true),
             'description' => $this->faker->sentence,
             'type' => $this->faker->randomElement(OfferingType::cases()),
-            'price' => $this->faker->numberBetween(5, 1000),
+            'price' => $this->faker->numberBetween(500, 50000), // $5.00 to $500.00
             'sellable' => false,
             'purchasable' => false,
             'income_account_id' => null,

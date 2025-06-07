@@ -9,6 +9,7 @@ use App\Filament\Tables\Actions\ReplicateBulkAction;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Transaction;
 use App\Utilities\Currency\ConfigureCurrencies;
+use App\Utilities\Currency\CurrencyConverter;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\ReplicateAction;
@@ -78,8 +79,8 @@ it('stores and sums correct debit and credit amounts for different transaction t
         ->create();
 
     expect($transaction)
-        ->journalEntries->sumDebits()->getValue()->toEqual($amount)
-        ->journalEntries->sumCredits()->getValue()->toEqual($amount);
+        ->journalEntries->sumDebits()->getAmount()->toEqual($amount)
+        ->journalEntries->sumCredits()->getAmount()->toEqual($amount);
 })->with([
     ['asDeposit', 'forUncategorizedRevenue', 2000],
     ['asWithdrawal', 'forUncategorizedExpense', 500],
@@ -122,10 +123,10 @@ it('handles multi-currency transfers without conversion when the source bank acc
     $expectedUSDValue = 1500;
 
     expect($transaction)
-        ->amount->toEqual('1,500.00')
+        ->amount->toBe(1500)
         ->journalEntries->count()->toBe(2)
-        ->journalEntries->sumDebits()->getValue()->toEqual($expectedUSDValue)
-        ->journalEntries->sumCredits()->getValue()->toEqual($expectedUSDValue);
+        ->journalEntries->sumDebits()->getAmount()->toEqual($expectedUSDValue)
+        ->journalEntries->sumCredits()->getAmount()->toEqual($expectedUSDValue);
 });
 
 it('handles multi-currency transfers correctly', function () {
@@ -150,16 +151,16 @@ it('handles multi-currency transfers correctly', function () {
     expect($debitAccount->name)->toBe('Destination Bank Account') // Debit: Destination (USD) account
         ->and($creditAccount->is($foreignBankAccount))->toBeTrue(); // Credit: Foreign Bank Account (CAD) account
 
-    // The 1500 CAD is worth 1102.94 USD (1500 CAD / 1.36)
-    $expectedUSDValue = round(1500 / 1.36, 2);
+    // The 1500 CAD is worth approximately 1103 USD (1500 CAD / 1.36)
+    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'CAD', 'USD');
 
-    // Verify that the debit is 1102.94 USD and the credit is 1500 CAD converted to 1102.94 USD
-    // Transaction amount stays in source bank account currency (cast is applied)
+    // Verify that the debit and credit are converted to USD cents
+    // Transaction amount stays in source bank account currency
     expect($transaction)
-        ->amount->toEqual('1,500.00')
+        ->amount->toBe(1500)
         ->journalEntries->count()->toBe(2)
-        ->journalEntries->sumDebits()->getValue()->toEqual($expectedUSDValue)
-        ->journalEntries->sumCredits()->getValue()->toEqual($expectedUSDValue);
+        ->journalEntries->sumDebits()->getAmount()->toEqual($expectedUSDValue)
+        ->journalEntries->sumCredits()->getAmount()->toEqual($expectedUSDValue);
 });
 
 it('handles multi-currency deposits correctly', function () {
@@ -171,7 +172,7 @@ it('handles multi-currency deposits correctly', function () {
 
     ConfigureCurrencies::syncCurrencies();
 
-    // Create a deposit of 1500 BHD to the foreign bank account
+    // Create a deposit of 1500 BHD (in fils - BHD subunits) to the foreign bank account
     /** @var Transaction $transaction */
     $transaction = Transaction::factory()
         ->forBankAccount($foreignBankAccount->bankAccount)
@@ -184,15 +185,14 @@ it('handles multi-currency deposits correctly', function () {
     expect($debitAccount->is($foreignBankAccount))->toBeTrue() // Debit: Foreign Bank Account (BHD) account
         ->and($creditAccount->name)->toBe('Uncategorized Income'); // Credit: Uncategorized Income (USD) account
 
-    // Convert to USD using the rate 0.38 BHD per USD
-    $expectedUSDValue = round(1500 / 0.38, 2);
+    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'BHD', 'USD');
 
-    // Verify that the debit is 39473.68 USD and the credit is 1500 BHD converted to 39473.68 USD
+    // Verify that journal entries are converted to USD cents
     expect($transaction)
-        ->amount->toEqual('1,500.000')
+        ->amount->toBe(1500)
         ->journalEntries->count()->toBe(2)
-        ->journalEntries->sumDebits()->getValue()->toEqual($expectedUSDValue)
-        ->journalEntries->sumCredits()->getValue()->toEqual($expectedUSDValue);
+        ->journalEntries->sumDebits()->getAmount()->toEqual($expectedUSDValue)
+        ->journalEntries->sumCredits()->getAmount()->toEqual($expectedUSDValue);
 });
 
 it('handles multi-currency withdrawals correctly', function () {
@@ -216,13 +216,13 @@ it('handles multi-currency withdrawals correctly', function () {
     expect($debitAccount->name)->toBe('Uncategorized Expense')
         ->and($creditAccount->is($foreignBankAccount))->toBeTrue();
 
-    $expectedUSDValue = round(1500 / 0.76, 2);
+    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'GBP', 'USD');
 
     expect($transaction)
-        ->amount->toEqual('1,500.00')
+        ->amount->toBe(1500)
         ->journalEntries->count()->toBe(2)
-        ->journalEntries->sumDebits()->getValue()->toEqual($expectedUSDValue)
-        ->journalEntries->sumCredits()->getValue()->toEqual($expectedUSDValue);
+        ->journalEntries->sumDebits()->getAmount()->toEqual($expectedUSDValue)
+        ->journalEntries->sumCredits()->getAmount()->toEqual($expectedUSDValue);
 });
 
 it('can add an income or expense transaction', function (TransactionType $transactionType, string $actionName) {
@@ -249,7 +249,7 @@ it('can add an income or expense transaction', function (TransactionType $transa
 
     expect($transaction)
         ->not->toBeNull()
-        ->amount->toEqual('500.00')
+        ->amount->toBe(50000) // 500.00 in cents
         ->type->toBe($transactionType)
         ->bankAccount->is($defaultBankAccount)->toBeTrue()
         ->account->is($defaultAccount)->toBeTrue()
@@ -284,7 +284,7 @@ it('can add a transfer transaction', function () {
 
     expect($transaction)
         ->not->toBeNull()
-        ->amount->toEqual('1,500.00')
+        ->amount->toBe(150000) // 1,500.00 in cents
         ->type->toBe(TransactionType::Transfer)
         ->bankAccount->is($sourceBankAccount)->toBeTrue()
         ->account->is($destinationBankAccount)->toBeTrue()
@@ -323,13 +323,13 @@ it('can add a journal transaction', function () {
 
     expect($transaction)
         ->not->toBeNull()
-        ->amount->toEqual('1,000.00')
+        ->amount->toBe(100000) // 1,000.00 in cents
         ->type->isJournal()->toBeTrue()
         ->bankAccount->toBeNull()
         ->account->toBeNull()
         ->journalEntries->count()->toBe(2)
-        ->journalEntries->sumDebits()->getValue()->toEqual(1000)
-        ->journalEntries->sumCredits()->getValue()->toEqual(1000)
+        ->journalEntries->sumDebits()->getAmount()->toEqual(100000)
+        ->journalEntries->sumCredits()->getAmount()->toEqual(100000)
         ->and($debitAccount->is($defaultDebitAccount))->toBeTrue()
         ->and($creditAccount->is($defaultCreditAccount))->toBeTrue();
 });
@@ -345,12 +345,14 @@ it('can update a deposit or withdrawal transaction', function (TransactionType $
 
     $newDescription = 'Updated Description';
 
+    $formattedAmount = CurrencyConverter::convertCentsToFormatSimple($transaction->amount);
+
     livewire(ListTransactions::class)
         ->mountTableAction(EditTransactionAction::class, $transaction)
         ->assertTableActionDataSet([
             'type' => $transactionType->value,
             'description' => $transaction->description,
-            'amount' => $transaction->amount,
+            'amount' => $formattedAmount,
         ])
         ->setTableActionData([
             'description' => $newDescription,
@@ -362,7 +364,7 @@ it('can update a deposit or withdrawal transaction', function (TransactionType $
     $transaction->refresh();
 
     expect($transaction->description)->toBe($newDescription)
-        ->and($transaction->amount)->toEqual('1,500.00');
+        ->and($transaction->amount)->toBe(150000); // 1,500.00 in cents
 })->with([
     TransactionType::Deposit,
     TransactionType::Withdrawal,
@@ -377,12 +379,14 @@ it('can update a transfer transaction', function () {
 
     $newDescription = 'Updated Transfer Description';
 
+    $formattedAmount = CurrencyConverter::convertCentsToFormatSimple($transaction->amount);
+
     livewire(ListTransactions::class)
         ->mountTableAction(EditTransactionAction::class, $transaction)
         ->assertTableActionDataSet([
             'type' => TransactionType::Transfer->value,
             'description' => $transaction->description,
-            'amount' => $transaction->amount,
+            'amount' => $formattedAmount,
         ])
         ->setTableActionData([
             'description' => $newDescription,
@@ -394,7 +398,7 @@ it('can update a transfer transaction', function () {
     $transaction->refresh();
 
     expect($transaction->description)->toBe($newDescription)
-        ->and($transaction->amount)->toEqual('2,000.00');
+        ->and($transaction->amount)->toBe(200000); // 2,000.00 in cents
 });
 
 it('replicates a transaction with correct journal entries', function () {
@@ -417,8 +421,8 @@ it('replicates a transaction with correct journal entries', function () {
 
     expect($replicatedTransaction)
         ->journalEntries->count()->toBe(2)
-        ->journalEntries->sumDebits()->getValue()->toEqual(1000)
-        ->journalEntries->sumCredits()->getValue()->toEqual(1000)
+        ->journalEntries->sumDebits()->getAmount()->toEqual(1000)
+        ->journalEntries->sumCredits()->getAmount()->toEqual(1000)
         ->description->toBe('(Copy of) ' . $originalTransaction->description)
         ->and($replicatedDebitAccount->name)->toBe($originalDebitAccount->name)
         ->and($replicatedCreditAccount->name)->toBe($originalCreditAccount->name);
@@ -451,8 +455,8 @@ it('bulk replicates transactions with correct journal entries', function () {
 
         expect($replicatedTransaction)
             ->journalEntries->count()->toBe(2)
-            ->journalEntries->sumDebits()->getValue()->toEqual(1000)
-            ->journalEntries->sumCredits()->getValue()->toEqual(1000)
+            ->journalEntries->sumDebits()->getAmount()->toEqual(1000)
+            ->journalEntries->sumCredits()->getAmount()->toEqual(1000)
             ->and($replicatedDebitAccount->name)->toBe($originalDebitAccount->name)
             ->and($replicatedCreditAccount->name)->toBe($originalCreditAccount->name);
     });

@@ -2,7 +2,6 @@
 
 namespace App\Models\Common;
 
-use App\Casts\MoneyCast;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Accounting\AdjustmentCategory;
@@ -40,7 +39,6 @@ class Offering extends Model
 
     protected $casts = [
         'type' => OfferingType::class,
-        'price' => MoneyCast::class,
         'sellable' => 'boolean',
         'purchasable' => 'boolean',
     ];

@@ -8,25 +8,25 @@ readonly class LineItemPreviewDTO extends LineItemDTO
     {
         return [
             new self(
-                name: 'Item 1',
-                description: 'Sample item description',
+                name: 'Professional Services',
+                description: 'Consulting and strategic planning',
                 quantity: 2,
-                unitPrice: self::formatToMoney(150.00, null),
-                subtotal: self::formatToMoney(300.00, null),
+                unitPrice: self::formatToMoney(15000, null), // $150.00
+                subtotal: self::formatToMoney(30000, null),  // $300.00
             ),
             new self(
-                name: 'Item 2',
-                description: 'Another sample item description',
+                name: 'Software License',
+                description: 'Annual subscription and support',
                 quantity: 3,
-                unitPrice: self::formatToMoney(200.00, null),
-                subtotal: self::formatToMoney(600.00, null),
+                unitPrice: self::formatToMoney(20000, null), // $200.00
+                subtotal: self::formatToMoney(60000, null),  // $600.00
             ),
             new self(
-                name: 'Item 3',
-                description: 'Yet another sample item description',
+                name: 'Training Session',
+                description: 'Team onboarding and documentation',
                 quantity: 1,
-                unitPrice: self::formatToMoney(180.00, null),
-                subtotal: self::formatToMoney(180.00, null),
+                unitPrice: self::formatToMoney(10000, null), // $100.00
+                subtotal: self::formatToMoney(10000, null),  // $100.00
             ),
         ];
     }

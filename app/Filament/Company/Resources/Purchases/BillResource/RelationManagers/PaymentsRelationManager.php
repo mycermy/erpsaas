@@ -79,19 +79,19 @@ class PaymentsRelationManager extends RelationManager
 
                                 $billCurrency = $ownerRecord->currency_code;
 
-                                if (! CurrencyConverter::isValidAmount($state, $billCurrency)) {
+                                if (! CurrencyConverter::isValidAmount($state, 'USD')) {
                                     return null;
                                 }
 
-                                $amountDue = $ownerRecord->getRawOriginal('amount_due');
+                                $amountDue = $ownerRecord->amount_due;
 
-                                $amount = CurrencyConverter::convertToCents($state, $billCurrency);
+                                $amount = CurrencyConverter::convertToCents($state, 'USD');
 
                                 if ($amount <= 0) {
                                     return 'Please enter a valid positive amount';
                                 }
 
-                                $currentPaymentAmount = $record?->getRawOriginal('amount') ?? 0;
+                                $currentPaymentAmount = $record?->amount ?? 0;
 
                                 $newAmountDue = $amountDue - $amount + $currentPaymentAmount;
 
@@ -102,11 +102,8 @@ class PaymentsRelationManager extends RelationManager
                                 };
                             })
                             ->rules([
-                                static fn (RelationManager $livewire): Closure => static function (string $attribute, $value, Closure $fail) use ($livewire) {
-                                    /** @var Bill $bill */
-                                    $bill = $livewire->getOwnerRecord();
-
-                                    if (! CurrencyConverter::isValidAmount($value, $bill->currency_code)) {
+                                static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
+                                    if (! CurrencyConverter::isValidAmount($value, 'USD')) {
                                         $fail('Please enter a valid amount');
                                     }
                                 },
@@ -122,7 +119,7 @@ class PaymentsRelationManager extends RelationManager
                         $bill = $livewire->getOwnerRecord();
                         $billCurrency = $bill->currency_code;
 
-                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, $billCurrency)) {
+                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, 'USD')) {
                             return null;
                         }
 
@@ -139,7 +136,7 @@ class PaymentsRelationManager extends RelationManager
                         }
 
                         // Convert amount from bill currency to bank currency
-                        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($amount, $billCurrency);
+                        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($amount, 'USD');
                         $amountInBankCurrencyCents = CurrencyConverter::convertBalance(
                             $amountInBillCurrencyCents,
                             $billCurrency,
@@ -210,7 +207,7 @@ class PaymentsRelationManager extends RelationManager
                         }
                     )
                     ->sortable()
-                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency(), true),
+                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency()),
             ])
             ->filters([
                 //

@@ -10,7 +10,6 @@ use App\Models\Accounting\Estimate;
 use App\Models\Common\Client;
 use App\Models\Company;
 use App\Models\Setting\DocumentDefault;
-use App\Utilities\Currency\CurrencyConverter;
 use App\Utilities\RateCalculator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
@@ -32,17 +31,22 @@ class EstimateFactory extends Factory
      */
     public function definition(): array
     {
-        $estimateDate = $this->faker->dateTimeBetween('-1 year');
+        $estimateDate = $this->faker->dateTimeBetween('-2 months', '-1 day');
 
         return [
             'company_id' => 1,
-            'client_id' => fn (array $attributes) => Client::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id'),
+            'client_id' => function (array $attributes) {
+                return Client::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id')
+                    ?? Client::factory()->state([
+                        'company_id' => $attributes['company_id'],
+                    ]);
+            },
             'header' => 'Estimate',
             'subheader' => 'Estimate',
             'estimate_number' => $this->faker->unique()->numerify('EST-####'),
             'reference_number' => $this->faker->unique()->numerify('REF-####'),
             'date' => $estimateDate,
-            'expiration_date' => Carbon::parse($estimateDate)->addDays($this->faker->numberBetween(14, 30)),
+            'expiration_date' => $this->faker->dateTimeInInterval($estimateDate, '+3 months'),
             'status' => EstimateStatus::Draft,
             'discount_method' => $this->faker->randomElement(DocumentDiscountMethod::class),
             'discount_computation' => AdjustmentComputation::Percentage,
@@ -72,6 +76,9 @@ class EstimateFactory extends Factory
     public function withLineItems(int $count = 3): static
     {
         return $this->afterCreating(function (Estimate $estimate) use ($count) {
+            // Clear existing line items first
+            $estimate->lineItems()->delete();
+
             DocumentLineItem::factory()
                 ->count($count)
                 ->forEstimate($estimate)
@@ -84,26 +91,21 @@ class EstimateFactory extends Factory
     public function approved(): static
     {
         return $this->afterCreating(function (Estimate $estimate) {
-            $this->ensureLineItems($estimate);
-
-            if (! $estimate->canBeApproved()) {
-                return;
-            }
-
-            $approvedAt = Carbon::parse($estimate->date)
-                ->addHours($this->faker->numberBetween(1, 24));
-
-            $estimate->approveDraft($approvedAt);
+            $this->performApproval($estimate);
         });
     }
 
     public function accepted(): static
     {
         return $this->afterCreating(function (Estimate $estimate) {
-            $this->ensureSent($estimate);
+            $this->performSent($estimate);
 
             $acceptedAt = Carbon::parse($estimate->last_sent_at)
                 ->addDays($this->faker->numberBetween(1, 7));
+
+            if ($acceptedAt->isAfter(now())) {
+                $acceptedAt = Carbon::parse($this->faker->dateTimeBetween($estimate->last_sent_at, now()));
+            }
 
             $estimate->markAsAccepted($acceptedAt);
         });
@@ -113,11 +115,24 @@ class EstimateFactory extends Factory
     {
         return $this->afterCreating(function (Estimate $estimate) {
             if (! $estimate->wasAccepted()) {
-                $this->accepted()->callAfterCreating(collect([$estimate]));
+                $this->performSent($estimate);
+
+                $acceptedAt = Carbon::parse($estimate->last_sent_at)
+                    ->addDays($this->faker->numberBetween(1, 7));
+
+                if ($acceptedAt->isAfter(now())) {
+                    $acceptedAt = Carbon::parse($this->faker->dateTimeBetween($estimate->last_sent_at, now()));
+                }
+
+                $estimate->markAsAccepted($acceptedAt);
             }
 
             $convertedAt = Carbon::parse($estimate->accepted_at)
                 ->addDays($this->faker->numberBetween(1, 7));
+
+            if ($convertedAt->isAfter(now())) {
+                $convertedAt = Carbon::parse($this->faker->dateTimeBetween($estimate->accepted_at, now()));
+            }
 
             $estimate->convertToInvoice($convertedAt);
         });
@@ -126,10 +141,14 @@ class EstimateFactory extends Factory
     public function declined(): static
     {
         return $this->afterCreating(function (Estimate $estimate) {
-            $this->ensureSent($estimate);
+            $this->performSent($estimate);
 
             $declinedAt = Carbon::parse($estimate->last_sent_at)
                 ->addDays($this->faker->numberBetween(1, 7));
+
+            if ($declinedAt->isAfter(now())) {
+                $declinedAt = Carbon::parse($this->faker->dateTimeBetween($estimate->last_sent_at, now()));
+            }
 
             $estimate->markAsDeclined($declinedAt);
         });
@@ -138,22 +157,21 @@ class EstimateFactory extends Factory
     public function sent(): static
     {
         return $this->afterCreating(function (Estimate $estimate) {
-            $this->ensureApproved($estimate);
-
-            $sentAt = Carbon::parse($estimate->approved_at)
-                ->addHours($this->faker->numberBetween(1, 24));
-
-            $estimate->markAsSent($sentAt);
+            $this->performSent($estimate);
         });
     }
 
     public function viewed(): static
     {
         return $this->afterCreating(function (Estimate $estimate) {
-            $this->ensureSent($estimate);
+            $this->performSent($estimate);
 
             $viewedAt = Carbon::parse($estimate->last_sent_at)
                 ->addHours($this->faker->numberBetween(1, 24));
+
+            if ($viewedAt->isAfter(now())) {
+                $viewedAt = Carbon::parse($this->faker->dateTimeBetween($estimate->last_sent_at, now()));
+            }
 
             $estimate->markAsViewed($viewedAt);
         });
@@ -166,14 +184,51 @@ class EstimateFactory extends Factory
                 'expiration_date' => now()->subDays($this->faker->numberBetween(1, 30)),
             ])
             ->afterCreating(function (Estimate $estimate) {
-                $this->ensureApproved($estimate);
+                $this->performApproval($estimate);
             });
+    }
+
+    protected function performApproval(Estimate $estimate): void
+    {
+        if (! $estimate->canBeApproved()) {
+            throw new \InvalidArgumentException('Estimate cannot be approved. Current status: ' . $estimate->status->value);
+        }
+
+        $approvedAt = Carbon::parse($estimate->date)
+            ->addHours($this->faker->numberBetween(1, 24));
+
+        if ($approvedAt->isAfter(now())) {
+            $approvedAt = Carbon::parse($this->faker->dateTimeBetween($estimate->date, now()));
+        }
+
+        $estimate->approveDraft($approvedAt);
+    }
+
+    protected function performSent(Estimate $estimate): void
+    {
+        if (! $estimate->wasApproved()) {
+            $this->performApproval($estimate);
+        }
+
+        $sentAt = Carbon::parse($estimate->approved_at)
+            ->addHours($this->faker->numberBetween(1, 24));
+
+        if ($sentAt->isAfter(now())) {
+            $sentAt = Carbon::parse($this->faker->dateTimeBetween($estimate->approved_at, now()));
+        }
+
+        $estimate->markAsSent($sentAt);
     }
 
     public function configure(): static
     {
         return $this->afterCreating(function (Estimate $estimate) {
-            $this->ensureLineItems($estimate);
+            DocumentLineItem::factory()
+                ->count(3)
+                ->forEstimate($estimate)
+                ->create();
+
+            $this->recalculateTotals($estimate);
 
             $number = DocumentDefault::getBaseNumber() + $estimate->id;
 
@@ -182,33 +237,12 @@ class EstimateFactory extends Factory
                 'reference_number' => "REF-{$number}",
             ]);
 
-            if ($estimate->wasApproved() && $estimate->is_currently_expired) {
+            if ($estimate->wasApproved() && $estimate->shouldBeExpired()) {
                 $estimate->updateQuietly([
                     'status' => EstimateStatus::Expired,
                 ]);
             }
         });
-    }
-
-    protected function ensureLineItems(Estimate $estimate): void
-    {
-        if (! $estimate->hasLineItems()) {
-            $this->withLineItems()->callAfterCreating(collect([$estimate]));
-        }
-    }
-
-    protected function ensureApproved(Estimate $estimate): void
-    {
-        if (! $estimate->wasApproved()) {
-            $this->approved()->callAfterCreating(collect([$estimate]));
-        }
-    }
-
-    protected function ensureSent(Estimate $estimate): void
-    {
-        if (! $estimate->hasBeenSent()) {
-            $this->sent()->callAfterCreating(collect([$estimate]));
-        }
     }
 
     protected function recalculateTotals(Estimate $estimate): void
@@ -231,18 +265,17 @@ class EstimateFactory extends Factory
                 $scaledRate = RateCalculator::parseLocalizedRate($estimate->discount_rate);
                 $discountTotalCents = RateCalculator::calculatePercentage($subtotalCents, $scaledRate);
             } else {
-                $discountTotalCents = CurrencyConverter::convertToCents($estimate->discount_rate, $estimate->currency_code);
+                $discountTotalCents = $estimate->getRawOriginal('discount_rate');
             }
         }
 
         $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
-        $currencyCode = $estimate->currency_code;
 
         $estimate->update([
-            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
-            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
-            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
-            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
+            'subtotal' => $subtotalCents,
+            'tax_total' => $taxTotalCents,
+            'discount_total' => $discountTotalCents,
+            'total' => $grandTotalCents,
         ]);
     }
 }

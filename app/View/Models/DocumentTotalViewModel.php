@@ -72,22 +72,27 @@ class DocumentTotalViewModel
     private function calculateLineSubtotalInCents(array $item, string $currencyCode): int
     {
         $quantity = max((float) ($item['quantity'] ?? 0), 0);
-        $unitPrice = max((float) ($item['unit_price'] ?? 0), 0);
+        $unitPrice = CurrencyConverter::isValidAmount($item['unit_price'], 'USD')
+            ? CurrencyConverter::convertToFloat($item['unit_price'], 'USD')
+            : 0;
 
         $subtotal = $quantity * $unitPrice;
 
-        return CurrencyConverter::convertToCents($subtotal, $currencyCode);
+        return CurrencyConverter::convertToCents($subtotal, 'USD');
     }
 
     private function calculateAdjustmentsTotalInCents($lineItems, string $key, string $currencyCode): int
     {
-        return $lineItems->reduce(function ($carry, $item) use ($key, $currencyCode) {
+        return $lineItems->reduce(function ($carry, $item) use ($key) {
             $quantity = max((float) ($item['quantity'] ?? 0), 0);
-            $unitPrice = max((float) ($item['unit_price'] ?? 0), 0);
+            $unitPrice = CurrencyConverter::isValidAmount($item['unit_price'], 'USD')
+                ? CurrencyConverter::convertToFloat($item['unit_price'], 'USD')
+                : 0;
+
             $adjustmentIds = $item[$key] ?? [];
             $lineTotal = $quantity * $unitPrice;
 
-            $lineTotalInCents = CurrencyConverter::convertToCents($lineTotal, $currencyCode);
+            $lineTotalInCents = CurrencyConverter::convertToCents($lineTotal, 'USD');
 
             $adjustmentTotal = Adjustment::whereIn('id', $adjustmentIds)
                 ->get()
@@ -120,7 +125,7 @@ class DocumentTotalViewModel
             return RateCalculator::calculatePercentage($subtotalInCents, $scaledDiscountRate);
         }
 
-        if (! CurrencyConverter::isValidAmount($discountRate)) {
+        if (! CurrencyConverter::isValidAmount($discountRate, $currencyCode)) {
             $discountRate = '0';
         }
 
@@ -152,8 +157,7 @@ class DocumentTotalViewModel
 
     private function calculateAmountDueInCents(int $grandTotalInCents, string $currencyCode): int
     {
-        $amountPaid = $this->data['amount_paid'] ?? '0.00';
-        $amountPaidInCents = CurrencyConverter::convertToCents($amountPaid, $currencyCode);
+        $amountPaidInCents = $this->data['amount_paid'] ?? 0;
 
         return $grandTotalInCents - $amountPaidInCents;
     }

@@ -6,6 +6,7 @@ use App\Events\PlaidSuccess;
 use App\Models\Banking\Institution;
 use App\Models\Company;
 use App\Services\PlaidService;
+use App\Utilities\Currency\CurrencyConverter;
 use Illuminate\Support\Facades\DB;
 
 class CreateConnectedAccount
@@ -59,6 +60,12 @@ class CreateConnectedAccount
     {
         $identifierHash = md5($company->id . $institution->external_institution_id . $plaidAccount->name . $plaidAccount->mask);
 
+        $currencyCode = $plaidAccount->balances->iso_currency_code ?? 'USD';
+
+        $currentBalance = $plaidAccount->balances->current ?? 0;
+
+        $currentBalanceCents = CurrencyConverter::convertToCents($currentBalance, $currencyCode);
+
         $company->connectedBankAccounts()->updateOrCreate([
             'identifier' => $identifierHash,
         ], [
@@ -66,8 +73,8 @@ class CreateConnectedAccount
             'external_account_id' => $plaidAccount->account_id,
             'access_token' => $accessToken,
             'item_id' => $authResponse->item->item_id,
-            'currency_code' => $plaidAccount->balances->iso_currency_code ?? 'USD',
-            'current_balance' => $plaidAccount->balances->current ?? 0,
+            'currency_code' => $currencyCode,
+            'current_balance' => $currentBalanceCents,
             'name' => $plaidAccount->name,
             'mask' => $plaidAccount->mask,
             'type' => $plaidAccount->type,

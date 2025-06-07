@@ -10,6 +10,20 @@ beforeEach(function () {
     $this->withOfferings();
 });
 
+it('creates a basic recurring invoice with line items and calculates totals correctly', function () {
+    $recurringInvoice = RecurringInvoice::factory()
+        ->withLineItems()
+        ->create();
+
+    $recurringInvoice->refresh();
+
+    expect($recurringInvoice)
+        ->hasLineItems()->toBeTrue()
+        ->lineItems->count()->toBe(3)
+        ->subtotal->toBeGreaterThan(0)
+        ->total->toBeGreaterThan(0);
+});
+
 test('recurring invoice properly handles months with fewer days for monthly frequency', function () {
     // Start from January 31st
     Carbon::setTestNow('2024-01-31');

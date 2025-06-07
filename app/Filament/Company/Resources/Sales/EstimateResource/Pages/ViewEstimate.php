@@ -99,15 +99,12 @@ class ViewEstimate extends ViewRecord
                                     ->asRelativeDay(),
                                 TextEntry::make('approved_at')
                                     ->label('Approved at')
-                                    ->placeholder('Not Approved')
                                     ->date(),
                                 TextEntry::make('last_sent_at')
                                     ->label('Last sent')
-                                    ->placeholder('Never')
                                     ->date(),
                                 TextEntry::make('accepted_at')
                                     ->label('Accepted at')
-                                    ->placeholder('Not Accepted')
                                     ->date(),
                             ])->columnSpan(1),
                         DocumentPreview::make()

@@ -12,7 +12,6 @@ use App\Models\Banking\BankAccount;
 use App\Models\Common\Vendor;
 use App\Models\Company;
 use App\Models\Setting\DocumentDefault;
-use App\Utilities\Currency\CurrencyConverter;
 use App\Utilities\RateCalculator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
@@ -34,23 +33,20 @@ class BillFactory extends Factory
      */
     public function definition(): array
     {
-        $isFutureBill = $this->faker->boolean();
-
-        if ($isFutureBill) {
-            $billDate = $this->faker->dateTimeBetween('-10 days', '+10 days');
-        } else {
-            $billDate = $this->faker->dateTimeBetween('-1 year', '-30 days');
-        }
-
-        $dueDays = $this->faker->numberBetween(14, 60);
+        $billDate = $this->faker->dateTimeBetween('-1 year', '-1 day');
 
         return [
             'company_id' => 1,
-            'vendor_id' => fn (array $attributes) => Vendor::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id'),
+            'vendor_id' => function (array $attributes) {
+                return Vendor::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id')
+                    ?? Vendor::factory()->state([
+                        'company_id' => $attributes['company_id'],
+                    ]);
+            },
             'bill_number' => $this->faker->unique()->numerify('BILL-####'),
             'order_number' => $this->faker->unique()->numerify('PO-####'),
             'date' => $billDate,
-            'due_date' => Carbon::parse($billDate)->addDays($dueDays),
+            'due_date' => $this->faker->dateTimeInInterval($billDate, '+6 months'),
             'status' => BillStatus::Open,
             'discount_method' => $this->faker->randomElement(DocumentDiscountMethod::class),
             'discount_computation' => AdjustmentComputation::Percentage,
@@ -79,6 +75,9 @@ class BillFactory extends Factory
     public function withLineItems(int $count = 3): static
     {
         return $this->afterCreating(function (Bill $bill) use ($count) {
+            // Clear existing line items first
+            $bill->lineItems()->delete();
+
             DocumentLineItem::factory()
                 ->count($count)
                 ->forBill($bill)
@@ -91,36 +90,23 @@ class BillFactory extends Factory
     public function initialized(): static
     {
         return $this->afterCreating(function (Bill $bill) {
-            $this->ensureLineItems($bill);
-
-            if ($bill->wasInitialized()) {
-                return;
-            }
-
-            $postedAt = Carbon::parse($bill->date)
-                ->addHours($this->faker->numberBetween(1, 24));
-
-            $bill->createInitialTransaction($postedAt);
+            $this->performInitialization($bill);
         });
     }
 
     public function partial(int $maxPayments = 4): static
     {
         return $this->afterCreating(function (Bill $bill) use ($maxPayments) {
-            $this->ensureInitialized($bill);
-
-            $this->withPayments(max: $maxPayments, billStatus: BillStatus::Partial)
-                ->callAfterCreating(collect([$bill]));
+            $this->performInitialization($bill);
+            $this->performPayments($bill, $maxPayments, BillStatus::Partial);
         });
     }
 
     public function paid(int $maxPayments = 4): static
     {
         return $this->afterCreating(function (Bill $bill) use ($maxPayments) {
-            $this->ensureInitialized($bill);
-
-            $this->withPayments(max: $maxPayments)
-                ->callAfterCreating(collect([$bill]));
+            $this->performInitialization($bill);
+            $this->performPayments($bill, $maxPayments, BillStatus::Paid);
         });
     }
 
@@ -131,75 +117,99 @@ class BillFactory extends Factory
                 'due_date' => now()->subDays($this->faker->numberBetween(1, 30)),
             ])
             ->afterCreating(function (Bill $bill) {
-                $this->ensureInitialized($bill);
+                $this->performInitialization($bill);
             });
     }
 
-    public function withPayments(?int $min = null, ?int $max = null, BillStatus $billStatus = BillStatus::Paid): static
+    protected function performInitialization(Bill $bill): void
     {
-        $min ??= 1;
+        if ($bill->wasInitialized()) {
+            return;
+        }
 
-        return $this->afterCreating(function (Bill $bill) use ($billStatus, $max, $min) {
-            $this->ensureInitialized($bill);
+        $postedAt = Carbon::parse($bill->date)
+            ->addHours($this->faker->numberBetween(1, 24));
 
-            $bill->refresh();
+        if ($postedAt->isAfter(now())) {
+            $postedAt = Carbon::parse($this->faker->dateTimeBetween($bill->date, now()));
+        }
 
-            $amountDue = $bill->getRawOriginal('amount_due');
+        $bill->createInitialTransaction($postedAt);
+    }
 
-            $totalAmountDue = match ($billStatus) {
-                BillStatus::Partial => (int) floor($amountDue * 0.5),
-                default => $amountDue,
-            };
+    protected function performPayments(Bill $bill, int $maxPayments, BillStatus $billStatus): void
+    {
+        $bill->refresh();
 
-            if ($totalAmountDue <= 0 || empty($totalAmountDue)) {
-                return;
+        $amountDue = $bill->getRawOriginal('amount_due');
+
+        $totalAmountDue = match ($billStatus) {
+            BillStatus::Partial => (int) floor($amountDue * 0.5),
+            default => $amountDue,
+        };
+
+        if ($totalAmountDue <= 0 || empty($totalAmountDue)) {
+            return;
+        }
+
+        $paymentCount = $this->faker->numberBetween(1, $maxPayments);
+        $paymentAmount = (int) floor($totalAmountDue / $paymentCount);
+        $remainingAmount = $totalAmountDue;
+
+        $initialPaymentDate = Carbon::parse($bill->initialTransaction->posted_at);
+        $maxPaymentDate = now();
+
+        $paymentDates = [];
+
+        for ($i = 0; $i < $paymentCount; $i++) {
+            $amount = $i === $paymentCount - 1 ? $remainingAmount : $paymentAmount;
+
+            if ($amount <= 0) {
+                break;
             }
 
-            $paymentCount = $max && $min ? $this->faker->numberBetween($min, $max) : $min;
-            $paymentAmount = (int) floor($totalAmountDue / $paymentCount);
-            $remainingAmount = $totalAmountDue;
-
-            $paymentDate = Carbon::parse($bill->initialTransaction->posted_at);
-            $paymentDates = [];
-
-            for ($i = 0; $i < $paymentCount; $i++) {
-                $amount = $i === $paymentCount - 1 ? $remainingAmount : $paymentAmount;
-
-                if ($amount <= 0) {
-                    break;
-                }
-
-                $postedAt = $paymentDate->copy()->addDays($this->faker->numberBetween(1, 30));
-                $paymentDates[] = $postedAt;
-
-                $data = [
-                    'posted_at' => $postedAt,
-                    'amount' => CurrencyConverter::convertCentsToFormatSimple($amount, $bill->currency_code),
-                    'payment_method' => $this->faker->randomElement(PaymentMethod::class),
-                    'bank_account_id' => BankAccount::where('company_id', $bill->company_id)->inRandomOrder()->value('id'),
-                    'notes' => $this->faker->sentence,
-                ];
-
-                $bill->recordPayment($data);
-                $remainingAmount -= $amount;
+            if ($i === 0) {
+                $postedAt = $initialPaymentDate->copy()->addDays($this->faker->numberBetween(1, 15));
+            } else {
+                $postedAt = $paymentDates[$i - 1]->copy()->addDays($this->faker->numberBetween(1, 10));
             }
 
-            if ($billStatus !== BillStatus::Paid) {
-                return;
+            if ($postedAt->isAfter($maxPaymentDate)) {
+                $postedAt = Carbon::parse($this->faker->dateTimeBetween($initialPaymentDate, $maxPaymentDate));
             }
 
+            $paymentDates[] = $postedAt;
+
+            $data = [
+                'posted_at' => $postedAt,
+                'amount' => $amount,
+                'payment_method' => $this->faker->randomElement(PaymentMethod::class),
+                'bank_account_id' => BankAccount::where('company_id', $bill->company_id)->inRandomOrder()->value('id'),
+                'notes' => $this->faker->sentence,
+            ];
+
+            $bill->recordPayment($data);
+            $remainingAmount -= $amount;
+        }
+
+        if ($billStatus === BillStatus::Paid && ! empty($paymentDates)) {
             $latestPaymentDate = max($paymentDates);
             $bill->updateQuietly([
                 'status' => $billStatus,
                 'paid_at' => $latestPaymentDate,
             ]);
-        });
+        }
     }
 
     public function configure(): static
     {
         return $this->afterCreating(function (Bill $bill) {
-            $this->ensureInitialized($bill);
+            DocumentLineItem::factory()
+                ->count(3)
+                ->forBill($bill)
+                ->create();
+
+            $this->recalculateTotals($bill);
 
             $number = DocumentDefault::getBaseNumber() + $bill->id;
 
@@ -208,26 +218,12 @@ class BillFactory extends Factory
                 'order_number' => "PO-{$number}",
             ]);
 
-            if ($bill->wasInitialized() && $bill->is_currently_overdue) {
+            if ($bill->wasInitialized() && $bill->shouldBeOverdue()) {
                 $bill->updateQuietly([
                     'status' => BillStatus::Overdue,
                 ]);
             }
         });
-    }
-
-    protected function ensureLineItems(Bill $bill): void
-    {
-        if (! $bill->hasLineItems()) {
-            $this->withLineItems()->callAfterCreating(collect([$bill]));
-        }
-    }
-
-    protected function ensureInitialized(Bill $bill): void
-    {
-        if (! $bill->wasInitialized()) {
-            $this->initialized()->callAfterCreating(collect([$bill]));
-        }
     }
 
     protected function recalculateTotals(Bill $bill): void
@@ -250,18 +246,17 @@ class BillFactory extends Factory
                 $scaledRate = RateCalculator::parseLocalizedRate($bill->discount_rate);
                 $discountTotalCents = RateCalculator::calculatePercentage($subtotalCents, $scaledRate);
             } else {
-                $discountTotalCents = CurrencyConverter::convertToCents($bill->discount_rate, $bill->currency_code);
+                $discountTotalCents = $bill->getRawOriginal('discount_rate');
             }
         }
 
         $grandTotalCents = $subtotalCents + $taxTotalCents - $discountTotalCents;
-        $currencyCode = $bill->currency_code;
 
         $bill->update([
-            'subtotal' => CurrencyConverter::convertCentsToFormatSimple($subtotalCents, $currencyCode),
-            'tax_total' => CurrencyConverter::convertCentsToFormatSimple($taxTotalCents, $currencyCode),
-            'discount_total' => CurrencyConverter::convertCentsToFormatSimple($discountTotalCents, $currencyCode),
-            'total' => CurrencyConverter::convertCentsToFormatSimple($grandTotalCents, $currencyCode),
+            'subtotal' => $subtotalCents,
+            'tax_total' => $taxTotalCents,
+            'discount_total' => $discountTotalCents,
+            'total' => $grandTotalCents,
         ]);
     }
 }

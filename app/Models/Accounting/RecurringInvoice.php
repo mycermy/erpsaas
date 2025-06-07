@@ -2,7 +2,6 @@
 
 namespace App\Models\Accounting;
 
-use App\Casts\MoneyCast;
 use App\Casts\RateCast;
 use App\Collections\Accounting\DocumentCollection;
 use App\Enums\Accounting\AdjustmentComputation;
@@ -109,10 +108,6 @@ class RecurringInvoice extends Document
         'discount_method' => DocumentDiscountMethod::class,
         'discount_computation' => AdjustmentComputation::class,
         'discount_rate' => RateCast::class,
-        'subtotal' => MoneyCast::class,
-        'tax_total' => MoneyCast::class,
-        'discount_total' => MoneyCast::class,
-        'total' => MoneyCast::class,
     ];
 
     protected $appends = [
@@ -643,7 +638,7 @@ class RecurringInvoice extends Document
             'currency_code' => $this->currency_code,
             'discount_method' => $this->discount_method,
             'discount_computation' => $this->discount_computation,
-            'discount_rate' => $this->discount_rate,
+            'discount_rate' => $this->getRawOriginal('discount_rate'),
             'subtotal' => $this->subtotal,
             'tax_total' => $this->tax_total,
             'discount_total' => $this->discount_total,

@@ -50,6 +50,7 @@ use Filament\Forms\Components\Select;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
@@ -288,6 +289,10 @@ class CompanyPanelProvider extends PanelProvider
 
         Tables\Columns\TextColumn::configureUsing(function (Tables\Columns\TextColumn $column): void {
             $column->placeholder('–');
+        });
+
+        TextEntry::configureUsing(function (TextEntry $component): void {
+            $component->placeholder('–');
         });
     }
 

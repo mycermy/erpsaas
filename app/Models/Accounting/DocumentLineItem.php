@@ -3,7 +3,6 @@
 namespace App\Models\Accounting;
 
 use Akaunting\Money\Money;
-use App\Casts\DocumentMoneyCast;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Accounting\AdjustmentCategory;
@@ -39,14 +38,6 @@ class DocumentLineItem extends Model
         'line_number',
         'created_by',
         'updated_by',
-    ];
-
-    protected $casts = [
-        'unit_price' => DocumentMoneyCast::class,
-        'subtotal' => DocumentMoneyCast::class,
-        'tax_total' => DocumentMoneyCast::class,
-        'discount_total' => DocumentMoneyCast::class,
-        'total' => DocumentMoneyCast::class,
     ];
 
     public function documentable(): MorphTo

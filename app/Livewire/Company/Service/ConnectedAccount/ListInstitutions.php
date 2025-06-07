@@ -79,17 +79,19 @@ class ListInstitutions extends Component implements HasActions, HasForms
                     )),
                 Placeholder::make('info')
                     ->hiddenLabel()
-                    ->visible(static fn (ConnectedBankAccount $connectedBankAccount) => $connectedBankAccount->bank_account_id === null)
+                    ->visible(static fn (ConnectedBankAccount $connectedBankAccount) => ! $connectedBankAccount->bank_account_id)
                     ->content(static fn (ConnectedBankAccount $connectedBankAccount) => 'If ' . $connectedBankAccount->name . ' already has transactions for an existing account, select the account to import transactions into.'),
                 Select::make('bank_account_id')
                     ->label('Select account')
-                    ->visible(static fn (ConnectedBankAccount $connectedBankAccount) => $connectedBankAccount->bank_account_id === null)
+                    ->visible(static fn (ConnectedBankAccount $connectedBankAccount) => ! $connectedBankAccount->bank_account_id)
                     ->options(fn (ConnectedBankAccount $connectedBankAccount) => $this->getBankAccountOptions($connectedBankAccount))
                     ->required(),
                 DatePicker::make('start_date')
                     ->label('Start date')
                     ->required()
-                    ->placeholder('Select a start date for importing transactions.'),
+                    ->placeholder('Select a start date for importing transactions.')
+                    ->minDate(now()->subDays(PlaidService::TRANSACTION_DAYS_REQUESTED)->toDateString())
+                    ->maxDate(now()->toDateString()),
             ])
             ->action(function (array $data, ConnectedBankAccount $connectedBankAccount) {
                 $selectedBankAccountId = $data['bank_account_id'] ?? $connectedBankAccount->bank_account_id;

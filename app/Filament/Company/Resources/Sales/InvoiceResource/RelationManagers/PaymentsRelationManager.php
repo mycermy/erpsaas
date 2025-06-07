@@ -88,19 +88,19 @@ class PaymentsRelationManager extends RelationManager
 
                                 $invoiceCurrency = $ownerRecord->currency_code;
 
-                                if (! CurrencyConverter::isValidAmount($state, $invoiceCurrency)) {
+                                if (! CurrencyConverter::isValidAmount($state, 'USD')) {
                                     return null;
                                 }
 
-                                $amountDue = $ownerRecord->getRawOriginal('amount_due');
+                                $amountDue = $ownerRecord->amount_due;
 
-                                $amount = CurrencyConverter::convertToCents($state, $invoiceCurrency);
+                                $amount = CurrencyConverter::convertToCents($state, 'USD');
 
                                 if ($amount <= 0) {
                                     return 'Please enter a valid positive amount';
                                 }
 
-                                $currentPaymentAmount = $record?->getRawOriginal('amount') ?? 0;
+                                $currentPaymentAmount = $record?->amount ?? 0;
 
                                 if ($ownerRecord->status === InvoiceStatus::Overpaid) {
                                     $newAmountDue = $amountDue + $amount - $currentPaymentAmount;
@@ -135,7 +135,7 @@ class PaymentsRelationManager extends RelationManager
                         $invoice = $livewire->getOwnerRecord();
                         $invoiceCurrency = $invoice->currency_code;
 
-                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, $invoiceCurrency)) {
+                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, 'USD')) {
                             return null;
                         }
 
@@ -152,7 +152,7 @@ class PaymentsRelationManager extends RelationManager
                         }
 
                         // Convert amount from invoice currency to bank currency
-                        $amountInInvoiceCurrencyCents = CurrencyConverter::convertToCents($amount, $invoiceCurrency);
+                        $amountInInvoiceCurrencyCents = CurrencyConverter::convertToCents($amount, 'USD');
                         $amountInBankCurrencyCents = CurrencyConverter::convertBalance(
                             $amountInInvoiceCurrencyCents,
                             $invoiceCurrency,
@@ -223,7 +223,7 @@ class PaymentsRelationManager extends RelationManager
                         }
                     )
                     ->sortable()
-                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency(), true),
+                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency()),
             ])
             ->filters([
                 //

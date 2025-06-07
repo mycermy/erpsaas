@@ -20,6 +20,7 @@ use Filament\Forms\Components\Field;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Enums\IconPosition;
+use Filament\Support\RawJs;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Illuminate\Contracts\Support\Htmlable;
@@ -64,11 +65,31 @@ class MacroServiceProvider extends ServiceProvider
                     });
             }
 
-            $this->mask(static function (TextInput $component) use ($currency) {
-                $currency = $component->evaluate($currency);
+            $this->mask(RawJs::make('$money($input)'))
+                ->afterStateHydrated(function (TextInput $component, ?int $state) {
+                    if (blank($state)) {
+                        return;
+                    }
 
-                return moneyMask($currency);
-            });
+                    $formatted = CurrencyConverter::convertCentsToFormatSimple($state, 'USD');
+                    $component->state($formatted);
+                })
+                ->dehydrateStateUsing(function (?string $state): ?int {
+                    if (blank($state)) {
+                        return null;
+                    }
+
+                    // Remove thousand separators
+                    $cleaned = str_replace(',', '', $state);
+
+                    // If no decimal point, assume it's whole dollars (add .00)
+                    if (! str_contains($cleaned, '.')) {
+                        $cleaned .= '.00';
+                    }
+
+                    // Convert to float then to cents (integer)
+                    return (int) round((float) $cleaned * 100);
+                });
 
             return $this;
         });
@@ -174,7 +195,7 @@ class MacroServiceProvider extends ServiceProvider
 
         TextColumn::macro('currency', function (string | Closure | null $currency = null, ?bool $convert = null): static {
             $currency ??= CurrencyAccessor::getDefaultCurrency();
-            $convert ??= true;
+            $convert ??= false;
 
             $this->formatStateUsing(static function (TextColumn $column, $state) use ($currency, $convert): ?string {
                 if (blank($state)) {
@@ -192,7 +213,7 @@ class MacroServiceProvider extends ServiceProvider
 
         TextEntry::macro('currency', function (string | Closure | null $currency = null, ?bool $convert = null): static {
             $currency ??= CurrencyAccessor::getDefaultCurrency();
-            $convert ??= true;
+            $convert ??= false;
 
             $this->formatStateUsing(static function (TextEntry $entry, $state) use ($currency, $convert): ?string {
                 if (blank($state)) {
@@ -210,7 +231,7 @@ class MacroServiceProvider extends ServiceProvider
 
         TextColumn::macro('currencyWithConversion', function (string | Closure | null $currency = null, ?bool $convertFromCents = null): static {
             $currency ??= CurrencyAccessor::getDefaultCurrency();
-            $convertFromCents ??= false;
+            $convertFromCents ??= true;
 
             $this->formatStateUsing(static function (TextColumn $column, $state) use ($currency, $convertFromCents): ?string {
                 if (blank($state)) {

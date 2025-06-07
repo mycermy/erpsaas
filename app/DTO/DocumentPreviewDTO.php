@@ -17,7 +17,7 @@ readonly class DocumentPreviewDTO extends DocumentDTO
         $paymentTerms = PaymentTerms::parse($data['payment_terms']) ?? $settings->payment_terms;
 
         $amountDue = $settings->type !== DocumentType::Estimate ?
-            self::formatToMoney('950', null) :
+            self::formatToMoney(95000, null) :
             null;
 
         return new self(
@@ -31,11 +31,11 @@ readonly class DocumentPreviewDTO extends DocumentDTO
             date: $company->locale->date_format->getLabel(),
             dueDate: $paymentTerms->getDueDate($company->locale->date_format->value),
             currencyCode: CurrencyAccessor::getDefaultCurrency(),
-            subtotal: self::formatToMoney('1000', null),
-            discount: self::formatToMoney('100', null),
-            tax: self::formatToMoney('50', null),
-            total: self::formatToMoney('950', null),
-            amountDue: $amountDue,
+            subtotal: self::formatToMoney(100000, null), // $1000.00
+            discount: self::formatToMoney(10000, null), // $100.00
+            tax: self::formatToMoney(5000, null), // $50.00
+            total: self::formatToMoney(95000, null), // $950.00
+            amountDue: $amountDue, // $950.00 or null for estimates
             company: CompanyDTO::fromModel($company),
             client: ClientPreviewDTO::fake(),
             lineItems: LineItemPreviewDTO::fakeItems(),

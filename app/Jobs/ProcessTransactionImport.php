@@ -60,7 +60,7 @@ class ProcessTransactionImport implements ShouldQueue
         if (count($newTransactions) > 0) {
             $currentBalance = $transactionsResponse->accounts[0]->balances->current;
 
-            $transactionService->createStartingBalanceIfNeeded($this->company, $this->account, $this->bankAccount, $newTransactions, $currentBalance, $startDate);
+            $transactionService->createStartingBalanceIfNeeded($this->company, $this->bankAccount, $newTransactions, $currentBalance, $startDate);
             $transactionService->storeTransactions($this->company, $this->bankAccount, $newTransactions);
 
             $this->connectedBankAccount->update([

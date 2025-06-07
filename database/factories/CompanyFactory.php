@@ -133,6 +133,7 @@ class CompanyFactory extends Factory
 
             Invoice::factory()
                 ->count($draftCount)
+                ->withLineItems()
                 ->create([
                     'company_id' => $company->id,
                     'created_by' => $company->user_id,

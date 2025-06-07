@@ -12,7 +12,17 @@ class InvoiceObserver
 {
     public function saving(Invoice $invoice): void
     {
-        if ($invoice->approved_at && $invoice->is_currently_overdue) {
+        if (! $invoice->wasApproved()) {
+            return;
+        }
+
+        if ($invoice->isDirty('due_date') && $invoice->status === InvoiceStatus::Overdue && ! $invoice->shouldBeOverdue() && ! $invoice->hasPayments()) {
+            $invoice->status = $invoice->hasBeenSent() ? InvoiceStatus::Sent : InvoiceStatus::Unsent;
+
+            return;
+        }
+
+        if ($invoice->shouldBeOverdue()) {
             $invoice->status = InvoiceStatus::Overdue;
         }
     }

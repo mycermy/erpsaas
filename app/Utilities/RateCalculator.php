@@ -15,7 +15,9 @@ class RateCalculator
 
     public static function calculatePercentage(int $value, int $scaledRate): int
     {
-        return (int) round(($value * $scaledRate) / self::PERCENTAGE_SCALING_FACTOR);
+        $result = ($value * $scaledRate) / self::PERCENTAGE_SCALING_FACTOR;
+
+        return (int) round($result, 0, PHP_ROUND_HALF_EVEN);
     }
 
     public static function scaledRateToDecimal(int $scaledRate): float

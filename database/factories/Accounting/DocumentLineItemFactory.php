@@ -64,8 +64,8 @@ class DocumentLineItemFactory extends Factory
 
                 $lineItem->refresh();
 
-                $taxTotal = $lineItem->calculateTaxTotal()->getAmount();
-                $discountTotal = $lineItem->calculateDiscountTotal()->getAmount();
+                $taxTotal = $lineItem->calculateTaxTotalAmount();
+                $discountTotal = $lineItem->calculateDiscountTotalAmount();
 
                 $lineItem->updateQuietly([
                     'tax_total' => $taxTotal,
@@ -100,8 +100,8 @@ class DocumentLineItemFactory extends Factory
 
                 $lineItem->refresh();
 
-                $taxTotal = $lineItem->calculateTaxTotal()->getAmount();
-                $discountTotal = $lineItem->calculateDiscountTotal()->getAmount();
+                $taxTotal = $lineItem->calculateTaxTotalAmount();
+                $discountTotal = $lineItem->calculateDiscountTotalAmount();
 
                 $lineItem->updateQuietly([
                     'tax_total' => $taxTotal,
@@ -136,8 +136,8 @@ class DocumentLineItemFactory extends Factory
 
                 $lineItem->refresh();
 
-                $taxTotal = $lineItem->calculateTaxTotal()->getAmount();
-                $discountTotal = $lineItem->calculateDiscountTotal()->getAmount();
+                $taxTotal = $lineItem->calculateTaxTotalAmount();
+                $discountTotal = $lineItem->calculateDiscountTotalAmount();
 
                 $lineItem->updateQuietly([
                     'tax_total' => $taxTotal,

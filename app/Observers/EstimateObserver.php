@@ -15,13 +15,13 @@ class EstimateObserver
             return;
         }
 
-        if ($estimate->isDirty('expiration_date') && $estimate->status === EstimateStatus::Expired && ! $estimate->is_currently_expired) {
+        if ($estimate->isDirty('expiration_date') && $estimate->status === EstimateStatus::Expired && ! $estimate->shouldBeExpired()) {
             $estimate->status = $estimate->hasBeenSent() ? EstimateStatus::Sent : EstimateStatus::Unsent;
 
             return;
         }
 
-        if ($estimate->is_currently_expired && $estimate->canBeExpired()) {
+        if ($estimate->shouldBeExpired()) {
             $estimate->status = EstimateStatus::Expired;
         }
     }
