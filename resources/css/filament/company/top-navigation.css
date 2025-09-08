@@ -18,3 +18,8 @@
 :is(.dark .fi-topbar > nav.topbar-scrolled, .dark .fi-sidebar-header.topbar-scrolled) {
     @apply bg-gray-900/50 !important;
 }
+
+/* Notification badge transparency */
+.fi-topbar .fi-icon-btn-badge-ctn {
+    @apply bg-transparent !important;
+}

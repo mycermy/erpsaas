@@ -11,6 +11,7 @@ use App\Enums\Accounting\RecurringInvoiceStatus;
 use App\Enums\Setting\PaymentTerms;
 use App\Filament\Company\Resources\Sales\ClientResource\RelationManagers\RecurringInvoicesRelationManager;
 use App\Filament\Company\Resources\Sales\RecurringInvoiceResource\Pages;
+use App\Filament\Exports\Accounting\RecurringInvoiceExporter;
 use App\Filament\Forms\Components\CreateAdjustmentSelect;
 use App\Filament\Forms\Components\CreateClientSelect;
 use App\Filament\Forms\Components\CreateCurrencySelect;
@@ -353,6 +354,10 @@ class RecurringInvoiceResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options(RecurringInvoiceStatus::class)
                     ->native(false),
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(RecurringInvoiceExporter::class),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([

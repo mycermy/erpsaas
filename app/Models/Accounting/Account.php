@@ -13,6 +13,7 @@ use App\Observers\AccountObserver;
 use App\Utilities\Currency\CurrencyAccessor;
 use Database\Factories\Accounting\AccountFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -86,7 +87,8 @@ class Account extends Model
         return $this->hasOne(Adjustment::class, 'account_id');
     }
 
-    public function scopeBudgetable(Builder $query): Builder
+    #[Scope]
+    protected function budgetable(Builder $query): Builder
     {
         return $query->whereIn('category', [
             AccountCategory::Revenue,
@@ -111,7 +113,8 @@ class Account extends Model
             ->where('currency_code', CurrencyAccessor::getDefaultCurrency());
     }
 
-    public function scopeWithLastTransactionDate(Builder $query): Builder
+    #[Scope]
+    protected function withLastTransactionDate(Builder $query): Builder
     {
         return $query->addSelect([
             'last_transaction_date' => JournalEntry::select(DB::raw('MAX(transactions.posted_at)'))

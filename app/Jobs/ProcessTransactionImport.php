@@ -30,7 +30,7 @@ class ProcessTransactionImport implements ShouldQueue
     public function handle(PlaidService $plaid, TransactionService $transactionService): void
     {
         $accessToken = $this->connectedBankAccount->access_token;
-        $endDate = Carbon::now()->toDateString();
+        $endDate = company_now()->toDateString();
         $startDate = Carbon::parse($this->startDate)->toDateString();
         $allTransactions = [];
         $offset = 0;
@@ -64,7 +64,7 @@ class ProcessTransactionImport implements ShouldQueue
             $transactionService->storeTransactions($this->company, $this->bankAccount, $newTransactions);
 
             $this->connectedBankAccount->update([
-                'last_imported_at' => Carbon::now(),
+                'last_imported_at' => company_now(),
             ]);
         }
     }

@@ -117,11 +117,11 @@ class CreateBudget extends CreateRecord
                         ->live(),
                     Forms\Components\DatePicker::make('start_date')
                         ->required()
-                        ->default(now()->startOfYear())
+                        ->default(company_today()->startOfYear())
                         ->live(),
                     Forms\Components\DatePicker::make('end_date')
                         ->required()
-                        ->default(now()->endOfYear())
+                        ->default(company_today()->endOfYear())
                         ->live()
                         ->disabled(static fn (Forms\Get $get) => blank($get('start_date')))
                         ->minDate(fn (Forms\Get $get) => match (BudgetIntervalType::parse($get('interval_type'))) {

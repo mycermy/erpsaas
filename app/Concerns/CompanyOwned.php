@@ -2,6 +2,8 @@
 
 namespace App\Concerns;
 
+use App\Models\Notification;
+use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,9 +19,16 @@ trait CompanyOwned
             if (empty($model->company_id)) {
                 $companyId = session('current_company_id');
 
-                if (! $companyId && Auth::check()) {
-                    $companyId = Auth::user()->currentCompany->id;
+                if (! $companyId && ($user = Auth::user()) && ($companyId = $user->current_company_id)) {
                     session(['current_company_id' => $companyId]);
+                }
+
+                // For notifications in job context, get company_id from the notifiable user
+                if (! $companyId && $model instanceof Notification && $model->notifiable_type === User::class) {
+                    $notifiable = $model->notifiable;
+                    if ($notifiable instanceof User) {
+                        $companyId = $notifiable->current_company_id;
+                    }
                 }
 
                 if ($companyId) {

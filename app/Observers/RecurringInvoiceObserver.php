@@ -20,7 +20,7 @@ class RecurringInvoiceObserver
 
         if ($recurringInvoice->end_type?->isAfter() && $recurringInvoice->occurrences_count >= $recurringInvoice->max_occurrences) {
             $recurringInvoice->status = RecurringInvoiceStatus::Ended;
-            $recurringInvoice->ended_at = now();
+            $recurringInvoice->ended_at = company_now();
         }
     }
 

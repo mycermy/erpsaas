@@ -21,6 +21,7 @@ use Filament\Actions\ReplicateAction;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -132,7 +133,7 @@ class Estimate extends Document
 
     public function shouldBeExpired(): bool
     {
-        return $this->expiration_date?->isBefore(today()) && $this->canBeExpired();
+        return $this->expiration_date?->isBefore(company_today()) && $this->canBeExpired();
     }
 
     public function isDraft(): bool
@@ -212,7 +213,8 @@ class Estimate extends Document
             && ! $this->wasConverted();
     }
 
-    public function scopeActive(Builder $query): Builder
+    #[Scope]
+    protected function active(Builder $query): Builder
     {
         return $query->whereIn('status', [
             EstimateStatus::Unsent,
@@ -257,7 +259,7 @@ class Estimate extends Document
             throw new \RuntimeException('Estimate is not in draft status.');
         }
 
-        $approvedAt ??= now();
+        $approvedAt ??= company_now();
 
         $this->update([
             'approved_at' => $approvedAt,
@@ -316,7 +318,7 @@ class Estimate extends Document
 
     public function markAsSent(?Carbon $sentAt = null): void
     {
-        $sentAt ??= now();
+        $sentAt ??= company_now();
 
         $this->update([
             'status' => EstimateStatus::Sent,
@@ -326,7 +328,7 @@ class Estimate extends Document
 
     public function markAsViewed(?Carbon $viewedAt = null): void
     {
-        $viewedAt ??= now();
+        $viewedAt ??= company_now();
 
         $this->update([
             'status' => EstimateStatus::Viewed,
@@ -357,8 +359,8 @@ class Estimate extends Document
             ->beforeReplicaSaved(function (self $original, self $replica) {
                 $replica->status = EstimateStatus::Draft;
                 $replica->estimate_number = self::getNextDocumentNumber();
-                $replica->date = now();
-                $replica->expiration_date = now()->addDays($original->company->defaultInvoice->payment_terms->getDays());
+                $replica->date = company_today();
+                $replica->expiration_date = company_today()->addDays($original->company->defaultInvoice->payment_terms->getDays());
             })
             ->databaseTransaction()
             ->after(function (self $original, self $replica) {
@@ -388,7 +390,7 @@ class Estimate extends Document
 
     public function markAsAccepted(?Carbon $acceptedAt = null): void
     {
-        $acceptedAt ??= now();
+        $acceptedAt ??= company_now();
 
         $this->update([
             'status' => EstimateStatus::Accepted,
@@ -417,7 +419,7 @@ class Estimate extends Document
 
     public function markAsDeclined(?Carbon $declinedAt = null): void
     {
-        $declinedAt ??= now();
+        $declinedAt ??= company_now();
 
         $this->update([
             'status' => EstimateStatus::Declined,
@@ -458,8 +460,8 @@ class Estimate extends Document
             'header' => $this->company->defaultInvoice->header,
             'subheader' => $this->company->defaultInvoice->subheader,
             'invoice_number' => Invoice::getNextDocumentNumber($this->company),
-            'date' => now(),
-            'due_date' => now()->addDays($this->company->defaultInvoice->payment_terms->getDays()),
+            'date' => company_today(),
+            'due_date' => company_today()->addDays($this->company->defaultInvoice->payment_terms->getDays()),
             'status' => InvoiceStatus::Draft,
             'currency_code' => $this->currency_code,
             'discount_method' => $this->discount_method,
@@ -477,7 +479,7 @@ class Estimate extends Document
 
         $this->replicateLineItems($invoice);
 
-        $convertedAt ??= now();
+        $convertedAt ??= company_now();
 
         $this->update([
             'status' => EstimateStatus::Converted,

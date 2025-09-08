@@ -12,6 +12,7 @@ use App\Enums\Setting\PaymentTerms;
 use App\Filament\Company\Resources\Sales\ClientResource\RelationManagers\EstimatesRelationManager;
 use App\Filament\Company\Resources\Sales\EstimateResource\Pages;
 use App\Filament\Company\Resources\Sales\EstimateResource\Widgets;
+use App\Filament\Exports\Accounting\EstimateExporter;
 use App\Filament\Forms\Components\CreateAdjustmentSelect;
 use App\Filament\Forms\Components\CreateClientSelect;
 use App\Filament\Forms\Components\CreateCurrencySelect;
@@ -90,11 +91,11 @@ class EstimateResource extends Resource
                                     Forms\Components\DatePicker::make('date')
                                         ->label('Estimate date')
                                         ->live()
-                                        ->default(now())
+                                        ->default(company_today()->toDateString())
                                         ->columnSpan(2)
                                         ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                                            $date = $state;
-                                            $expirationDate = $get('expiration_date');
+                                            $date = Carbon::parse($state)->toDateString();
+                                            $expirationDate = Carbon::parse($get('expiration_date'))->toDateString();
 
                                             if ($date && $expirationDate && $date > $expirationDate) {
                                                 $set('expiration_date', $date);
@@ -136,10 +137,10 @@ class EstimateResource extends Resource
                                 Forms\Components\DatePicker::make('expiration_date')
                                     ->label('Expiration date')
                                     ->default(function () use ($settings) {
-                                        return now()->addDays($settings->payment_terms->getDays());
+                                        return company_today()->addDays($settings->payment_terms->getDays())->toDateString();
                                     })
                                     ->minDate(static function (Forms\Get $get) {
-                                        return $get('date') ?? now();
+                                        return Carbon::parse($get('date'))->toDateString() ?? company_today()->toDateString();
                                     })
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
@@ -418,6 +419,10 @@ class EstimateResource extends Resource
                     ->untilLabel('To expiration date')
                     ->indicatorLabel('Due'),
             ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(EstimateExporter::class),
+            ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ActionGroup::make([
@@ -465,8 +470,8 @@ class EstimateResource extends Resource
                         ->beforeReplicaSaved(function (Estimate $replica) {
                             $replica->status = EstimateStatus::Draft;
                             $replica->estimate_number = Estimate::getNextDocumentNumber();
-                            $replica->date = now();
-                            $replica->expiration_date = now()->addDays($replica->company->defaultInvoice->payment_terms->getDays());
+                            $replica->date = company_today();
+                            $replica->expiration_date = company_today()->addDays($replica->company->defaultInvoice->payment_terms->getDays());
                         })
                         ->withReplicatedRelationships(['lineItems'])
                         ->withExcludedRelationshipAttributes('lineItems', [

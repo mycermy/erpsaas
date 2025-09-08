@@ -18,6 +18,6 @@ enum WeekStart: int implements HasLabel
 
     public function getLabel(): ?string
     {
-        return today()->isoWeekday($this->value)->dayName;
+        return company_today()->isoWeekday($this->value)->dayName;
     }
 }

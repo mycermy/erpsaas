@@ -124,4 +124,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasDefaul
 
         return true;
     }
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable')->latest();
+    }
 }

@@ -126,11 +126,11 @@ class Adjustment extends Model
 
     public function calculateNaturalStatus(): AdjustmentStatus
     {
-        if ($this->start_date?->isFuture()) {
+        if ($this->start_date?->isAfter(company_now())) {
             return AdjustmentStatus::Upcoming;
         }
 
-        if ($this->end_date?->isPast()) {
+        if ($this->end_date?->isBefore(company_now())) {
             return AdjustmentStatus::Expired;
         }
 
@@ -144,7 +144,7 @@ class Adjustment extends Model
         }
 
         return $this->update([
-            'paused_at' => now(),
+            'paused_at' => company_now(),
             'paused_until' => $untilDate,
             'status' => AdjustmentStatus::Paused,
             'status_reason' => $reason,
@@ -172,7 +172,7 @@ class Adjustment extends Model
         }
 
         return $this->update([
-            'archived_at' => now(),
+            'archived_at' => company_now(),
             'status' => AdjustmentStatus::Archived,
             'status_reason' => $reason,
         ]);
@@ -182,7 +182,7 @@ class Adjustment extends Model
     {
         return $this->status === AdjustmentStatus::Paused &&
             $this->paused_until !== null &&
-            $this->paused_until->isPast();
+            $this->paused_until->isBefore(company_now());
     }
 
     public function refreshStatus(): bool

@@ -174,6 +174,7 @@ class CompanyPanelProvider extends PanelProvider
             })
             ->globalSearch(false)
             ->sidebarCollapsibleOnDesktop()
+            ->databaseNotifications(isLazy: false)
             ->viteTheme('resources/css/filament/company/theme.css')
             ->brandLogo(static fn () => view('components.icons.logo'))
             ->tenant(Company::class)
@@ -267,6 +268,11 @@ class CompanyPanelProvider extends PanelProvider
     {
         $this->configureSelect();
 
+        Forms\Components\FileUpload::configureUsing(function (Forms\Components\FileUpload $component): void {
+            $component
+                ->hidden(is_demo_environment());
+        });
+
         Actions\CreateAction::configureUsing(static fn (Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
         Actions\EditAction::configureUsing(static fn (Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
         Actions\DeleteAction::configureUsing(static fn (Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
@@ -274,17 +280,21 @@ class CompanyPanelProvider extends PanelProvider
         Tables\Actions\CreateAction::configureUsing(static fn (Tables\Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
         Tables\Actions\DeleteAction::configureUsing(static fn (Tables\Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
         Tables\Actions\DeleteBulkAction::configureUsing(static fn (Tables\Actions\DeleteBulkAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
-        Forms\Components\DateTimePicker::configureUsing(static function (Forms\Components\DateTimePicker $component) {
-            $component->native(false);
-        });
 
         Tables\Table::configureUsing(static function (Tables\Table $table): void {
-            $table::$defaultDateDisplayFormat = CompanySettingsService::getDefaultDateFormat(session('current_company_id') ?? auth()->user()->current_company_id);
+            $table::$defaultDateDisplayFormat = CompanySettingsService::getDefaultDateFormat();
+            $table::$defaultTimeDisplayFormat = CompanySettingsService::getDefaultTimeFormat();
+            $table::$defaultDateTimeDisplayFormat = CompanySettingsService::getDefaultDateTimeFormat();
 
             $table
                 ->paginationPageOptions([5, 10, 25, 50, 100])
                 ->filtersFormWidth(MaxWidth::Small)
-                ->filtersTriggerAction(fn (Tables\Actions\Action $action) => $action->slideOver());
+                ->filtersTriggerAction(
+                    fn (Tables\Actions\Action $action) => $action
+                        ->button()
+                        ->label('Filters')
+                        ->slideOver()
+                );
         });
 
         Tables\Columns\TextColumn::configureUsing(function (Tables\Columns\TextColumn $column): void {
@@ -293,6 +303,12 @@ class CompanyPanelProvider extends PanelProvider
 
         TextEntry::configureUsing(function (TextEntry $component): void {
             $component->placeholder('–');
+        });
+
+        Tables\Actions\ExportAction::configureUsing(function (Tables\Actions\ExportAction $action) {
+            $action
+                ->color('primary')
+                ->slideOver();
         });
     }
 

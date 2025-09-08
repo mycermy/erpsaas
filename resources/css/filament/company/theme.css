@@ -66,7 +66,7 @@
     z-index: -1;
 }
 
-.fi-ta-table:has(.budget-items-relation-manager) {
+.fi-ta-table:has(.is-spreadsheet) {
     .fi-ta-row {
         @apply divide-x divide-gray-200 dark:divide-gray-700;
     }
@@ -102,7 +102,7 @@
         }
     }
 
-    .fi-ta-cell:focus-within {
+    .fi-ta-cell:has(.fi-ta-text-input):focus-within {
         outline: 2px solid #2563eb;
         outline-offset: -2px;
         z-index: 1;

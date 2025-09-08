@@ -43,6 +43,6 @@ enum PaymentTerms: string implements HasLabel
     {
         $days = $this->getDays() ?? 0;
 
-        return now()->addDays($days)->translatedFormat($format);
+        return company_today()->addDays($days)->translatedFormat($format);
     }
 }

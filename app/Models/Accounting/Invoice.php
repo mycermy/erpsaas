@@ -26,6 +26,7 @@ use Filament\Notifications\Notification;
 use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -181,17 +182,26 @@ class Invoice extends Document
         return $this->amount_due;
     }
 
-    public function scopeUnpaid(Builder $query): Builder
+    #[Scope]
+    protected function unpaid(Builder $query): Builder
     {
-        return $query->whereNotIn('status', [
-            InvoiceStatus::Paid,
-            InvoiceStatus::Void,
-            InvoiceStatus::Draft,
-            InvoiceStatus::Overpaid,
-        ]);
+        return $query->whereIn('status', InvoiceStatus::unpaidStatuses());
     }
 
-    public function scopeOverdue(Builder $query): Builder
+    // TODO: Consider storing the numeric part of the invoice number separately
+    #[Scope]
+    protected function byNumber(Builder $query, string $number): Builder
+    {
+        $invoicePrefix = DocumentDefault::invoice()->first()->number_prefix ?? '';
+
+        return $query->where(function ($q) use ($number, $invoicePrefix) {
+            $q->where('invoice_number', $number)
+                ->orWhere('invoice_number', $invoicePrefix . $number);
+        });
+    }
+
+    #[Scope]
+    protected function overdue(Builder $query): Builder
     {
         return $query
             ->unpaid()
@@ -200,7 +210,7 @@ class Invoice extends Document
 
     public function shouldBeOverdue(): bool
     {
-        return $this->due_date->isBefore(today()) && $this->canBeOverdue();
+        return $this->due_date->isBefore(company_today()) && $this->canBeOverdue();
     }
 
     public function isDraft(): bool
@@ -363,7 +373,7 @@ class Invoice extends Document
 
         $this->createApprovalTransaction();
 
-        $approvedAt ??= now();
+        $approvedAt ??= company_now();
 
         $this->update([
             'approved_at' => $approvedAt,
@@ -607,7 +617,7 @@ class Invoice extends Document
 
     public function markAsSent(?Carbon $sentAt = null): void
     {
-        $sentAt ??= now();
+        $sentAt ??= company_now();
 
         $this->update([
             'status' => InvoiceStatus::Sent,
@@ -617,7 +627,7 @@ class Invoice extends Document
 
     public function markAsViewed(?Carbon $viewedAt = null): void
     {
-        $viewedAt ??= now();
+        $viewedAt ??= company_now();
 
         $this->update([
             'status' => InvoiceStatus::Viewed,
@@ -648,8 +658,8 @@ class Invoice extends Document
             ->beforeReplicaSaved(function (self $original, self $replica) {
                 $replica->status = InvoiceStatus::Draft;
                 $replica->invoice_number = self::getNextDocumentNumber();
-                $replica->date = now();
-                $replica->due_date = now()->addDays($original->company->defaultInvoice->payment_terms->getDays());
+                $replica->date = company_today();
+                $replica->due_date = company_today()->addDays($original->company->defaultInvoice->payment_terms->getDays());
             })
             ->databaseTransaction()
             ->after(function (self $original, self $replica) {

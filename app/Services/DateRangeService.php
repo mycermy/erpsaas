@@ -29,7 +29,8 @@ class DateRangeService
     private function generateDateRangeOptions(): array
     {
         $earliestDate = Carbon::parse(Accounting::getEarliestTransactionDate());
-        $currentDate = now();
+        $currentDate = company_today();
+        $currentYear = $currentDate->year;
         $fiscalYearStartCurrent = Carbon::parse($this->fiscalYearStartDate);
 
         $options = [
@@ -46,7 +47,7 @@ class DateRangeService
         foreach ($period as $date) {
             $options['Fiscal Year']['FY-' . $date->year] = $date->year;
 
-            $fiscalYearStart = $fiscalYearStartCurrent->copy()->subYears($currentDate->year - $date->year);
+            $fiscalYearStart = $fiscalYearStartCurrent->copy()->subYears($currentYear - $date->year);
 
             for ($i = 0; $i < 4; $i++) {
                 $quarterNumber = $i + 1;
@@ -86,9 +87,9 @@ class DateRangeService
                     continue;
                 }
 
-                $expectedEnd = $expectedEnd->isFuture() ? now()->startOfDay() : $expectedEnd;
+                $expectedEnd = $expectedEnd->isFuture() ? company_today() : $expectedEnd;
 
-                if ($startDate->eq($expectedStart) && $endDate->eq($expectedEnd)) {
+                if ($startDate->isSameDay($expectedStart) && $endDate->isSameDay($expectedEnd)) {
                     return $key; // Return the matching range key (e.g., "FY-2024")
                 }
             }
@@ -99,17 +100,19 @@ class DateRangeService
 
     private function getExpectedDateRange(string $type, string $key): array
     {
+        $currentYear = company_today()->year;
+
         switch ($type) {
             case 'Fiscal Year':
                 $year = (int) substr($key, 3);
-                $start = Carbon::parse($this->fiscalYearStartDate)->subYears(now()->year - $year)->startOfDay();
-                $end = Carbon::parse($this->fiscalYearEndDate)->subYears(now()->year - $year)->startOfDay();
+                $start = Carbon::parse($this->fiscalYearStartDate)->subYears($currentYear - $year)->startOfDay();
+                $end = Carbon::parse($this->fiscalYearEndDate)->subYears($currentYear - $year)->startOfDay();
 
                 break;
 
             case 'Fiscal Quarter':
                 [$quarter, $year] = explode('-', substr($key, 3));
-                $start = Carbon::parse($this->fiscalYearStartDate)->subYears(now()->year - $year)->addMonths(($quarter - 1) * 3)->startOfDay();
+                $start = Carbon::parse($this->fiscalYearStartDate)->subYears($currentYear - $year)->addMonths(($quarter - 1) * 3)->startOfDay();
                 $end = $start->copy()->addMonths(3)->subDay()->startOfDay();
 
                 break;

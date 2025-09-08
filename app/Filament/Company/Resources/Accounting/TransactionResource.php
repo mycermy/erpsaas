@@ -4,6 +4,7 @@ namespace App\Filament\Company\Resources\Accounting;
 
 use App\Enums\Accounting\TransactionType;
 use App\Filament\Company\Resources\Accounting\TransactionResource\Pages;
+use App\Filament\Exports\Accounting\TransactionExporter;
 use App\Filament\Forms\Components\DateRangeSelect;
 use App\Filament\Tables\Actions\EditTransactionAction;
 use App\Filament\Tables\Actions\ReplicateBulkAction;
@@ -155,6 +156,10 @@ class TransactionResource extends Resource
                 $filters['updated_at'],
             ])
             ->filtersFormWidth(MaxWidth::ThreeExtraLarge)
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(TransactionExporter::class),
+            ])
             ->actions([
                 Tables\Actions\Action::make('markAsReviewed')
                     ->label('Mark as reviewed')

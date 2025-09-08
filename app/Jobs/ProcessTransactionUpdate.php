@@ -39,7 +39,7 @@ class ProcessTransactionUpdate implements ShouldQueue
             $bufferDays = 15;
             $lastImportedAtDate = Carbon::parse($connectedBankAccount->last_imported_at);
             $startDate = $lastImportedAtDate->subDays($bufferDays)->toDateString();
-            $endDate = Carbon::now()->toDateString();
+            $endDate = company_today()->toDateString();
 
             $transactionsResponse = $plaidService->getTransactions($accessToken, $startDate, $endDate, [
                 'account_ids' => [$connectedBankAccount->external_account_id],
@@ -67,7 +67,7 @@ class ProcessTransactionUpdate implements ShouldQueue
                 $transactionService->storeTransactions($this->company, $bankAccount, $newTransactions);
 
                 $connectedBankAccount->update([
-                    'last_imported_at' => Carbon::now(),
+                    'last_imported_at' => company_now(),
                 ]);
             }
         }

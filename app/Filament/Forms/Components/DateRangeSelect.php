@@ -88,7 +88,7 @@ class DateRangeSelect extends Select
 
     public function processFiscalYear($year, Set $set): void
     {
-        $currentYear = now()->year;
+        $currentYear = company_today()->year;
         $diff = $currentYear - $year;
         $fiscalYearStart = Carbon::parse($this->fiscalYearStartDate)->subYears($diff);
         $fiscalYearEnd = Carbon::parse($this->fiscalYearEndDate)->subYears($diff);
@@ -97,7 +97,7 @@ class DateRangeSelect extends Select
 
     public function processFiscalQuarter($quarter, $year, Set $set): void
     {
-        $currentYear = now()->year;
+        $currentYear = company_today()->year;
         $diff = $currentYear - $year;
         $fiscalYearStart = Carbon::parse($this->fiscalYearStartDate)->subYears($diff);
         $quarterStart = $fiscalYearStart->copy()->addMonths(($quarter - 1) * 3);
@@ -130,11 +130,11 @@ class DateRangeSelect extends Select
     public function setDateRange(Carbon $start, Carbon $end, Set $set): void
     {
         if ($this->startDateField) {
-            $set($this->startDateField, $start->startOfDay()->toDateTimeString());
+            $set($this->startDateField, $start->toDateString());
         }
 
         if ($this->endDateField) {
-            $set($this->endDateField, $end->isFuture() ? now()->endOfDay()->toDateTimeString() : $end->endOfDay()->toDateTimeString());
+            $set($this->endDateField, $end->isFuture() ? company_today()->toDateString() : $end->toDateString());
         }
     }
 }

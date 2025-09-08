@@ -36,4 +36,21 @@ enum BillStatus: string implements HasColor, HasLabel
             self::Open,
         ];
     }
+
+    public static function unpaidStatuses(): array
+    {
+        return [
+            self::Open,
+            self::Partial,
+            self::Overdue,
+        ];
+    }
+
+    public static function getUnpaidOptions(): array
+    {
+        return collect(self::cases())
+            ->filter(fn (self $case) => in_array($case, self::unpaidStatuses()))
+            ->mapWithKeys(fn (self $case) => [$case->value => $case->getLabel()])
+            ->toArray();
+    }
 }

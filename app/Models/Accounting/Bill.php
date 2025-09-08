@@ -22,6 +22,7 @@ use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -131,7 +132,7 @@ class Bill extends Document
 
     public function shouldBeOverdue(): bool
     {
-        return $this->due_date->isBefore(today()) && $this->canBeOverdue();
+        return $this->due_date->isBefore(company_today()) && $this->canBeOverdue();
     }
 
     public function wasInitialized(): bool
@@ -196,7 +197,8 @@ class Bill extends Document
         return $this->initialTransaction()->exists();
     }
 
-    public function scopeUnpaid(Builder $query): Builder
+    #[Scope]
+    protected function unpaid(Builder $query): Builder
     {
         return $query->whereIn('status', [
             BillStatus::Open,
@@ -426,8 +428,8 @@ class Bill extends Document
             ->beforeReplicaSaved(function (self $original, self $replica) {
                 $replica->status = BillStatus::Open;
                 $replica->bill_number = self::getNextDocumentNumber();
-                $replica->date = now();
-                $replica->due_date = now()->addDays($original->company->defaultBill->payment_terms->getDays());
+                $replica->date = company_today();
+                $replica->due_date = company_today()->addDays($original->company->defaultBill->payment_terms->getDays());
             })
             ->databaseTransaction()
             ->after(function (self $original, self $replica) {

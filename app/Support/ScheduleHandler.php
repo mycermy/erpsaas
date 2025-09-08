@@ -22,7 +22,7 @@ class ScheduleHandler
 
     public function __construct(Set $set, ?Get $get = null)
     {
-        $this->today = today()->toImmutable();
+        $this->today = company_today()->toImmutable();
         $this->set = $set;
         $this->get = $get;
     }

@@ -4,7 +4,8 @@
     $isDisabled = $isDisabled();
     $state = $getState();
     $mask = $getMask();
-    $batchMode = $getBatchMode();
+    $isDeferred = $isDeferred();
+    $isNavigable = $isNavigable();
 
     $alignment = $getAlignment() ?? Alignment::Start;
 
@@ -32,6 +33,42 @@
         recordKey: @js($recordKey),
 
         state: @js($state),
+
+        navigateToRow(direction) {
+            const currentRow = $el.closest('tr');
+            const currentCell = $el.closest('td');
+            const currentColumnIndex = Array.from(currentRow.children).indexOf(currentCell);
+
+            const targetRow = direction === 'next'
+                ? currentRow.nextElementSibling
+                : currentRow.previousElementSibling;
+
+            if (targetRow && targetRow.children[currentColumnIndex]) {
+                const targetInput = targetRow.children[currentColumnIndex].querySelector('input[x-model=\'state\']');
+                if (targetInput) {
+                    targetInput.focus();
+                    targetInput.select();
+                }
+            }
+        },
+
+        navigateToColumn(direction) {
+            const currentCell = $el.closest('td');
+            const currentRow = $el.closest('tr');
+            const currentColumnIndex = Array.from(currentRow.children).indexOf(currentCell);
+
+            const targetCell = direction === 'next'
+                ? currentRow.children[currentColumnIndex + 1]
+                : currentRow.children[currentColumnIndex - 1];
+
+            if (targetCell) {
+                const targetInput = targetCell.querySelector('input[x-model=\'state\']');
+                if (targetInput) {
+                    targetInput.focus();
+                    targetInput.select();
+                }
+            }
+        }
     }"
     x-init="
         () => {
@@ -105,7 +142,7 @@
                 \Filament\Support\prepare_inherited_attributes(
                     $getExtraInputAttributeBag()
                         ->merge([
-                            'x-on:change' . ($type === 'number' ? '.debounce.1s' : null) => $batchMode ? '
+                            'x-on:change' . ($type === 'number' ? '.debounce.1s' : null) => $isDeferred ? '
                                 $wire.handleBatchColumnChanged({
                                     name: name,
                                     recordKey: recordKey,
@@ -128,7 +165,7 @@
 
                                 isLoading = false
                             ',
-                            'x-on:keydown.enter' => $batchMode ? '
+                            'x-on:keydown.enter' => $isDeferred ? '
                                 $wire.handleBatchColumnChanged({
                                     name: name,
                                     recordKey: recordKey,
@@ -138,7 +175,11 @@
                                 $nextTick(() => {
                                     $wire.saveBatchChanges();
                                 });
-                            ' : null,
+                            ' : ($isNavigable ? 'navigateToRow(\'next\')' : null),
+                            'x-on:keydown.arrow-down.prevent' => $isNavigable ? 'navigateToRow(\'next\')' : null,
+                            'x-on:keydown.arrow-up.prevent' => $isNavigable ? 'navigateToRow(\'prev\')' : null,
+                            'x-on:keydown.arrow-left.prevent' => $isNavigable ? 'navigateToColumn(\'prev\')' : null,
+                            'x-on:keydown.arrow-right.prevent' => $isNavigable ? 'navigateToColumn(\'next\')' : null,
                             'x-mask' . ($mask instanceof \Filament\Support\RawJs ? ':dynamic' : '') => filled($mask) ? $mask : null,
                         ])
                         ->class([

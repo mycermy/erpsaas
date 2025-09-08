@@ -78,7 +78,7 @@ class AdjustmentObserver
 
         // Ensure consistency between paused status and paused_at field
         if ($adjustment->status === AdjustmentStatus::Paused && ! $adjustment->paused_at) {
-            $adjustment->paused_at = now();
+            $adjustment->paused_at = company_now();
         }
     }
 }

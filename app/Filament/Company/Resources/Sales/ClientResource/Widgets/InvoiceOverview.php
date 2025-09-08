@@ -26,7 +26,7 @@ class InvoiceOverview extends EnhancedStatsOverviewWidget
             ->sumMoneyInDefaultCurrency('amount_due');
 
         $amountDueWithin30Days = $unpaidInvoices->clone()
-            ->whereBetween('due_date', [today(), today()->addMonth()])
+            ->whereBetween('due_date', [company_today(), company_today()->addMonth()])
             ->get()
             ->sumMoneyInDefaultCurrency('amount_due');
 
@@ -51,6 +51,8 @@ class InvoiceOverview extends EnhancedStatsOverviewWidget
 
         if ($driver === 'pgsql') {
             $query->selectRaw('AVG(EXTRACT(EPOCH FROM (paid_at - date)) / 86400) as avg_days');
+        } elseif ($driver === 'sqlite') {
+            $query->selectRaw('AVG(julianday(paid_at) - julianday(date)) as avg_days');
         } else {
             $query->selectRaw('AVG(TIMESTAMPDIFF(DAY, date, paid_at)) as avg_days');
         }

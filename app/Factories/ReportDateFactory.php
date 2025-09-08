@@ -29,24 +29,24 @@ class ReportDateFactory
 
     protected function buildReportDates(): void
     {
-        $fiscalYearStartDate = Carbon::parse($this->company->locale->fiscalYearStartDate())->startOfDay();
-        $fiscalYearEndDate = Carbon::parse($this->company->locale->fiscalYearEndDate())->endOfDay();
-        $defaultDateRange = 'FY-' . now()->year;
-        $defaultStartDate = $fiscalYearStartDate->startOfDay();
-        $defaultEndDate = $fiscalYearEndDate->isFuture() ? now()->endOfDay() : $fiscalYearEndDate->endOfDay();
+        $companyFyStartDate = Carbon::parse($this->company->locale->fiscalYearStartDate());
+        $companyFyEndDate = Carbon::parse($this->company->locale->fiscalYearEndDate())->endOfDay();
+        $dateRange = 'FY-' . company_today()->year;
+        $startDate = $companyFyStartDate->startOfDay();
+        $endDate = $companyFyEndDate->isFuture() ? company_today()->endOfDay() : $companyFyEndDate->endOfDay();
 
         // Calculate the earliest transaction date based on the company's transactions
-        $earliestTransactionDate = $this->company->transactions()->min('posted_at')
+        $earliestDate = $this->company->transactions()->min('posted_at')
             ? Carbon::parse($this->company->transactions()->min('posted_at'))->startOfDay()
-            : $defaultStartDate;
+            : $startDate;
 
         // Assign values to properties
-        $this->fiscalYearStartDate = $fiscalYearStartDate;
-        $this->fiscalYearEndDate = $fiscalYearEndDate;
-        $this->defaultDateRange = $defaultDateRange;
-        $this->defaultStartDate = $defaultStartDate;
-        $this->defaultEndDate = $defaultEndDate;
-        $this->earliestTransactionDate = $earliestTransactionDate;
+        $this->fiscalYearStartDate = $companyFyStartDate;
+        $this->fiscalYearEndDate = $companyFyEndDate;
+        $this->defaultDateRange = $dateRange;
+        $this->defaultStartDate = $startDate;
+        $this->defaultEndDate = $endDate;
+        $this->earliestTransactionDate = $earliestDate;
     }
 
     public function refresh(): self

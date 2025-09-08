@@ -29,7 +29,7 @@ class BillOverview extends EnhancedStatsOverviewWidget
 
         $amountDueWithin7Days = $unpaidBills
             ->clone()
-            ->whereBetween('due_date', [today(), today()->addWeek()])
+            ->whereBetween('due_date', [company_today(), company_today()->addWeek()])
             ->get()
             ->sumMoneyInDefaultCurrency('amount_due');
 
@@ -40,6 +40,8 @@ class BillOverview extends EnhancedStatsOverviewWidget
 
         if ($driver === 'pgsql') {
             $query->selectRaw('AVG(EXTRACT(EPOCH FROM (paid_at - date)) / 86400) as avg_days');
+        } elseif ($driver === 'sqlite') {
+            $query->selectRaw('AVG(julianday(paid_at) - julianday(date)) as avg_days');
         } else {
             $query->selectRaw('AVG(TIMESTAMPDIFF(DAY, date, paid_at)) as avg_days');
         }
@@ -54,8 +56,8 @@ class BillOverview extends EnhancedStatsOverviewWidget
         $lastMonthTotal = $this->record->bills()
             ->where('status', BillStatus::Paid)
             ->whereBetween('date', [
-                today()->subMonth()->startOfMonth(),
-                today()->subMonth()->endOfMonth(),
+                company_today()->subMonth()->startOfMonth(),
+                company_today()->subMonth()->endOfMonth(),
             ])
             ->get()
             ->sumMoneyInDefaultCurrency('amount_paid');

@@ -16,26 +16,6 @@
 
 A Laravel and Filament-powered accounting platform featuring full double-entry accrual accounting, delivering modern automation for professional financial management.
 
-# Demo
-
-**[Try the Demo](https://erpsaas-3-x-mrxixt.laravel.cloud)**
-
-The demo environment provides a complete experience of the application with the following setup:
-
-- **Login Credentials**: Pre-filled for convenience (email: admin@erpsaas.com, password: password)
-- **Multi-Company Setup**: 8 pre-configured companies with different currencies:
-    - ERPSAAS (USD)
-    - British Crown Analytics (GBP)
-    - Berlin Tech Solutions (EUR)
-    - Mumbai Software Services (INR)
-- **Feature Access**: Full accounting functionality with simplified user management
-- **Limitations**: Plaid, Live Currency, Profile customization, password reset, and registration are disabled
-
-This demo is ideal for evaluating the application's multi-currency capabilities and core features without any
-installation required.
-
-**Note**: As this is a public demo environment, please do not enter any sensitive or personal information.
-
 ## Sponsorship
 
 While **ERPSAAS** is open-source, maintaining it requires significant time and resources. Your sponsorship directly

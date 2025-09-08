@@ -3,7 +3,9 @@
 use App\Enums\Accounting\AdjustmentComputation;
 use App\Enums\Setting\NumberFormat;
 use App\Models\Setting\Localization;
+use App\Services\CompanySettingsService;
 use Filament\Support\RawJs;
+use Illuminate\Support\Carbon;
 
 if (! function_exists('generateJsCode')) {
     function generateJsCode(string $precision, ?string $currency = null): string
@@ -127,5 +129,19 @@ if (! function_exists('is_demo_environment')) {
     function is_demo_environment(): bool
     {
         return app()->environment('demo');
+    }
+}
+
+if (! function_exists('company_today')) {
+    function company_today(): Carbon
+    {
+        return today(CompanySettingsService::getDefaultTimezone());
+    }
+}
+
+if (! function_exists('company_now')) {
+    function company_now(): Carbon
+    {
+        return now(CompanySettingsService::getDefaultTimezone());
     }
 }

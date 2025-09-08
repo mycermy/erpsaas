@@ -113,6 +113,26 @@ class Transaction extends Model
         }
     }
 
+    public static function getBankAccountOptionsFlat(?int $excludedAccountId = null, ?int $currentBankAccountId = null, bool $excludeArchived = true): array
+    {
+        return BankAccount::query()
+            ->whereHas('account', function (Builder $query) use ($excludeArchived) {
+                if ($excludeArchived) {
+                    $query->where('archived', false);
+                }
+            })
+            ->with(['account' => function ($query) use ($excludeArchived) {
+                if ($excludeArchived) {
+                    $query->where('archived', false);
+                }
+            }])
+            ->when($excludedAccountId, fn (Builder $query) => $query->where('account_id', '!=', $excludedAccountId))
+            ->when($currentBankAccountId, fn (Builder $query) => $query->orWhere('id', $currentBankAccountId))
+            ->get()
+            ->pluck('account.name', 'id')
+            ->toArray();
+    }
+
     public static function getBankAccountOptions(?int $excludedAccountId = null, ?int $currentBankAccountId = null, bool $excludeArchived = true): array
     {
         return BankAccount::query()

@@ -6,6 +6,7 @@ use App\Enums\Accounting\BillStatus;
 use App\Enums\Common\ContractorType;
 use App\Enums\Common\VendorType;
 use App\Filament\Company\Resources\Purchases\VendorResource\Pages;
+use App\Filament\Exports\Common\VendorExporter;
 use App\Filament\Forms\Components\AddressFields;
 use App\Filament\Forms\Components\CreateCurrencySelect;
 use App\Filament\Forms\Components\CustomSection;
@@ -209,6 +210,10 @@ class VendorResource extends Resource
             ])
             ->filters([
                 //
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(VendorExporter::class),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([

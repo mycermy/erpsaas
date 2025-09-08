@@ -10,6 +10,7 @@ use App\Enums\Setting\Font;
 use App\Enums\Setting\PaymentTerms;
 use App\Enums\Setting\Template;
 use Database\Factories\Setting\DocumentDefaultFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -73,27 +74,32 @@ class DocumentDefault extends Model
         });
     }
 
-    public function scopeType(Builder $query, string | DocumentType $type): Builder
+    #[Scope]
+    protected function type(Builder $query, string | DocumentType $type): Builder
     {
-        return $query->where($this->qualifyColumn('type'), $type);
+        return $query->where('type', $type);
     }
 
-    public function scopeInvoice(Builder $query): Builder
+    #[Scope]
+    protected function invoice(Builder $query): Builder
     {
         return $query->type(DocumentType::Invoice);
     }
 
-    public function scopeRecurringInvoice(Builder $query): Builder
+    #[Scope]
+    protected function recurringInvoice(Builder $query): Builder
     {
         return $query->type(DocumentType::RecurringInvoice);
     }
 
-    public function scopeBill(Builder $query): Builder
+    #[Scope]
+    protected function bill(Builder $query): Builder
     {
         return $query->type(DocumentType::Bill);
     }
 
-    public function scopeEstimate(Builder $query): Builder
+    #[Scope]
+    protected function estimate(Builder $query): Builder
     {
         return $query->type(DocumentType::Estimate);
     }

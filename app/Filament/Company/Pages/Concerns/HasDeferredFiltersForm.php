@@ -105,19 +105,6 @@ trait HasDeferredFiltersForm
         Arr::set($this->deferredFilters, $name, $value);
     }
 
-    protected function convertDatesToDateTimeString(array $filters): array
-    {
-        if (isset($filters['startDate'])) {
-            $filters['startDate'] = Carbon::parse($filters['startDate'])->startOfDay()->toDateTimeString();
-        }
-
-        if (isset($filters['endDate'])) {
-            $filters['endDate'] = Carbon::parse($filters['endDate'])->endOfDay()->toDateTimeString();
-        }
-
-        return $filters;
-    }
-
     protected function queryStringHasDeferredFiltersForm(): array
     {
         // Get the filter keys dynamically from the filters form

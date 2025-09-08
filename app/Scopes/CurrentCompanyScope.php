@@ -22,13 +22,8 @@ class CurrentCompanyScope implements Scope
             return;
         }
 
-        if (! $companyId && Auth::check() && Auth::user()->currentCompany) {
-            $companyId = Auth::user()->currentCompany->id;
+        if (! $companyId && ($user = Auth::user()) && ($companyId = $user->current_company_id)) {
             session(['current_company_id' => $companyId]);
-        }
-
-        if (! $companyId) {
-            $companyId = Auth::user()->currentCompany->id;
         }
 
         if ($companyId) {

@@ -38,9 +38,12 @@ class ReportService
     ) {}
 
     /**
-     * @param  class-string<BalanceFormattable>|null  $dtoClass
+     * @template T of BalanceFormattable
+     *
+     * @param  class-string<T>|null  $dtoClass
+     * @return T
      */
-    public function formatBalances(array $balances, ?string $dtoClass = null, bool $formatZeros = true): BalanceFormattable | array
+    public function formatBalances(array $balances, ?string $dtoClass = null, bool $formatZeros = true)
     {
         $dtoClass ??= AccountBalanceDTO::class;
 
@@ -51,10 +54,6 @@ class ReportService
 
             return CurrencyConverter::formatCentsToMoney($balance);
         }, $balances);
-
-        if (! $dtoClass) {
-            return $formattedBalances;
-        }
 
         return $dtoClass::fromArray($formattedBalances);
     }
@@ -355,7 +354,7 @@ class ReportService
         return new ReportDTO(categories: $accountCategories, overallTotal: $formattedReportTotalBalances, fields: $columns, reportType: $trialBalanceType);
     }
 
-    public function getRetainedEarningsBalances(string $startDate, string $endDate): BalanceFormattable | array
+    public function getRetainedEarningsBalances(string $startDate, string $endDate): AccountBalanceDTO
     {
         $retainedEarningsAmount = $this->calculateRetainedEarnings($startDate, $endDate)->getAmount();
 
@@ -498,7 +497,7 @@ class ReportService
         );
     }
 
-    private function calculateTotalCashFlows(array $sections, string $startDate): BalanceFormattable | array
+    private function calculateTotalCashFlows(array $sections, string $startDate): AccountBalanceDTO
     {
         $totalInflow = 0;
         $totalOutflow = 0;

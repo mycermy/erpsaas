@@ -177,7 +177,7 @@ class Localization extends Page
                         Cluster::make([
                             Select::make('fiscal_year_end_month')
                                 ->softRequired()
-                                ->options(array_combine(range(1, 12), array_map(static fn ($month) => now()->month($month)->monthName, range(1, 12))))
+                                ->options(array_combine(range(1, 12), array_map(static fn ($month) => company_today()->month($month)->monthName, range(1, 12))))
                                 ->afterStateUpdated(static fn (Set $set) => $set('fiscal_year_end_day', null))
                                 ->columnSpan(2)
                                 ->live(),
@@ -188,7 +188,7 @@ class Localization extends Page
                                 ->options(function (Get $get) {
                                     $month = (int) $get('fiscal_year_end_month');
 
-                                    $daysInMonth = now()->month($month)->daysInMonth;
+                                    $daysInMonth = company_today()->month($month)->daysInMonth;
 
                                     return array_combine(range(1, $daysInMonth), range(1, $daysInMonth));
                                 })
@@ -215,12 +215,14 @@ class Localization extends Page
             'time_format',
         ];
 
-        if ($record->isDirty($keysToWatch)) {
+        $isDirty = $record->isDirty($keysToWatch);
+
+        $record->save();
+
+        if ($isDirty) {
             CompanySettingsService::invalidateSettings($record->company_id);
             $this->dispatch('localizationUpdated');
         }
-
-        $record->save();
 
         return $record;
     }

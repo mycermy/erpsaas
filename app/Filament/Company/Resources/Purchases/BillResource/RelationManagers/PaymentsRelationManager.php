@@ -216,6 +216,7 @@ class PaymentsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label('Record payment')
                     ->modalHeading(fn (Tables\Actions\CreateAction $action) => $action->getLabel())
+                    ->slideOver()
                     ->modalWidth(MaxWidth::TwoExtraLarge)
                     ->visible(function () {
                         return $this->getOwnerRecord()->canRecordPayment();
@@ -223,7 +224,7 @@ class PaymentsRelationManager extends RelationManager
                     ->mountUsing(function (Form $form) {
                         $record = $this->getOwnerRecord();
                         $form->fill([
-                            'posted_at' => now(),
+                            'posted_at' => company_today()->toDateString(),
                             'amount' => $record->amount_due,
                         ]);
                     })

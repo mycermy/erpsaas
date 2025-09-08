@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Setting\DateFormat;
+use App\Enums\Setting\TimeFormat;
 use App\Enums\Setting\WeekStart;
 use App\Models\Company;
 use App\Models\Setting\Currency;
@@ -14,6 +15,8 @@ class CompanySettingsService
 
     public static function getSettings(?int $companyId = null): array
     {
+        $companyId ??= session('current_company_id');
+
         if (! $companyId) {
             return self::getDefaultSettings();
         }
@@ -41,6 +44,7 @@ class CompanySettingsService
                 'default_timezone' => $company->locale->timezone ?? config('app.timezone'),
                 'default_currency' => $defaultCurrency,
                 'default_date_format' => $company->locale->date_format->value ?? DateFormat::DEFAULT,
+                'default_time_format' => $company->locale->time_format->value ?? TimeFormat::DEFAULT,
                 'default_week_start' => $company->locale->week_start->value ?? WeekStart::DEFAULT,
             ];
         });
@@ -66,6 +70,7 @@ class CompanySettingsService
             'default_timezone' => config('app.timezone'),
             'default_currency' => 'USD',
             'default_date_format' => DateFormat::DEFAULT,
+            'default_time_format' => TimeFormat::DEFAULT,
             'default_week_start' => WeekStart::DEFAULT,
         ];
     }
@@ -100,5 +105,15 @@ class CompanySettingsService
     public static function getDefaultWeekStart(?int $companyId = null): string
     {
         return self::getSpecificSetting($companyId, 'default_week_start', WeekStart::DEFAULT);
+    }
+
+    public static function getDefaultTimeFormat(?int $companyId = null): string
+    {
+        return self::getSpecificSetting($companyId, 'default_time_format', TimeFormat::DEFAULT);
+    }
+
+    public static function getDefaultDateTimeFormat(?int $companyId = null): string
+    {
+        return self::getDefaultDateFormat($companyId) . ' ' . self::getDefaultTimeFormat($companyId);
     }
 }

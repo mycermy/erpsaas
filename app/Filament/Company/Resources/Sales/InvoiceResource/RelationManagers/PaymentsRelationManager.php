@@ -115,11 +115,8 @@ class PaymentsRelationManager extends RelationManager
                                 };
                             })
                             ->rules([
-                                static fn (RelationManager $livewire): Closure => static function (string $attribute, $value, Closure $fail) use ($livewire) {
-                                    /** @var Invoice $invoice */
-                                    $invoice = $livewire->getOwnerRecord();
-
-                                    if (! CurrencyConverter::isValidAmount($value, $invoice->currency_code)) {
+                                static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
+                                    if (! CurrencyConverter::isValidAmount($value, 'USD')) {
                                         $fail('Please enter a valid amount');
                                     }
                                 },
@@ -232,6 +229,7 @@ class PaymentsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label(fn () => $this->getOwnerRecord()->status === InvoiceStatus::Overpaid ? 'Refund Overpayment' : 'Record Payment')
                     ->modalHeading(fn (Tables\Actions\CreateAction $action) => $action->getLabel())
+                    ->slideOver()
                     ->modalWidth(MaxWidth::TwoExtraLarge)
                     ->visible(function () {
                         return $this->getOwnerRecord()->canRecordPayment();
@@ -239,8 +237,8 @@ class PaymentsRelationManager extends RelationManager
                     ->mountUsing(function (Form $form) {
                         $record = $this->getOwnerRecord();
                         $form->fill([
-                            'posted_at' => now(),
-                            'amount' => $record->status === InvoiceStatus::Overpaid ? ltrim($record->amount_due, '-') : $record->amount_due,
+                            'posted_at' => company_today()->toDateString(),
+                            'amount' => abs($record->amount_due),
                         ]);
                     })
                     ->databaseTransaction()

@@ -28,7 +28,7 @@ class ExportService
             $dateLabel = $formattedAsOfDate;
         }
 
-        $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
+        $timestamp = company_now()->format('Y-m-d_H-i-s');
 
         $filename = $company->name . ' ' . $report->getTitle() . ' ' . $dateLabel . ' ' . $timestamp . '.csv';
 
@@ -269,7 +269,7 @@ class ExportService
             $dateLabel = $formattedAsOfDate;
         }
 
-        $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
+        $timestamp = company_now()->format('Y-m-d_H-i-s');
 
         $filename = $company->name . ' ' . $report->getTitle() . ' ' . $dateLabel . ' ' . $timestamp . '.pdf';
 

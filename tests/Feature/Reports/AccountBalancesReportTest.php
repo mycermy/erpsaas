@@ -54,8 +54,8 @@ it('correctly builds an account balances report for the current fiscal year', fu
     livewire(AccountBalances::class)
         ->assertFormSet([
             'deferredFilters.dateRange' => $defaultDateRange,
-            'deferredFilters.startDate' => $defaultStartDate->toDateTimeString(),
-            'deferredFilters.endDate' => $defaultEndDate->toDateTimeString(),
+            'deferredFilters.startDate' => $defaultStartDate->toDateString(),
+            'deferredFilters.endDate' => $defaultEndDate->toDateString(),
         ])
         ->assertSet('filters', [
             'dateRange' => $defaultDateRange,
@@ -120,8 +120,8 @@ it('correctly builds an account balances report for the previous fiscal year', f
     livewire(AccountBalances::class)
         ->assertFormSet([
             'deferredFilters.dateRange' => $defaultDateRange,
-            'deferredFilters.startDate' => $defaultStartDate->toDateTimeString(),
-            'deferredFilters.endDate' => $defaultEndDate->toDateTimeString(),
+            'deferredFilters.startDate' => $defaultStartDate->toDateString(),
+            'deferredFilters.endDate' => $defaultEndDate->toDateString(),
         ])
         ->assertSet('filters', [
             'dateRange' => $defaultDateRange,
@@ -129,8 +129,8 @@ it('correctly builds an account balances report for the previous fiscal year', f
             'endDate' => $defaultEndDate->toDateString(),
         ])
         ->set('deferredFilters', [
-            'startDate' => $defaultStartDate->subYear()->startOfYear()->toDateTimeString(),
-            'endDate' => $defaultEndDate->subYear()->endOfYear()->toDateTimeString(),
+            'startDate' => $defaultStartDate->subYear()->startOfYear()->toDateString(),
+            'endDate' => $defaultEndDate->subYear()->endOfYear()->toDateString(),
         ])
         ->call('applyFilters')
         ->assertSeeTextInOrder([

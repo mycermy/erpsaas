@@ -20,6 +20,9 @@ class ListBills extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('payBills')
+                ->outlined()
+                ->url(PayBills::getUrl()),
             Actions\CreateAction::make(),
         ];
     }

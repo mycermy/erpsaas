@@ -63,7 +63,7 @@ class Localization extends Model
     public static function getWeekStart(string $locale): int
     {
         /** @var Carbon $date */
-        $date = now()->locale($locale);
+        $date = company_now()->locale($locale);
 
         $firstDay = $date->startOfWeek()->dayOfWeekIso;
 
@@ -91,7 +91,7 @@ class Localization extends Model
     public function fiscalYearEndDate(): string
     {
         return once(function () {
-            $today = now();
+            $today = company_now();
             $fiscalYearEndThisYear = Carbon::createFromDate($today->year, $this->fiscal_year_end_month, $this->fiscal_year_end_day);
 
             if ($today->gt($fiscalYearEndThisYear)) {
@@ -104,7 +104,7 @@ class Localization extends Model
 
     public function getDateTimeFormatAttribute(): string
     {
-        return $this->date_format . ' ' . $this->time_format;
+        return $this->date_format->value . ' ' . $this->time_format->value;
     }
 
     public static function getAllLanguages(): array

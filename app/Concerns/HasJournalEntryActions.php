@@ -4,6 +4,7 @@ namespace App\Concerns;
 
 use App\Enums\Accounting\JournalEntryType;
 use App\Utilities\Currency\CurrencyAccessor;
+use App\Utilities\Currency\CurrencyConverter;
 use Filament\Tables\Actions\Action;
 
 trait HasJournalEntryActions
@@ -14,7 +15,7 @@ trait HasJournalEntryActions
 
     private function formatMoney(int $amount): string
     {
-        return money($amount, CurrencyAccessor::getDefaultCurrency())->format();
+        return CurrencyConverter::formatCentsToMoney($amount, CurrencyAccessor::getDefaultCurrency());
     }
 
     /**
@@ -184,7 +185,7 @@ trait HasJournalEntryActions
             return '0';
         }
 
-        $currency = currency(CurrencyAccessor::getDefaultCurrency());
+        $currency = currency('USD');
         $decimal = $currency->getDecimalMark();
 
         if (substr($amount, -1) === $decimal) {
@@ -201,6 +202,6 @@ trait HasJournalEntryActions
      */
     protected function convertAmountToCents(string $amount): int
     {
-        return money($amount, CurrencyAccessor::getDefaultCurrency(), true)->getAmount();
+        return CurrencyConverter::convertToCents($amount, 'USD');
     }
 }

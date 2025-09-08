@@ -36,6 +36,6 @@ enum DateFormat: string implements HasLabel
 
     public function getLabel(): ?string
     {
-        return now()->translatedFormat($this->value);
+        return company_today()->translatedFormat($this->value);
     }
 }

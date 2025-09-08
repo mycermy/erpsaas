@@ -27,8 +27,6 @@ class ConfigureCompanyDefault
 
         app()->setLocale($settings['default_language']);
         locale_set_default($settings['default_language']);
-        config(['app.timezone' => $settings['default_timezone']]);
-        date_default_timezone_set($settings['default_timezone']);
 
         Filament::getPanel('company')
             ->brandName($company->name);

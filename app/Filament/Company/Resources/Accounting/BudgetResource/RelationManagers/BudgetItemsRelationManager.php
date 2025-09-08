@@ -2,7 +2,7 @@
 
 namespace App\Filament\Company\Resources\Accounting\BudgetResource\RelationManagers;
 
-use App\Filament\Tables\Columns\DeferredTextInputColumn;
+use App\Filament\Tables\Columns\CustomTextInputColumn;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetAllocation;
 use App\Models\Accounting\BudgetItem;
@@ -144,7 +144,7 @@ class BudgetItemsRelationManager extends RelationManager
                     ->titlePrefixedWithLabel(false)
                     ->collapsible(),
             ])
-            ->recordClasses(['budget-items-relation-manager'])
+            ->recordClasses(['is-spreadsheet'])
             ->defaultGroup('account.category')
             ->headerActions([
                 Action::make('saveBatchChanges')
@@ -157,7 +157,7 @@ class BudgetItemsRelationManager extends RelationManager
                     ->label('Account')
                     ->limit(30)
                     ->searchable(),
-                DeferredTextInputColumn::make(self::TOTAL_COLUMN)
+                CustomTextInputColumn::make(self::TOTAL_COLUMN)
                     ->label('Total')
                     ->alignRight()
                     ->mask(RawJs::make('$money($input)'))
@@ -173,7 +173,8 @@ class BudgetItemsRelationManager extends RelationManager
 
                         return CurrencyConverter::convertCentsToFormatSimple($total);
                     })
-                    ->batchMode()
+                    ->deferred()
+                    ->navigable()
                     ->summarize(
                         Summarizer::make()
                             ->using(function (\Illuminate\Database\Query\Builder $query) {
@@ -258,10 +259,11 @@ class BudgetItemsRelationManager extends RelationManager
                 ...$allocationPeriods->map(function (BudgetAllocation $period) {
                     $alias = $period->start_date->format('Y_m_d');
 
-                    return DeferredTextInputColumn::make($alias)
+                    return CustomTextInputColumn::make($alias)
                         ->label($period->period)
                         ->alignRight()
-                        ->batchMode()
+                        ->deferred()
+                        ->navigable()
                         ->mask(RawJs::make('$money($input)'))
                         ->getStateUsing(function ($record) use ($alias) {
                             $key = "{$record->getKey()}.{$alias}";

@@ -46,4 +46,22 @@ enum InvoiceStatus: string implements HasColor, HasLabel
             self::Unsent,
         ];
     }
+
+    public static function unpaidStatuses(): array
+    {
+        return [
+            self::Unsent,
+            self::Sent,
+            self::Viewed,
+            self::Partial,
+            self::Overdue,
+        ];
+    }
+
+    public static function getUnpaidOptions(): array
+    {
+        return collect(self::unpaidStatuses())
+            ->mapWithKeys(fn (self $case) => [$case->value => $case->getLabel()])
+            ->toArray();
+    }
 }

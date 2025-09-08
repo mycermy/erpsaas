@@ -60,7 +60,7 @@ it('correctly builds a standard trial balance report', function () {
         ->assertFormSet([
             'deferredFilters.reportType' => $defaultReportType,
             'deferredFilters.dateRange' => $defaultDateRange,
-            'deferredFilters.asOfDate' => $defaultEndDate->toDateTimeString(),
+            'deferredFilters.asOfDate' => $defaultEndDate->toDateString(),
         ])
         ->assertSet('filters', [
             'reportType' => $defaultReportType,
@@ -125,7 +125,7 @@ it('correctly builds a post-closing trial balance report', function () {
 
     $formattedExpectedBalances = Reporting::formatBalances($calculatedTrialBalances);
 
-    $formattedRetainedEarningsBalances = Reporting::getRetainedEarningsBalances($earliestTransactionDate->toDateTimeString(), $defaultEndDate->toDateTimeString());
+    $formattedRetainedEarningsBalances = Reporting::getRetainedEarningsBalances($earliestTransactionDate->toDateString(), $defaultEndDate->toDateString());
 
     // Use Livewire to assert the report's filters and displayed data
     livewire(TrialBalance::class)
@@ -133,7 +133,7 @@ it('correctly builds a post-closing trial balance report', function () {
         ->assertFormSet([
             'deferredFilters.reportType' => $defaultReportType,
             'deferredFilters.dateRange' => $defaultDateRange,
-            'deferredFilters.asOfDate' => $defaultEndDate->toDateTimeString(),
+            'deferredFilters.asOfDate' => $defaultEndDate->toDateString(),
         ])
         ->call('applyFilters')
         ->assertSet('filters', [

@@ -100,7 +100,8 @@ class DocumentDefaultResource extends Resource
                             ->loadingIndicatorPosition('left')
                             ->removeUploadedFileButtonPosition('right'),
                         Forms\Components\Checkbox::make('show_logo')
-                            ->localizeLabel(),
+                            ->localizeLabel()
+                            ->hidden(is_demo_environment()),
                         Forms\Components\ColorPicker::make('accent_color')
                             ->localizeLabel(),
                         Forms\Components\Select::make('font')

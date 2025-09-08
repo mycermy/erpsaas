@@ -9,6 +9,7 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\Transaction;
 use App\Models\Banking\BankAccount;
 use App\Utilities\Currency\CurrencyAccessor;
+use App\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Header;
 use Closure;
 use Filament\Forms;
@@ -38,7 +39,7 @@ trait HasTransactionAction
     protected function getFormDefaultsForType(TransactionType $type): array
     {
         $commonDefaults = [
-            'posted_at' => today(),
+            'posted_at' => company_today()->toDateString(),
         ];
 
         return match ($type) {
@@ -202,12 +203,11 @@ trait HasTransactionAction
 
     protected function getTransactionDetailsGrid(): Forms\Components\Grid
     {
-        return Forms\Components\Grid::make(8)
+        return Forms\Components\Grid::make(6)
             ->schema([
                 Forms\Components\DatePicker::make('posted_at')
                     ->label('Date')
-                    ->softRequired()
-                    ->displayFormat('Y-m-d'),
+                    ->softRequired(),
                 Forms\Components\TextInput::make('description')
                     ->label('Description')
                     ->columnSpan(2),
@@ -251,20 +251,23 @@ trait HasTransactionAction
 
                         $hasDebit = false;
                         $hasCredit = false;
+                        $totalDebits = 0;
+                        $totalCredits = 0;
 
                         foreach ($value as $entry) {
-                            if (! isset($entry['type'])) {
+                            if (! isset($entry['type']) || ! isset($entry['amount'])) {
                                 continue;
                             }
 
-                            if (JournalEntryType::parse($entry['type'])->isDebit()) {
-                                $hasDebit = true;
-                            } elseif (JournalEntryType::parse($entry['type'])->isCredit()) {
-                                $hasCredit = true;
-                            }
+                            $entryType = JournalEntryType::parse($entry['type']);
+                            $amount = CurrencyConverter::convertToCents($entry['amount'], 'USD');
 
-                            if ($hasDebit && $hasCredit) {
-                                break;
+                            if ($entryType->isDebit()) {
+                                $hasDebit = true;
+                                $totalDebits += $amount;
+                            } elseif ($entryType->isCredit()) {
+                                $hasCredit = true;
+                                $totalCredits += $amount;
                             }
                         }
 
@@ -274,6 +277,12 @@ trait HasTransactionAction
 
                         if (! $hasCredit) {
                             $fail('At least one credit entry is required.');
+                        }
+
+                        if ($totalDebits !== $totalCredits) {
+                            $debitFormatted = CurrencyConverter::formatCentsToMoney($totalDebits, CurrencyAccessor::getDefaultCurrency());
+                            $creditFormatted = CurrencyConverter::formatCentsToMoney($totalCredits, CurrencyAccessor::getDefaultCurrency());
+                            $fail("Total debits ({$debitFormatted}) must equal total credits ({$creditFormatted}).");
                         }
                     };
                 },
@@ -326,7 +335,7 @@ trait HasTransactionAction
                 ->searchable(),
             Forms\Components\TextInput::make('amount')
                 ->label('Amount')
-                ->live()
+                ->live(onBlur: true)
                 ->money()
                 ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, ?string $state, ?string $old) {
                     $this->updateJournalEntryAmount(JournalEntryType::parse($get('type')), $state, $old);

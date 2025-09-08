@@ -7,8 +7,8 @@ use App\Enums\Accounting\InvoiceStatus;
 use App\Filament\Company\Resources\Sales\InvoiceResource;
 use App\Filament\Company\Resources\Sales\InvoiceResource\Widgets;
 use App\Filament\Company\Resources\Sales\RecurringInvoiceResource\Pages\ViewRecurringInvoice;
+use App\Filament\Infolists\Components\BannerEntry;
 use App\Models\Accounting\RecurringInvoice;
-use CodeWithDennis\SimpleAlert\Components\Infolists\SimpleAlert;
 use Filament\Actions;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Infolist;
@@ -37,7 +37,7 @@ class ListInvoices extends ListRecords
     {
         return $infolist
             ->schema([
-                SimpleAlert::make('recurringInvoiceFilter')
+                BannerEntry::make('recurringInvoiceFilter')
                     ->info()
                     ->title(function () {
                         if (empty($this->recurringInvoice)) {
@@ -79,6 +79,9 @@ class ListInvoices extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('recordPayments')
+                ->outlined()
+                ->url(RecordPayments::getUrl()),
             Actions\CreateAction::make(),
         ];
     }

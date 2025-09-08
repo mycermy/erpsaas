@@ -233,7 +233,7 @@ it('can add an income or expense transaction', function (TransactionType $transa
     livewire(ListTransactions::class)
         ->mountAction($actionName)
         ->assertActionDataSet([
-            'posted_at' => today(),
+            'posted_at' => company_today()->toDateString(),
             'type' => $transactionType,
             'bank_account_id' => $defaultBankAccount->id,
             'amount' => '0.00',
@@ -267,7 +267,7 @@ it('can add a transfer transaction', function () {
     livewire(ListTransactions::class)
         ->mountAction('createTransfer')
         ->assertActionDataSet([
-            'posted_at' => today(),
+            'posted_at' => company_today()->toDateString(),
             'type' => TransactionType::Transfer,
             'bank_account_id' => $sourceBankAccount->id,
             'amount' => '0.00',
@@ -300,7 +300,7 @@ it('can add a journal transaction', function () {
     livewire(ListTransactions::class)
         ->mountAction('createJournalEntry')
         ->assertActionDataSet([
-            'posted_at' => today(),
+            'posted_at' => company_today()->toDateString(),
             'journalEntries' => [
                 ['type' => JournalEntryType::Debit, 'account_id' => $defaultDebitAccount->id, 'amount' => '0.00'],
                 ['type' => JournalEntryType::Credit, 'account_id' => $defaultCreditAccount->id, 'amount' => '0.00'],

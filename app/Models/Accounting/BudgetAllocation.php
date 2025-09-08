@@ -38,6 +38,6 @@ class BudgetAllocation extends Model
 
     public function isCurrentPeriod(): bool
     {
-        return now()->between($this->start_date, $this->end_date);
+        return company_now()->between($this->start_date, $this->end_date);
     }
 }
