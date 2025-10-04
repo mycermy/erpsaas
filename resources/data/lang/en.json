@@ -202,5 +202,13 @@
     "Budget Items": "Budget Items",
     "Budget Allocations": "Budget Allocations",
     "Account Selection": "Account Selection",
-    "Custom": "Custom"
+    "Custom": "Custom",
+    "Adjustment Information": "Adjustment Information",
+    "Adjustment Items": "Adjustment Items",
+    "Basic Information": "Basic Information",
+    "Inventory Settings": "Inventory Settings",
+    "Account Mapping": "Account Mapping",
+    "Transfer Information": "Transfer Information",
+    "Transfer Items": "Transfer Items",
+    "Report Parameters": "Report Parameters"
 }

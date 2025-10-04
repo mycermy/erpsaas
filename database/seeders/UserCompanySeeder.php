@@ -37,30 +37,30 @@ class UserCompanySeeder extends Seeder
                 'current_company_id' => 1,  // Assuming this will be the ID of the created company
             ]);
 
-        $additionalCompanies = [
-            ['name' => 'British Crown Analytics', 'country' => 'GB', 'currency' => 'GBP', 'locale' => 'en'],
-            ['name' => 'Berlin Tech Solutions', 'country' => 'DE', 'currency' => 'EUR', 'locale' => 'en'],
-            ['name' => 'Mumbai Software Services', 'country' => 'IN', 'currency' => 'INR', 'locale' => 'en'],
-        ];
+        // $additionalCompanies = [
+        //     ['name' => 'British Crown Analytics', 'country' => 'GB', 'currency' => 'GBP', 'locale' => 'en'],
+        //     ['name' => 'Berlin Tech Solutions', 'country' => 'DE', 'currency' => 'EUR', 'locale' => 'en'],
+        //     ['name' => 'Mumbai Software Services', 'country' => 'IN', 'currency' => 'INR', 'locale' => 'en'],
+        // ];
 
-        foreach ($additionalCompanies as $companyData) {
-            Company::factory()
-                ->state([
-                    'name' => $companyData['name'],
-                    'user_id' => $user->id,
-                    'personal_company' => false,
-                ])
-                ->withCompanyProfile($companyData['country'])
-                ->withCompanyDefaults($companyData['currency'], $companyData['locale'])
-                ->withTransactions(50)
-                ->withOfferings()
-                ->withClients()
-                ->withVendors()
-                ->withInvoices()
-                ->withRecurringInvoices()
-                ->withEstimates()
-                ->withBills()
-                ->create();
-        }
+        // foreach ($additionalCompanies as $companyData) {
+        //     Company::factory()
+        //         ->state([
+        //             'name' => $companyData['name'],
+        //             'user_id' => $user->id,
+        //             'personal_company' => false,
+        //         ])
+        //         ->withCompanyProfile($companyData['country'])
+        //         ->withCompanyDefaults($companyData['currency'], $companyData['locale'])
+        //         ->withTransactions(50)
+        //         ->withOfferings()
+        //         ->withClients()
+        //         ->withVendors()
+        //         ->withInvoices()
+        //         ->withRecurringInvoices()
+        //         ->withEstimates()
+        //         ->withBills()
+        //         ->create();
+        // }
     }
 }

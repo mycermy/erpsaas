@@ -9,11 +9,13 @@ use App\Enums\Accounting\AdjustmentType;
 use App\Enums\Common\OfferingType;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Adjustment;
+use App\Models\Inventory\InventoryItem;
 use App\Observers\OfferingObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 #[ObservedBy(OfferingObserver::class)]
@@ -75,6 +77,11 @@ class Offering extends Model
         return $this->belongsTo(Account::class, 'expense_account_id');
     }
 
+    public function inventoryItem(): HasOne
+    {
+        return $this->hasOne(InventoryItem::class);
+    }
+
     public function adjustments(): MorphToMany
     {
         return $this->morphToMany(Adjustment::class, 'adjustmentable', 'adjustmentables');
@@ -115,5 +122,15 @@ class Offering extends Model
         return $this->adjustments->contains(function (Adjustment $adjustment) {
             return $adjustment->isInactive();
         });
+    }
+
+    public function hasInventoryTracking(): bool
+    {
+        return $this->inventoryItem()->exists();
+    }
+
+    public function isInventoryEnabled(): bool
+    {
+        return $this->inventoryItem && $this->inventoryItem->active;
     }
 }

@@ -20,6 +20,8 @@ use App\Actions\FilamentCompanies\UpdateUserProfileInformation;
 use App\Filament\Company\Clusters\Settings;
 use App\Filament\Company\Pages\Accounting\AccountChart;
 use App\Filament\Company\Pages\CreateCompany;
+use App\Filament\Company\Pages\Dashboard;
+use App\Filament\Company\Pages\Inventory\InventoryReports;
 use App\Filament\Company\Pages\ManageCompany;
 use App\Filament\Company\Pages\Reports;
 use App\Filament\Company\Pages\Service\ConnectedAccount;
@@ -28,6 +30,10 @@ use App\Filament\Company\Resources\Accounting\BudgetResource;
 use App\Filament\Company\Resources\Accounting\TransactionResource;
 use App\Filament\Company\Resources\Banking\AccountResource;
 use App\Filament\Company\Resources\Common\OfferingResource;
+use App\Filament\Company\Resources\Inventory\InventoryAdjustmentResource;
+use App\Filament\Company\Resources\Inventory\InventoryItemResource;
+use App\Filament\Company\Resources\Inventory\InventoryTransferResource;
+use App\Filament\Company\Resources\Inventory\WarehouseResource;
 use App\Filament\Company\Resources\Purchases\BillResource;
 use App\Filament\Company\Resources\Purchases\VendorResource;
 use App\Filament\Company\Resources\Sales\ClientResource;
@@ -129,6 +135,7 @@ class CompanyPanelProvider extends PanelProvider
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
                     ->items([
+                        ...Dashboard::getNavigationItems(),
                         ...Reports::getNavigationItems(),
                         ...Settings::getNavigationItems(),
                         ...OfferingResource::getNavigationItems(),
@@ -149,6 +156,16 @@ class CompanyPanelProvider extends PanelProvider
                             ->items([
                                 ...BillResource::getNavigationItems(),
                                 ...VendorResource::getNavigationItems(),
+                            ]),
+                        NavigationGroup::make('Inventory')
+                            ->label('Inventory')
+                            ->icon('heroicon-o-cube')
+                            ->items([
+                                ...InventoryItemResource::getNavigationItems(),
+                                ...WarehouseResource::getNavigationItems(),
+                                ...InventoryAdjustmentResource::getNavigationItems(),
+                                ...InventoryTransferResource::getNavigationItems(),
+                                ...InventoryReports::getNavigationItems(),
                             ]),
                         NavigationGroup::make('Accounting')
                             ->localizeLabel()
@@ -184,7 +201,7 @@ class CompanyPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Company/Pages'), for: 'App\\Filament\\Company\\Pages')
             ->discoverClusters(in: app_path('Filament/Company/Clusters'), for: 'App\\Filament\\Company\\Clusters')
             ->pages([
-                // Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->authGuard('web')
             ->discoverWidgets(in: app_path('Filament/Company/Widgets'), for: 'App\\Filament\\Company\\Widgets')
