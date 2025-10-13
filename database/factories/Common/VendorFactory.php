@@ -40,7 +40,7 @@ class VendorFactory extends Factory
             'ein' => function (array $attributes) {
                 return $attributes['contractor_type'] === ContractorType::Business ? $this->faker->numerify(str_repeat('#', 9)) : null;
             },
-            'currency_code' => fn (array $attributes) => Company::find($attributes['company_id'])->default->currency_code ?? 'USD',
+            'currency_code' => fn (array $attributes) => Company::find($attributes['company_id'])->default->currency_code ?? config('money.defaults.currency'),
             'account_number' => $this->faker->unique()->numerify(str_repeat('#', 12)),
             'website' => $this->faker->url,
             'notes' => $this->faker->sentence,

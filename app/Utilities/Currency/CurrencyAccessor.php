@@ -56,7 +56,7 @@ class CurrencyAccessor
         $companyId = auth()->user()?->current_company_id;
 
         if ($companyId === null) {
-            return 'USD';
+            return config('money.defaults.currency');
         }
 
         return CompanySettingsService::getDefaultCurrency($companyId);

@@ -31,7 +31,7 @@ class AccountFactory extends Factory
             'company_id' => 1,
             'subtype_id' => 1,
             'name' => $this->faker->unique()->word,
-            'currency_code' => CurrencyAccessor::getDefaultCurrency() ?? 'USD',
+            'currency_code' => CurrencyAccessor::getDefaultCurrency() ?? config('money.defaults.currency'),
             'description' => $this->faker->sentence,
             'archived' => false,
             'default' => false,

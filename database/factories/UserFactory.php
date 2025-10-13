@@ -62,8 +62,9 @@ class UserFactory extends Factory
 
         return $this->has(
             Company::factory()
-                ->withCompanyProfile()
-                ->withCompanyDefaults()
+                // Create personal company with Malaysia profile and the app default currency
+                ->withCompanyProfile('MY')
+                ->withCompanyDefaults(config('money.defaults.currency'))
                 ->state(fn (array $attributes, User $user) => [
                     'name' => $user->name . '\'s Company',
                     'user_id' => $user->id,

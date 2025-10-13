@@ -72,27 +72,27 @@ class DocumentTotalViewModel
     private function calculateLineSubtotalInCents(array $item, string $currencyCode): int
     {
         $quantity = max((float) ($item['quantity'] ?? 0), 0);
-        $unitPrice = CurrencyConverter::isValidAmount($item['unit_price'], 'USD')
-            ? CurrencyConverter::convertToFloat($item['unit_price'], 'USD')
+        $unitPrice = CurrencyConverter::isValidAmount($item['unit_price'], $currencyCode)
+            ? CurrencyConverter::convertToFloat($item['unit_price'], $currencyCode)
             : 0;
 
         $subtotal = $quantity * $unitPrice;
 
-        return CurrencyConverter::convertToCents($subtotal, 'USD');
+        return CurrencyConverter::convertToCents($subtotal, $currencyCode);
     }
 
     private function calculateAdjustmentsTotalInCents($lineItems, string $key, string $currencyCode): int
     {
-        return $lineItems->reduce(function ($carry, $item) use ($key) {
+        return $lineItems->reduce(function ($carry, $item) use ($key, $currencyCode) {
             $quantity = max((float) ($item['quantity'] ?? 0), 0);
-            $unitPrice = CurrencyConverter::isValidAmount($item['unit_price'], 'USD')
-                ? CurrencyConverter::convertToFloat($item['unit_price'], 'USD')
+            $unitPrice = CurrencyConverter::isValidAmount($item['unit_price'], $currencyCode)
+                ? CurrencyConverter::convertToFloat($item['unit_price'], $currencyCode)
                 : 0;
 
             $adjustmentIds = $item[$key] ?? [];
             $lineTotal = $quantity * $unitPrice;
 
-            $lineTotalInCents = CurrencyConverter::convertToCents($lineTotal, 'USD');
+            $lineTotalInCents = CurrencyConverter::convertToCents($lineTotal, $currencyCode);
 
             $adjustmentTotal = Adjustment::whereIn('id', $adjustmentIds)
                 ->get()

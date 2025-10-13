@@ -22,7 +22,7 @@ class CurrencyFactory extends Factory
      */
     public function definition(): array
     {
-        $defaultCurrency = currency('USD');
+        $defaultCurrency = currency(config('money.defaults.currency'));
 
         return [
             'name' => $defaultCurrency->getName(),

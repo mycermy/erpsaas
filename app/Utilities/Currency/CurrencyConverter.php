@@ -83,7 +83,7 @@ class CurrencyConverter
 
     public static function convertCentsToFloat(int $amount, ?string $currency = null): float
     {
-        $currency ??= 'USD';
+        $currency ??= CurrencyAccessor::getDefaultCurrency();
 
         return money($amount, $currency)->getValue();
     }

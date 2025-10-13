@@ -13,7 +13,7 @@ class CurrencyCode extends Base
         try {
             return Country::where('id', $countryCode)->pluck('currency_code')->first();
         } catch (OutOfBoundsException $e) {
-            return 'USD';
+            return config('money.defaults.currency');
         }
     }
 }

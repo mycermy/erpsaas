@@ -18,7 +18,7 @@ function createCompany(string $name): Company
             'profile.entity_type' => EntityType::LimitedLiabilityCompany,
             'profile.country' => 'US',
             'locale.language' => 'en',
-            'currencies.code' => 'USD',
+            'currencies.code' => config('money.defaults.currency'),
         ])
         ->call('register')
         ->assertHasNoErrors();
