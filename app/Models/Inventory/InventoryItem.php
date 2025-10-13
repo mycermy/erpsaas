@@ -92,4 +92,12 @@ class InventoryItem extends Model
     {
         return $this->total_available <= $this->reorder_level;
     }
+
+    /**
+     * Return whether inventory tracking is enabled for this item.
+     */
+    public function isInventoryEnabled(): bool
+    {
+        return $this->active && (! $this->offering || $this->offering->sellable || $this->offering->purchasable || true);
+    }
 }

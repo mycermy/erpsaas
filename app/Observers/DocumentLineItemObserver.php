@@ -43,7 +43,7 @@ class DocumentLineItemObserver
         }
 
         $document = $lineItem->document;
-        
+
         try {
             if ($document->type === DocumentType::Invoice) {
                 $this->handleInvoiceLineItem($lineItem);
@@ -57,7 +57,7 @@ class DocumentLineItemObserver
                 'line_item_id' => $lineItem->id,
                 'error' => $e->getMessage(),
             ]);
-            
+
             // Don't throw to prevent blocking the document workflow
             // Log for manual review instead
         }
@@ -71,7 +71,12 @@ class DocumentLineItemObserver
         }
 
         $document = $lineItem->document;
-        
+
+        // Defensive: ensure document and status exist
+        if (! $document || ! isset($document->status) || ! $document->status) {
+            return false;
+        }
+
         // Only process when document is approved or paid
         return in_array($document->status->value, ['approved', 'paid', 'partial']);
     }
@@ -80,18 +85,18 @@ class DocumentLineItemObserver
     {
         $document = $lineItem->document;
         $inventoryItem = $lineItem->offering->inventoryItem;
-        
+
         // Check if already processed
         $existingMovement = $inventoryItem->movements()
             ->where('reference_type', get_class($document))
             ->where('reference_id', $document->id)
             ->where('movement_type', MovementType::Sale)
             ->exists();
-            
+
         if ($existingMovement) {
             return; // Already processed
         }
-        
+
         // Determine warehouse (use default or first available)
         $stockLevel = $inventoryItem->stockLevels()->first();
         if (! $stockLevel) {
@@ -99,6 +104,7 @@ class DocumentLineItemObserver
                 'invoice_id' => $document->id,
                 'offering_id' => $lineItem->offering_id,
             ]);
+
             return;
         }
 
@@ -142,32 +148,33 @@ class DocumentLineItemObserver
     {
         $document = $lineItem->document;
         $inventoryItem = $lineItem->offering->inventoryItem;
-        
+
         // Check if already processed
         $existingMovement = $inventoryItem->movements()
             ->where('reference_type', get_class($document))
             ->where('reference_id', $document->id)
             ->where('movement_type', MovementType::Purchase)
             ->exists();
-            
+
         if ($existingMovement) {
             return; // Already processed
         }
-        
+
         // Determine warehouse (use default or first available, or create initial stock level)
         $warehouse = $inventoryItem->warehouses()->first();
-        
+
         if (! $warehouse) {
             // Get any warehouse or the default one
             $warehouse = \App\Models\Inventory\Warehouse::where('company_id', $document->company_id)
                 ->where('active', true)
                 ->first();
-                
+
             if (! $warehouse) {
                 Log::warning('No warehouse found for bill line item', [
                     'bill_id' => $document->id,
                     'offering_id' => $lineItem->offering_id,
                 ]);
+
                 return;
             }
         }

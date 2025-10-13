@@ -45,6 +45,25 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('company_user', function (Blueprint $table) {
+            // Defensive: attempt to drop foreign keys if present. Wrap in try/catch
+            // because some connections may not expose Doctrine or the constraint
+            // may already be absent.
+            if (Schema::hasColumn('company_user', 'contact_id')) {
+                try {
+                    $table->dropForeign(['contact_id']);
+                } catch (\Exception $e) {
+                    // ignore - foreign key may not exist
+                }
+            }
+
+            if (Schema::hasColumn('company_user', 'department_id')) {
+                try {
+                    $table->dropForeign(['department_id']);
+                } catch (\Exception $e) {
+                    // ignore - foreign key may not exist
+                }
+            }
+
             $table->dropColumn([
                 'contact_id',
                 'employment_type',

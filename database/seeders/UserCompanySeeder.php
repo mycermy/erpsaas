@@ -14,28 +14,34 @@ class UserCompanySeeder extends Seeder
      */
     public function run(): void
     {
-        // Create a single admin user and their personal company
-        $user = User::factory()
-            ->withPersonalCompany(function (CompanyFactory $factory) {
-                return $factory
-                    ->state([
-                        'name' => 'ERPSAAS',
-                    ])
-                    ->withTransactions(250)
-                    ->withOfferings()
-                    ->withClients()
-                    ->withVendors()
-                    ->withInvoices(30)
-                    ->withRecurringInvoices()
-                    ->withEstimates(30)
-                    ->withBills(30);
-            })
-            ->create([
-                'name' => 'Admin',
-                'email' => 'admin@erpsaas.com',
-                'password' => bcrypt('password'),
-                'current_company_id' => 1,  // Assuming this will be the ID of the created company
-            ]);
+        // Create a single admin user and their personal company if not already present
+        $email = 'admin@erpsaas.com';
+
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            $user = User::factory()
+                ->withPersonalCompany(function (CompanyFactory $factory) {
+                    return $factory
+                        ->state([
+                            'name' => 'ERPSAAS',
+                        ])
+                        ->withTransactions(250)
+                        ->withOfferings()
+                        ->withClients()
+                        ->withVendors()
+                        ->withInvoices(30)
+                        ->withRecurringInvoices()
+                        ->withEstimates(30)
+                        ->withBills(30);
+                })
+                ->create([
+                    'name' => 'Admin',
+                    'email' => $email,
+                    'password' => bcrypt('password'),
+                    'current_company_id' => 1,  // Assuming this will be the ID of the created company
+                ]);
+        }
 
         // $additionalCompanies = [
         //     ['name' => 'British Crown Analytics', 'country' => 'GB', 'currency' => 'GBP', 'locale' => 'en'],
