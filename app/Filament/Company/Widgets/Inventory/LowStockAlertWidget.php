@@ -20,13 +20,15 @@ class LowStockAlertWidget extends BaseWidget
     {
         return $table
             ->query(
+                // Join inventory_stock_levels so we can safely compare quantity_available to the item's reorder_level
                 InventoryItem::query()
-                    ->where('active', true)
-                    ->whereHas('stockLevels', function (Builder $query) {
-                        $query->whereColumn('quantity_available', '<=', 'inventory_items.reorder_level')
-                            ->where('quantity_available', '>', 0);
-                    })
+                    ->where('inventory_items.active', true)
+                    ->join('inventory_stock_levels', 'inventory_items.id', '=', 'inventory_stock_levels.inventory_item_id')
+                    ->whereColumn('inventory_stock_levels.quantity_available', '<=', 'inventory_items.reorder_level')
+                    ->where('inventory_stock_levels.quantity_available', '>', 0)
                     ->with(['offering', 'stockLevels.warehouse'])
+                    ->select('inventory_items.*')
+                    ->distinct()
             )
             ->columns([
                 Tables\Columns\TextColumn::make('offering.name')
@@ -55,8 +57,8 @@ class LowStockAlertWidget extends BaseWidget
                     ->label('Affected Warehouses')
                     ->getStateUsing(function (InventoryItem $record) {
                         return $record->stockLevels()
-                            ->whereColumn('quantity_available', '<=', 'inventory_items.reorder_level')
                             ->with('warehouse')
+                            ->where('quantity_available', '<=', $record->reorder_level)
                             ->get()
                             ->pluck('warehouse.name')
                             ->join(', ');

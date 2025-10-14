@@ -162,15 +162,19 @@ class InventoryItemResource extends Resource
                 Tables\Filters\TernaryFilter::make('active')
                     ->default(true),
 
-                Tables\Filters\TernaryFilter::make('low_stock')
+                Tables\filters\TernaryFilter::make('low_stock')
                     ->label('Low Stock')
                     ->queries(
-                        true: fn (Builder $query) => $query->whereHas('stockLevels', function (Builder $query) {
-                            $query->whereColumn('quantity_available', '<=', 'inventory_items.reorder_level');
-                        }),
-                        false: fn (Builder $query) => $query->whereHas('stockLevels', function (Builder $query) {
-                            $query->whereColumn('quantity_available', '>', 'inventory_items.reorder_level');
-                        }),
+                        true: fn (Builder $query) => $query->where('inventory_items.company_id', filament()->getTenant()->id)
+                            ->join('inventory_stock_levels', 'inventory_items.id', '=', 'inventory_stock_levels.inventory_item_id')
+                            ->whereColumn('inventory_stock_levels.quantity_available', '<=', 'inventory_items.reorder_level')
+                            ->select('inventory_items.*')
+                            ->distinct(),
+                        false: fn (Builder $query) => $query->where('inventory_items.company_id', filament()->getTenant()->id)
+                            ->join('inventory_stock_levels', 'inventory_items.id', '=', 'inventory_stock_levels.inventory_item_id')
+                            ->whereColumn('inventory_stock_levels.quantity_available', '>', 'inventory_items.reorder_level')
+                            ->select('inventory_items.*')
+                            ->distinct(),
                     ),
             ])
             ->actions([

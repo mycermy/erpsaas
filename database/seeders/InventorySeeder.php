@@ -6,6 +6,8 @@ use App\Enums\Inventory\TrackMethod;
 use App\Models\Common\Offering;
 use App\Models\Company;
 use App\Models\Inventory\InventoryItem;
+use App\Models\Inventory\InventoryMovement;
+use App\Models\Inventory\InventoryStockLevel;
 use App\Models\Inventory\Warehouse;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Database\Seeder;
@@ -142,8 +144,12 @@ class InventorySeeder extends Seeder
 
             $this->command->info("  Created/Found inventory item: {$inventoryItem->offering->name}");
 
-            // Create initial stock in each warehouse only when item was just created
-            if ($wasRecentlyCreated) {
+            // Determine if we need to create initial stock
+            $hasStockLevel = InventoryStockLevel::where('inventory_item_id', $inventoryItem->id)->exists();
+            $hasMovements = InventoryMovement::where('inventory_item_id', $inventoryItem->id)->exists();
+
+            // Create initial stock in each warehouse when item was just created OR when no stock/movements exist
+            if ($wasRecentlyCreated || (! $hasStockLevel && ! $hasMovements)) {
                 foreach ($createdWarehouses as $warehouse) {
                     $quantity = random_int(10, 100);
                     $unitCost = random_int(30000, 150000); // $300 to $1500
@@ -158,16 +164,22 @@ class InventorySeeder extends Seeder
                         batchNumber: "INIT-{$warehouse->code}-" . now()->format('ymd'),
                     );
 
-                    // Record initial movement
-                    $inventoryService->recordMovement(
-                        item: $inventoryItem,
-                        warehouse: $warehouse,
-                        quantity: $quantity,
-                        movementType: \App\Enums\Inventory\MovementType::Initial,
-                        unitCost: $unitCost,
-                        movementDate: now()->subDays(random_int(1, 30)),
-                        notes: "Initial stock for {$warehouse->name}"
-                    );
+                    // Record initial movement (only if none exists for this item in this warehouse)
+                    $existingMovement = InventoryMovement::where('inventory_item_id', $inventoryItem->id)
+                        ->where('warehouse_id', $warehouse->id)
+                        ->exists();
+
+                    if (! $existingMovement) {
+                        $inventoryService->recordMovement(
+                            item: $inventoryItem,
+                            warehouse: $warehouse,
+                            quantity: $quantity,
+                            movementType: \App\Enums\Inventory\MovementType::Initial,
+                            unitCost: $unitCost,
+                            movementDate: now()->subDays(random_int(1, 30)),
+                            notes: "Initial stock for {$warehouse->name}"
+                        );
+                    }
 
                     $this->command->info("    Added {$quantity} units to {$warehouse->name}");
                 }

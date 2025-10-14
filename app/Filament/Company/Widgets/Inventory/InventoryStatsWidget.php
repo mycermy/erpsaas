@@ -33,18 +33,18 @@ class InventoryStatsWidget extends BaseWidget
             ->where('active', true)
             ->count();
 
-        // Low stock items count
-        $lowStockCount = InventoryItem::where('company_id', $companyId)
-            ->where('active', true)
-            ->whereHas('stockLevels', function ($query) {
-                $query->whereColumn('quantity_available', '<=', 'inventory_items.reorder_level')
-                    ->where('quantity_available', '>', 0);
-            })
-            ->count();
+        // Low stock items count (join stock levels so we can compare against reorder_level)
+        $lowStockCount = InventoryItem::where('inventory_items.company_id', $companyId)
+            ->where('inventory_items.active', true)
+            ->join('inventory_stock_levels', 'inventory_items.id', '=', 'inventory_stock_levels.inventory_item_id')
+            ->whereColumn('inventory_stock_levels.quantity_available', '<=', 'inventory_items.reorder_level')
+            ->where('inventory_stock_levels.quantity_available', '>', 0)
+            ->distinct()
+            ->count('inventory_items.id');
 
         // Out of stock items count
         $outOfStockCount = InventoryItem::where('company_id', $companyId)
-            ->where('active', true)
+            ->where('inventory_items.active', true)
             ->whereHas('stockLevels', function ($query) {
                 $query->where('quantity_available', '<=', 0);
             })

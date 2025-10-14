@@ -184,13 +184,15 @@ class InventoryReports extends Page implements HasForms
 
     public function getLowStockItems(): array
     {
+        // Join stock levels so we can safely compare quantity_available against the item's reorder_level
         $query = InventoryItem::with(['offering', 'stockLevels.warehouse'])
-            ->where('company_id', filament()->getTenant()->id)
-            ->where('active', true)
-            ->whereHas('stockLevels', function ($q) {
-                $q->whereColumn('quantity_available', '<=', 'inventory_items.reorder_level')
-                    ->where('quantity_available', '>', 0);
-            });
+            ->where('inventory_items.company_id', filament()->getTenant()->id)
+            ->where('inventory_items.active', true)
+            ->join('inventory_stock_levels', 'inventory_items.id', '=', 'inventory_stock_levels.inventory_item_id')
+            ->whereColumn('inventory_stock_levels.quantity_available', '<=', 'inventory_items.reorder_level')
+            ->where('inventory_stock_levels.quantity_available', '>', 0)
+            ->select('inventory_items.*')
+            ->distinct();
 
         $items = $query->get();
 

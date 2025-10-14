@@ -228,15 +228,15 @@ class InventoryAdjustmentResource extends Resource
                             }
 
                             $inventoryService->recordMovement(
-                                inventoryItemId: $item->inventory_item_id,
-                                warehouseId: $record->warehouse_id,
-                                movementType: MovementType::Adjustment,
+                                item: $item->inventoryItem,
+                                warehouse: $record->warehouse,
                                 quantity: $item->quantity_adjusted,
+                                movementType: MovementType::Adjustment,
                                 unitCost: $item->unit_cost,
-                                movementDate: $record->adjustment_date,
                                 referenceType: InventoryAdjustment::class,
                                 referenceId: $record->id,
-                                notes: $item->reason
+                                notes: $item->reason,
+                                movementDate: $record->adjustment_date
                             );
                         }
 
