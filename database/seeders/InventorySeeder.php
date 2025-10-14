@@ -18,6 +18,7 @@ class InventorySeeder extends Seeder
 
         if (! $company) {
             $this->command->error('No company found. Please create a company first.');
+
             return;
         }
 
@@ -120,48 +121,58 @@ class InventorySeeder extends Seeder
                 ]
             );
 
-            // Create inventory item
-            $inventoryItem = InventoryItem::create([
-                'company_id' => $company->id,
-                'offering_id' => $offering->id,
-                'sku' => $productData['sku'],
-                'track_method' => $productData['track_method'],
-                'reorder_level' => random_int(5, 20),
-                'reorder_quantity' => random_int(20, 50),
-                'track_batches' => true,
-                'active' => true,
-                'created_by' => 1,
-            ]);
+            // Create or find inventory item
+            $inventoryItem = InventoryItem::firstOrCreate(
+                [
+                    'company_id' => $company->id,
+                    'offering_id' => $offering->id,
+                ],
+                [
+                    'sku' => $productData['sku'],
+                    'track_method' => $productData['track_method'],
+                    'reorder_level' => random_int(5, 20),
+                    'reorder_quantity' => random_int(20, 50),
+                    'track_batches' => true,
+                    'active' => true,
+                    'created_by' => 1,
+                ]
+            );
 
-            $this->command->info("  Created inventory item: {$inventoryItem->offering->name}");
+            $wasRecentlyCreated = $inventoryItem->wasRecentlyCreated;
 
-            // Create initial stock in each warehouse
-            foreach ($createdWarehouses as $warehouse) {
-                $quantity = random_int(10, 100);
-                $unitCost = random_int(30000, 150000); // $300 to $1500
+            $this->command->info("  Created/Found inventory item: {$inventoryItem->offering->name}");
 
-                // Create batch
-                $batch = $inventoryService->createBatch(
-                    item: $inventoryItem,
-                    warehouse: $warehouse,
-                    quantity: $quantity,
-                    unitCost: $unitCost,
-                    receivedDate: now()->subDays(random_int(1, 30)),
-                    batchNumber: "INIT-{$warehouse->code}-" . now()->format('ymd'),
-                );
+            // Create initial stock in each warehouse only when item was just created
+            if ($wasRecentlyCreated) {
+                foreach ($createdWarehouses as $warehouse) {
+                    $quantity = random_int(10, 100);
+                    $unitCost = random_int(30000, 150000); // $300 to $1500
 
-                // Record initial movement
-                $inventoryService->recordMovement(
-                    item: $inventoryItem,
-                    warehouse: $warehouse,
-                    quantity: $quantity,
-                    movementType: \App\Enums\Inventory\MovementType::Initial,
-                    unitCost: $unitCost,
-                    movementDate: now()->subDays(random_int(1, 30)),
-                    notes: "Initial stock for {$warehouse->name}"
-                );
+                    // Create batch
+                    $batch = $inventoryService->createBatch(
+                        item: $inventoryItem,
+                        warehouse: $warehouse,
+                        quantity: $quantity,
+                        unitCost: $unitCost,
+                        receivedDate: now()->subDays(random_int(1, 30)),
+                        batchNumber: "INIT-{$warehouse->code}-" . now()->format('ymd'),
+                    );
 
-                $this->command->info("    Added {$quantity} units to {$warehouse->name}");
+                    // Record initial movement
+                    $inventoryService->recordMovement(
+                        item: $inventoryItem,
+                        warehouse: $warehouse,
+                        quantity: $quantity,
+                        movementType: \App\Enums\Inventory\MovementType::Initial,
+                        unitCost: $unitCost,
+                        movementDate: now()->subDays(random_int(1, 30)),
+                        notes: "Initial stock for {$warehouse->name}"
+                    );
+
+                    $this->command->info("    Added {$quantity} units to {$warehouse->name}");
+                }
+            } else {
+                $this->command->info('    Inventory item already exists, skipping initial stock creation.');
             }
         }
 
