@@ -51,6 +51,11 @@ class InventoryItem extends Model
         return $this->belongsTo(Account::class, 'asset_account_id');
     }
 
+    public function cogsAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'cogs_account_id');
+    }
+
     public function batches(): HasMany
     {
         return $this->hasMany(InventoryBatch::class);

@@ -108,7 +108,7 @@ class OfferingResource extends Resource
 
     public static function getStockableSection(): Forms\Components\Section
     {
-        return Forms\Components\Section::make('Inventory Information')
+        return Forms\Components\Section::make('Stock Information')
             ->description('Configure inventory tracking settings for this product')
             ->schema([
                 // Forms\Components\Group::make()

@@ -82,19 +82,19 @@ class InventoryItemResource extends Resource
 
                 Forms\Components\Section::make('Account Mapping')
                     ->schema([
-                        Forms\Components\Select::make('inventory_account_id')
+                        Forms\Components\Select::make('asset_account_id')
                             ->label('Inventory Asset Account')
-                            ->relationship('inventoryAccount', 'name', fn (Builder $query) => $query->where('category', 'asset'))
+                            ->relationship('assetAccount', 'name', fn (Builder $query) => $query->where('category', 'asset'))
                             ->searchable()
                             ->preload()
                             ->helperText('Balance sheet account to track inventory value'),
 
-                        Forms\Components\Select::make('cogs_account_id')
-                            ->label('COGS Expense Account')
-                            ->relationship('cogsAccount', 'name', fn (Builder $query) => $query->where('category', 'expense'))
-                            ->searchable()
-                            ->preload()
-                            ->helperText('Income statement account for cost of goods sold'),
+                        // Forms\Components\Select::make('cogs_account_id')
+                        //     ->label('COGS Expense Account')
+                        //     ->relationship('cogsAccount', 'name', fn (Builder $query) => $query->where('category', 'expense'))
+                        //     ->searchable()
+                        //     ->preload()
+                        //     ->helperText('Income statement account for cost of goods sold'),
                     ])
                     ->columns(2)
                     ->collapsible(),
@@ -164,7 +164,7 @@ class InventoryItemResource extends Resource
                 Tables\Filters\TernaryFilter::make('active')
                     ->default(true),
 
-                Tables\filters\TernaryFilter::make('low_stock')
+                Tables\Filters\TernaryFilter::make('low_stock')
                     ->label('Low Stock')
                     ->queries(
                         true: fn (Builder $query) => $query->where('inventory_items.company_id', filament()->getTenant()->id)
