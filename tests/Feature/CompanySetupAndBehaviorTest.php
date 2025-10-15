@@ -29,8 +29,13 @@ it('returns data for the current company based on the CurrentCompanyScope', func
     $testUser = $this->testUser;
     $testCompany = $this->testCompany;
 
+    $defaultBankAccount = $testCompany->default?->bankAccount ?? \App\Models\Banking\BankAccount::factory()->create([
+        'company_id' => $testCompany->id,
+        'enabled' => true,
+    ]);
+
     Transaction::factory()
-        ->forCompanyAndBankAccount($testCompany, $testCompany->default->bankAccount)
+        ->forCompanyAndBankAccount($testCompany, $defaultBankAccount)
         ->count(10)
         ->create();
 

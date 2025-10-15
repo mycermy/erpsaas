@@ -68,6 +68,23 @@ class TransactionFactory extends Factory
                 ],
             };
 
+            // Ensure bank account exists and has an associated account. If not, create them.
+            if (! $bankAccount || ! $bankAccount->exists) {
+                $bankAccount = BankAccount::factory()->create([
+                    'company_id' => $company->id,
+                    'enabled' => true,
+                ]);
+            }
+
+            if (! $bankAccount->account) {
+                $accountForBank = \App\Models\Accounting\Account::factory()->create([
+                    'company_id' => $company->id,
+                ]);
+
+                $bankAccount->account_id = $accountForBank->id;
+                $bankAccount->save();
+            }
+
             $accountIdForBankAccount = $bankAccount->account->id;
 
             $excludedSubtypes = AccountSubtype::where('company_id', $company->id)
