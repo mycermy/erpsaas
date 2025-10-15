@@ -83,9 +83,11 @@ class TransactionFactory extends Factory
 
                 $bankAccount->account_id = $accountForBank->id;
                 $bankAccount->save();
+                // Ensure the relationship is available on the model instance
+                $bankAccount->setRelation('account', $accountForBank);
             }
 
-            $accountIdForBankAccount = $bankAccount->account->id;
+            $accountIdForBankAccount = $bankAccount->account?->id ?? $bankAccount->account_id;
 
             $excludedSubtypes = AccountSubtype::where('company_id', $company->id)
                 ->whereIn('name', ['Sales Taxes', 'Purchase Taxes', 'Sales Discounts', 'Purchase Discounts'])
@@ -99,10 +101,17 @@ class TransactionFactory extends Factory
                 ->first();
 
             if (! $account) {
-                $account = Account::where('company_id', $company->id)
-                    ->whereKeyNot($accountIdForBankAccount)
-                    ->inRandomOrder()
-                    ->firstOrFail();
+                // Create a fallback account for the company if none match the criteria
+                $account = Account::factory()->create([
+                    'company_id' => $company->id,
+                ]);
+
+                // Ensure we don't accidentally use the bank account's account
+                if ($account->id === $accountIdForBankAccount) {
+                    $account = Account::factory()->create([
+                        'company_id' => $company->id,
+                    ]);
+                }
             }
 
             return [

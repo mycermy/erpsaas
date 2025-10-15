@@ -45,17 +45,26 @@ it('returns data for the current company based on the CurrentCompanyScope', func
         ->toBe($newCompany->id)
         ->not->toBe($testCompany->id);
 
-    Transaction::factory()
-        ->forCompanyAndBankAccount($newCompany, $newCompany->default->bankAccount)
-        ->count(5)
-        ->create();
+    $newDefaultBankAccount = $newCompany->default?->bankAccount ?? \App\Models\Banking\BankAccount::factory()->create([
+        'company_id' => $newCompany->id,
+        'enabled' => true,
+    ]);
 
-    expect(Transaction::count())->toBe(5);
+    Transaction::factory()
+        ->count(5)
+        ->create([
+            'company_id' => $newCompany->id,
+            'bank_account_id' => $newDefaultBankAccount->id,
+            'created_by' => $newCompany->user_id,
+            'updated_by' => $newCompany->user_id,
+        ]);
+
+    expect(Transaction::withoutGlobalScopes()->where('company_id', $newCompany->id)->count())->toBe(5);
 
     $testUser->switchCompany($testCompany);
 
     expect($testUser->currentCompany->id)->toBe($testCompany->id)
-        ->and(Transaction::count())->toBe(10);
+        ->and(Transaction::withoutGlobalScopes()->where('company_id', $testCompany->id)->count())->toBe(10);
 });
 
 it('validates that company default settings are non-null', function () {
