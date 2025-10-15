@@ -153,10 +153,10 @@ class Invoice extends Document
      */
     public function clearInventoryFlag(): void
     {
-        $this->update([
-            'inventory_flagged' => false,
-            'inventory_flagged_at' => null,
-        ]);
+        // Use direct assignment and save() instead of update() to avoid observer issues
+        $this->inventory_flagged = false;
+        $this->inventory_flagged_at = null;
+        $this->save();
     }
 
     public function approvalTransaction(): MorphOne

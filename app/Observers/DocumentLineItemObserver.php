@@ -257,19 +257,8 @@ class DocumentLineItemObserver
             return;
         }
 
-        // Create batch for this purchase
+        // Record inventory movement (inbound) - this will auto-create batch if item tracks batches
         $inventoryService = app(InventoryService::class);
-        $batch = $inventoryService->createBatch(
-            item: $inventoryItem,
-            warehouse: $warehouse,
-            quantity: $lineItem->quantity,
-            unitCost: $lineItem->unit_price, // Already in cents (int)
-            receivedDate: $document->date, // Use date, not issued_at
-            batchNumber: "BILL-{$document->bill_number}",
-            billId: $document->id
-        );
-
-        // Record inventory movement (inbound)
         $inventoryService->recordMovement(
             item: $inventoryItem,
             warehouse: $warehouse,
@@ -292,6 +281,86 @@ class DocumentLineItemObserver
         // Create accounting transaction if this is the first line item processed for this bill
         if (! $document->transactions()->exists()) {
             $document->createInitialTransaction();
+        }
+
+        // After receiving stock, check for flagged invoices that can now be fulfilled
+        $this->checkAndClearInvoiceFlags($inventoryItem, $warehouse, $document->company_id, $inventoryService);
+    }
+
+    /**
+     * Check flagged invoices and clear flags if sufficient stock now exists
+     */
+    protected function checkAndClearInvoiceFlags(
+        \App\Models\Inventory\InventoryItem $inventoryItem,
+        \App\Models\Inventory\Warehouse $warehouse,
+        int $companyId,
+        InventoryService $inventoryService
+    ): void {
+        // Find all flagged invoices in this company
+        $flaggedInvoices = \App\Models\Accounting\Invoice::where('inventory_flagged', true)
+            ->where('company_id', $companyId)
+            ->get();
+
+        Log::info('Checking flagged invoices for clearing', [
+            'item' => $inventoryItem->name,
+            'warehouse' => $warehouse->name,
+            'flagged_count' => $flaggedInvoices->count(),
+            'available_stock' => $inventoryService->getStockQuantity($inventoryItem, $warehouse),
+        ]);
+
+        foreach ($flaggedInvoices as $invoice) {
+            Log::info('Examining invoice', [
+                'invoice_number' => $invoice->invoice_number,
+                'line_items_count' => $invoice->lineItems->count(),
+            ]);
+
+            // Check each line item in the invoice
+            foreach ($invoice->lineItems as $invLine) {
+                if (! $invLine->offering || ! $invLine->offering->inventoryItem) {
+                    continue;
+                }
+
+                Log::info('Checking line item', [
+                    'offering' => $invLine->offering->name ?? 'N/A',
+                    'item_id' => $invLine->offering->inventoryItem->id ?? 'N/A',
+                    'looking_for' => $inventoryItem->id,
+                    'quantity' => $invLine->quantity,
+                ]);
+
+                // Only check items that match the one we just restocked
+                if ($invLine->offering->inventoryItem->id !== $inventoryItem->id) {
+                    Log::info('Skipping - different item');
+
+                    continue;
+                }
+
+                $availableStock = $inventoryService->getStockQuantity($inventoryItem, $warehouse);
+                $hasSufficient = $inventoryService->hasSufficientStock($inventoryItem, $warehouse, $invLine->quantity);
+
+                Log::info('Stock check', [
+                    'required' => $invLine->quantity,
+                    'available' => $availableStock,
+                    'has_sufficient' => $hasSufficient,
+                ]);
+
+                // Check if we now have sufficient stock for this invoice line
+                if ($hasSufficient) {
+                    // Clear the invoice flag
+                    $invoice->clearInventoryFlag();
+
+                    Log::info('Invoice flag cleared', [
+                        'invoice_number' => $invoice->invoice_number,
+                        'item' => $inventoryItem->name,
+                        'required_quantity' => $invLine->quantity,
+                        'available_quantity' => $availableStock,
+                    ]);
+
+                    // Only clear one invoice per bill line item (simple, low-risk approach)
+                    break 2;
+                } else {
+                    Log::info('Not clearing - insufficient stock');
+                }
+            }
         }
     }
 
