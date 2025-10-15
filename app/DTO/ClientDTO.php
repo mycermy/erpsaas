@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use App\Models\Common\Client;
+use App\Models\Common\Vendor;
 
 readonly class ClientDTO
 {
@@ -22,6 +23,21 @@ readonly class ClientDTO
 
         return new self(
             name: $client->name,
+            addressLine1: $address?->address_line_1 ?? '',
+            addressLine2: $address?->address_line_2 ?? '',
+            city: $address?->city ?? '',
+            state: $address?->state?->name ?? '',
+            postalCode: $address?->postal_code ?? '',
+            country: $address?->country?->name ?? '',
+        );
+    }
+
+    public static function fromVendor(Vendor $vendor): self
+    {
+        $address = $vendor->address ?? null;
+
+        return new self(
+            name: $vendor->name,
             addressLine1: $address?->address_line_1 ?? '',
             addressLine2: $address?->address_line_2 ?? '',
             city: $address?->city ?? '',

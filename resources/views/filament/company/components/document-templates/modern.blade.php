@@ -29,7 +29,7 @@
         <div class="flex justify-between items-end">
             <!-- Billing Details -->
             <div class="text-sm">
-                <h3 class="text-gray-600 font-medium mb-1">BILL TO</h3>
+                <h3 class="text-gray-600 font-medium mb-1">{{ $document->label->recipientLabel }}</h3>
                 <p class="text-sm font-bold"
                    style="color: {{ $document->accentColor }}">{{ $document->client?->name ?? 'Client Not Found' }}</p>
 

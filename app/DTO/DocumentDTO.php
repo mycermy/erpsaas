@@ -67,12 +67,34 @@ readonly class DocumentDTO
             self::formatToMoney($document->amountDue(), $currencyCode) :
             null;
 
+        // Use document fields if they exist (Invoice), otherwise use defaults (Bill)
+        $header = $document->header ?? $settings->header;
+        $subheader = $document->subheader ?? $settings->subheader;
+        $footer = $document->footer ?? $settings->footer;
+        $terms = $document->terms ?? $settings->terms;
+
+        // Get logo - try document logo_url first, then settings
+        $logo = null;
+        if (method_exists($document, 'getLogoUrlAttribute') || isset($document->logo_url)) {
+            $logo = $document->logo_url ?? $settings->logo_url;
+        } else {
+            $logo = $settings->logo_url;
+        }
+
+        // Get client - works for Invoice, vendor for Bill
+        $client = null;
+        if (isset($document->client) && $document->client) {
+            $client = ClientDTO::fromModel($document->client);
+        } elseif (isset($document->vendor) && $document->vendor) {
+            $client = ClientDTO::fromVendor($document->vendor);
+        }
+
         return new self(
-            header: $document->header,
-            subheader: $document->subheader,
-            footer: $document->footer,
-            terms: $document->terms,
-            logo: $document->logo_url ?? $settings->logo_url,
+            header: $header,
+            subheader: $subheader,
+            footer: $footer,
+            terms: $terms,
+            logo: $logo,
             number: $document->documentNumber(),
             referenceNumber: $document->referenceNumber(),
             date: $document->documentDate(),
@@ -84,7 +106,7 @@ readonly class DocumentDTO
             total: self::formatToMoney($document->total, $currencyCode),
             amountDue: $amountDue,
             company: CompanyDTO::fromModel($document->company),
-            client: $document->client ? ClientDTO::fromModel($document->client) : null,
+            client: $client,
             lineItems: $document->lineItems->map(fn ($item) => LineItemDTO::fromModel($item)),
             label: $document::documentType()->getLabels(),
             columnLabel: DocumentColumnLabelDTO::fromModel($settings),

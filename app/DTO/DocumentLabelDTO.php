@@ -11,6 +11,7 @@ readonly class DocumentLabelDTO
         public string $date,
         public string $dueDate,
         public ?string $amountDue,
+        public string $recipientLabel = 'BILL TO',
     ) {}
 
     public function toArray(): array
@@ -22,6 +23,7 @@ readonly class DocumentLabelDTO
             'date' => $this->date,
             'due_date' => $this->dueDate,
             'amount_due' => $this->amountDue,
+            'recipient_label' => $this->recipientLabel,
         ];
     }
 }

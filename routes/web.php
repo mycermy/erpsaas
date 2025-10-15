@@ -3,6 +3,7 @@
 use App\Http\Controllers\DocumentPrintController;
 use App\Http\Middleware\AllowSameOriginFrame;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -16,7 +17,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Debug route
     Route::get('/debug/inventory', function () {
-        $user = auth()->user();
+        $user = Auth::user();
         $tenant = null;
 
         try {
