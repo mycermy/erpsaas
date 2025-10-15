@@ -85,7 +85,9 @@ try {
     echo "✨ RESULTS:\n";
     echo "   Stock level: {$stockAfterInvoice} units (negative allowed)\n";
     echo '   Invoice flagged: ' . ($invoice->inventory_flagged ? '✅ YES' : '❌ NO') . "\n";
-    if ($invoice->inventory_flagged) { echo "   Flagged at: {$invoice->inventory_flagged_at}\n"; }
+    if ($invoice->inventory_flagged) {
+        echo "   Flagged at: {$invoice->inventory_flagged_at}\n";
+    }
 
     if (! $invoice->inventory_flagged) {
         echo "\n❌ TEST 1 FAILED: Invoice should be flagged for shortage!\n";

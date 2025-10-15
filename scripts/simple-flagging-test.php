@@ -27,10 +27,10 @@ echo "\n";
 
 try {
     $offering = Offering::where('name', 'Laptop Computer')->first();
-        if (! $offering) {
-            echo "ERROR: Offering 'Laptop Computer' not found. Seed fixtures or update offering name.\n";
-            exit(1);
-        }
+    if (! $offering) {
+        echo "ERROR: Offering 'Laptop Computer' not found. Seed fixtures or update offering name.\n";
+        exit(1);
+    }
     $inventoryItem = $offering->inventoryItem;
     $warehouse = Warehouse::where('is_default', true)->first();
     $client = Client::first();

@@ -27,16 +27,28 @@ echo "=== INVENTORY FLAGGING TEST ===\n\n";
 try {
     // Get test data
     $offering = Offering::where('name', 'Laptop Computer')->first();
-    if (! $offering) { exit("ERROR: Laptop Computer offering not found\n"); }
+    if (! $offering) {
+        exit("ERROR: Laptop Computer offering not found\n");
+    }
 
     $inventoryItem = $offering->inventoryItem;
-    if (! $inventoryItem) { exit("ERROR: No inventory item linked to offering\n"); }
+    if (! $inventoryItem) {
+        exit("ERROR: No inventory item linked to offering\n");
+    }
 
     $warehouse = Warehouse::where('is_default', true)->first();
-    if (! $warehouse) { exit("ERROR: No default warehouse found\n"); }
+    if (! $warehouse) {
+        exit("ERROR: No default warehouse found\n");
+    }
 
-    $client = Client::first(); if (! $client) { exit("ERROR: No client found\n"); }
-    $vendor = Vendor::first(); if (! $vendor) { exit("ERROR: No vendor found\n"); }
+    $client = Client::first();
+    if (! $client) {
+        exit("ERROR: No client found\n");
+    }
+    $vendor = Vendor::first();
+    if (! $vendor) {
+        exit("ERROR: No vendor found\n");
+    }
 
     $inventoryService = app(InventoryService::class);
     $companyId = $offering->company_id;

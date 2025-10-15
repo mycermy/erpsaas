@@ -91,11 +91,15 @@ try {
     echo "✨ RESULTS:\n";
     echo "   Stock level: {$stockAfterInvoice} units\n";
     echo '   Invoice flagged: ' . ($invoice->inventory_flagged ? '✅ YES' : '❌ NO') . "\n";
-    if ($invoice->inventory_flagged) { echo "   Flagged at: {$invoice->inventory_flagged_at}\n"; }
+    if ($invoice->inventory_flagged) {
+        echo "   Flagged at: {$invoice->inventory_flagged_at}\n";
+    }
 
     if ($invoice->inventory_flagged && $stockAfterInvoice < 0) {
         echo "\n   ✅ PHASE 1 PASSED: Invoice correctly flagged for shortage\n";
-    } else { echo "\n   ❌ PHASE 1 FAILED\n"; }
+    } else {
+        echo "\n   ❌ PHASE 1 FAILED\n";
+    }
 
     echo "\n";
 
@@ -141,7 +145,11 @@ try {
     echo "   Sufficient for invoice ({$oversellQty} units): " . ($hasSufficientAfterPartial ? 'YES' : 'NO') . "\n";
     echo '   Invoice flagged: ' . ($invoice->inventory_flagged ? '✅ YES' : '❌ NO') . "\n";
 
-    if ($invoice->inventory_flagged && ! $hasSufficientAfterPartial) { echo "\n   ✅ PHASE 2 PASSED: Flag correctly remains (still insufficient stock)\n"; } else { echo "\n   ⚠️  PHASE 2: Unexpected state\n"; }
+    if ($invoice->inventory_flagged && ! $hasSufficientAfterPartial) {
+        echo "\n   ✅ PHASE 2 PASSED: Flag correctly remains (still insufficient stock)\n";
+    } else {
+        echo "\n   ⚠️  PHASE 2: Unexpected state\n";
+    }
 
     echo "\n";
 

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 echo "\n🧪 Testing Observer (wrapped in transaction for safety)\n\n";
 
 DB::beginTransaction();
+
 try {
     $offering = Offering::where('name', 'Laptop Computer')->first();
     $vendor = Vendor::first();
