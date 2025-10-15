@@ -34,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
 
@@ -98,7 +98,7 @@ class Invoice extends Document
     protected function logoUrl(): Attribute
     {
         return Attribute::get(static function (mixed $value, array $attributes): ?string {
-            return $attributes['logo'] ? Storage::disk('public')->url($attributes['logo']) : null;
+            return $attributes['logo'] ? asset('storage/' . $attributes['logo']) : null;
         });
     }
 
@@ -311,7 +311,7 @@ class Invoice extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= auth()->user()?->currentCompany;
+        $company ??= Auth::user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -602,15 +602,15 @@ class Invoice extends Document
                     }
                 }
 
-                $output = "<p class='text-sm mb-4'>This invoice contains inactive adjustments that need to be addressed before approval:</p>";
-                $output .= "<ul role='list' class='list-disc list-inside space-y-1 text-sm'>";
+                $output = "<p class='mb-4 text-sm'>This invoice contains inactive adjustments that need to be addressed before approval:</p>";
+                $output .= "<ul role='list' class='space-y-1 text-sm list-disc list-inside'>";
 
                 foreach ($inactiveAdjustments as $name) {
                     $output .= "<li class='py-1'><span class='font-medium'>{$name}</span></li>";
                 }
 
                 $output .= '</ul>';
-                $output .= "<p class='text-sm mt-4'>Please update these adjustments before approving the invoice.</p>";
+                $output .= "<p class='mt-4 text-sm'>Please update these adjustments before approving the invoice.</p>";
 
                 return new HtmlString($output);
             })

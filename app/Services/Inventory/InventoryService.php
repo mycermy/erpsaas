@@ -9,6 +9,7 @@ use App\Models\Inventory\InventoryItem;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\InventoryStockLevel;
 use App\Models\Inventory\Warehouse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
@@ -321,7 +322,7 @@ class InventoryService
             'received_date' => $receivedDate,
             'expiry_date' => $expiryDate,
             'bill_id' => $billId,
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
     }
 
