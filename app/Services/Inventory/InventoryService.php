@@ -41,12 +41,72 @@ class InventoryService
             $movementDate
         ) {
             $totalCost = abs($quantity) * $unitCost;
+            $batchId = null;
+            $batchAllocations = [];
 
-            // Create movement record
+            // Handle batch tracking for outbound movements (Sales, Adjustments, Transfers)
+            if ($movementType->isOutbound() && $item->track_batches) {
+                // Calculate COGS and get batch allocations
+                $cogsCalculation = $this->calculateCOGS($item, $warehouse, abs($quantity));
+
+                if (isset($cogsCalculation['batches']) && ! empty($cogsCalculation['batches'])) {
+                    $batchAllocations = $cogsCalculation['batches'];
+
+                    // Update total cost from COGS calculation
+                    $totalCost = $cogsCalculation['total_cost'];
+
+                    // If unit cost wasn't provided, calculate weighted average from COGS
+                    if ($unitCost === 0 && abs($quantity) > 0) {
+                        $unitCost = (int) round($totalCost / abs($quantity));
+                    }
+
+                    // Create SEPARATE movement records for EACH batch consumed
+                    if (count($batchAllocations) > 1) {
+                        // Multiple batches: create one movement per batch for full traceability
+                        foreach ($batchAllocations as $allocation) {
+                            InventoryMovement::create([
+                                'company_id' => $item->company_id,
+                                'inventory_item_id' => $item->id,
+                                'warehouse_id' => $warehouse->id,
+                                'batch_id' => $allocation['batch_id'],
+                                'movement_type' => $movementType,
+                                'quantity' => -$allocation['quantity'], // Negative for outbound
+                                'unit_cost' => $allocation['unit_cost'],
+                                'total_cost' => $allocation['total_cost'],
+                                'reference_type' => $referenceType,
+                                'reference_id' => $referenceId,
+                                'transaction_id' => $transactionId,
+                                'notes' => $notes,
+                                'movement_date' => $movementDate ?? now(),
+                            ]);
+                        }
+
+                        // Update stock level once with total
+                        $this->updateStockLevel($item, $warehouse, $quantity, $unitCost);
+
+                        // Reduce batch quantities
+                        $this->reduceBatches($batchAllocations);
+
+                        // Return the first movement as the primary record
+                        return InventoryMovement::where('inventory_item_id', $item->id)
+                            ->where('reference_type', $referenceType)
+                            ->where('reference_id', $referenceId)
+                            ->where('movement_type', $movementType)
+                            ->latest()
+                            ->first();
+                    }
+
+                    // Single batch: use standard single movement record
+                    $batchId = $batchAllocations[0]['batch_id'] ?? null;
+                }
+            }
+
+            // Create movement record (for inbound, non-tracked, or single-batch outbound)
             $movement = InventoryMovement::create([
                 'company_id' => $item->company_id,
                 'inventory_item_id' => $item->id,
                 'warehouse_id' => $warehouse->id,
+                'batch_id' => $batchId ?? null,
                 'movement_type' => $movementType,
                 'quantity' => $quantity,
                 'unit_cost' => $unitCost,
@@ -63,7 +123,15 @@ class InventoryService
 
             // Handle batch tracking for inbound movements
             if ($movementType->isInbound() && $item->track_batches) {
-                $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $referenceId);
+                $batch = $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $referenceId);
+
+                // Link the movement to the created batch
+                $movement->update(['batch_id' => $batch->id]);
+            }
+
+            // Reduce batch quantities for single-batch outbound movements
+            if (! empty($batchAllocations) && count($batchAllocations) === 1) {
+                $this->reduceBatches($batchAllocations);
             }
 
             return $movement;
@@ -134,10 +202,20 @@ class InventoryService
         $averageCost = $stockLevel->average_cost;
         $totalCost = (int) round($quantity * $averageCost);
 
+        // Even with average cost, we need to reduce batch quantities (use FIFO for batch reduction)
+        $batches = InventoryBatch::where('inventory_item_id', $item->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->where('quantity_remaining', '>', 0)
+            ->orderBy('received_date')
+            ->orderBy('id')
+            ->get();
+
+        $batchAllocations = $this->allocateBatches($batches, $quantity);
+
         return [
             'total_cost' => $totalCost,
             'average_cost' => $averageCost,
-            'batches' => [],
+            'batches' => $batchAllocations['batches'], // Include batch allocations for quantity tracking
         ];
     }
 

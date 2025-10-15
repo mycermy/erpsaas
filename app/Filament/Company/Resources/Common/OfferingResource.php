@@ -7,6 +7,7 @@ use App\Enums\Accounting\AccountType;
 use App\Enums\Accounting\AdjustmentCategory;
 use App\Enums\Accounting\AdjustmentType;
 use App\Enums\Common\OfferingType;
+use App\Enums\Inventory\TrackMethod;
 use App\Filament\Company\Resources\Common\OfferingResource\Pages;
 use App\Filament\Forms\Components\Banner;
 use App\Filament\Forms\Components\CreateAccountSelect;
@@ -56,6 +57,8 @@ class OfferingResource extends Resource
                         return new HtmlString($output);
                     }),
                 static::getGeneralSection(),
+                // Stockable Section
+                static::getStockableSection(),
                 // Sellable Section
                 static::getSellableSection(),
                 // Purchasable Section
@@ -90,6 +93,7 @@ class OfferingResource extends Resource
                     ->options([
                         'Sellable' => 'Sellable',
                         'Purchasable' => 'Purchasable',
+                        'Stockable' => 'Stockable',
                     ])
                     ->visible($hasAttributeChoices)
                     ->hiddenLabel()
@@ -97,9 +101,111 @@ class OfferingResource extends Resource
                     ->live()
                     ->bulkToggleable()
                     ->validationMessages([
-                        'required' => 'The offering must be either sellable or purchasable.',
+                        'required' => 'The offering must be either sellable, purchasable, or stockable.',
                     ]),
             ])->columns();
+    }
+
+    public static function getStockableSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make('Inventory Information')
+            ->description('Configure inventory tracking settings for this product')
+            ->schema([
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\TextInput::make('inventoryItem.sku')
+                            ->label('SKU')
+                            ->maxLength(255)
+                            ->helperText('Stock Keeping Unit - unique identifier for this item')
+                            ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->sku);
+                                }
+                            }),
+
+                        Forms\Components\Select::make('inventoryItem.track_method')
+                            ->label('Cost Tracking Method')
+                            ->options(TrackMethod::class)
+                            ->default(TrackMethod::FIFO)
+                            ->helperText('Method used to calculate cost of goods sold')
+                            ->required(fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? []))
+                            ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->track_method);
+                                }
+                            }),
+
+                        Forms\Components\Toggle::make('inventoryItem.track_batches')
+                            ->label('Track Batches/Lots')
+                            ->default(true)
+                            ->helperText('Enable batch/lot tracking for detailed cost tracking')
+                            ->afterStateHydrated(function (Forms\Components\Toggle $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->track_batches);
+                                }
+                            }),
+                    ])
+                    ->columns(3),
+
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\TextInput::make('inventoryItem.reorder_level')
+                            ->label('Reorder Level')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->helperText('Alert when stock falls below this level')
+                            ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->reorder_level);
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('inventoryItem.reorder_quantity')
+                            ->label('Reorder Quantity')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->helperText('Suggested quantity to order when restocking')
+                            ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->reorder_quantity);
+                                }
+                            }),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Fieldset::make('Account Mapping')
+                    ->schema([
+                        CreateAccountSelect::make('inventoryItem.inventory_account_id')
+                            ->label('Inventory Asset Account')
+                            ->category(AccountCategory::Asset)
+                            ->type(AccountType::CurrentAsset)
+                            ->helperText('Balance sheet account to track inventory value')
+                            ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->inventory_account_id);
+                                }
+                            }),
+
+                        CreateAccountSelect::make('inventoryItem.cogs_account_id')
+                            ->label('COGS Expense Account')
+                            ->category(AccountCategory::Expense)
+                            ->type(AccountType::OperatingExpense)
+                            ->helperText('Income statement account for cost of goods sold')
+                            ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
+                                if ($record && $record->inventoryItem) {
+                                    $component->state($record->inventoryItem->cogs_account_id);
+                                }
+                            }),
+                    ])
+                    ->columns(2),
+            ])
+            ->columns()
+            ->visible(
+                static fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? []) &&
+                $get('type') === OfferingType::Product->value
+            );
     }
 
     public static function getSellableSection(): Forms\Components\Section
@@ -134,13 +240,21 @@ class OfferingResource extends Resource
         return Forms\Components\Section::make('Purchase Information')
             ->schema([
                 CreateAccountSelect::make('expense_account_id')
-                    ->label('Expense account')
+                    ->label('Expense Account')
                     ->category(AccountCategory::Expense)
                     ->type(AccountType::OperatingExpense)
-                    ->required()
+                    ->visible(static fn (Forms\Get $get) => ! in_array('Stockable', $get('attributes') ?? []))
+                    ->required(
+                        static fn (Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? []) &&
+                        ! in_array('Stockable', $get('attributes') ?? [])
+                    )
                     ->validationMessages([
                         'required' => 'The expense account is required for purchasable offerings.',
                     ]),
+                Forms\Components\Placeholder::make('inventory_note')
+                    ->label('Inventory Asset Account')
+                    ->content('Purchases will be recorded to the Inventory Asset Account configured in the Inventory Information section above.')
+                    ->visible(static fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? [])),
                 CreateAdjustmentSelect::make('purchaseTaxes')
                     ->label('Purchase tax')
                     ->category(AdjustmentCategory::Tax)
@@ -164,13 +278,19 @@ class OfferingResource extends Resource
                         *,
                         CONCAT_WS(' & ',
                             CASE WHEN sellable THEN 'Sellable' END,
-                            CASE WHEN purchasable THEN 'Purchasable' END
+                            CASE WHEN purchasable THEN 'Purchasable' END,
+                            CASE WHEN stockable THEN 'Stockable' END
                         ) AS attributes
                     ");
             })
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name'),
+                Tables\Columns\TextColumn::make('inventoryItem.sku')
+                    ->label('SKU')
+                    ->searchable()
+                    ->toggleable()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('attributes')
                     ->label('Attributes')
                     ->badge(),
@@ -192,6 +312,11 @@ class OfferingResource extends Resource
 
                         return "+ {$adjustmentsList}";
                     }),
+                Tables\Columns\TextColumn::make('inventoryItem.track_method')
+                    ->label('Track Method')
+                    ->badge()
+                    ->toggleable()
+                    ->placeholder('—'),
             ])
             ->filters([
                 //

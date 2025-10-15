@@ -24,6 +24,24 @@ class OfferingObserver
     {
         $offering->clearSellableAdjustments();
         $offering->clearPurchasableAdjustments();
+
+        // Auto-create inventory item when stockable is enabled
+        if ($offering->stockable && $offering->type === OfferingType::Product) {
+            // This will be handled after save in the 'saved' event
+        }
+    }
+
+    public function saved(Offering $offering): void
+    {
+        // Auto-create inventory item when stockable is enabled
+        if ($offering->stockable && $offering->type === OfferingType::Product && ! $offering->inventoryItem) {
+            $offering->ensureInventoryItem();
+        }
+
+        // Deactivate inventory item when stockable is disabled
+        if (! $offering->stockable && $offering->inventoryItem) {
+            $offering->inventoryItem->update(['active' => false]);
+        }
     }
 
     /**
@@ -37,7 +55,7 @@ class OfferingObserver
                 $this->createInventoryItem($offering);
             }
         }
-        
+
         // If type changed from Product to Service, you might want to deactivate inventory item
         if ($offering->wasChanged('type') && $offering->getOriginal('type') === OfferingType::Product->value) {
             if ($offering->inventoryItem) {
@@ -105,9 +123,9 @@ class OfferingObserver
         // Create SKU from offering name
         $prefix = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $offering->name), 0, 8));
         $suffix = str_pad((string) $offering->id, 4, '0', STR_PAD_LEFT);
-        
+
         $sku = $prefix . '-' . $suffix;
-        
+
         // Check if SKU already exists, if so add random suffix
         $counter = 1;
         while (InventoryItem::where('company_id', $offering->company_id)
@@ -116,7 +134,7 @@ class OfferingObserver
             $sku = $prefix . '-' . $suffix . '-' . $counter;
             $counter++;
         }
-        
+
         return $sku;
     }
 }

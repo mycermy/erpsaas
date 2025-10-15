@@ -21,17 +21,26 @@ class CreateOffering extends CreateRecord
 
         $data['sellable'] = isset($attributes['Sellable']);
         $data['purchasable'] = isset($attributes['Purchasable']);
+        $data['stockable'] = isset($attributes['Stockable']);
 
-        unset($data['attributes']);
+        // Extract inventory item data
+        $inventoryItemData = $data['inventoryItem'] ?? [];
+        unset($data['attributes'], $data['inventoryItem']);
 
         $offering = parent::handleRecordCreation($data);
 
-        // Notify if inventory item was auto-created
-        if ($offering->type === OfferingType::Product && $offering->inventoryItem) {
+        // Create or update inventory item if stockable
+        if ($offering->stockable && $offering->type === OfferingType::Product) {
+            $inventoryItem = $offering->ensureInventoryItem();
+
+            if (! empty($inventoryItemData)) {
+                $inventoryItem->update(array_filter($inventoryItemData));
+            }
+
             Notification::make()
                 ->success()
                 ->title('Inventory Item Created')
-                ->body("An inventory item has been automatically created with SKU: {$offering->inventoryItem->sku}")
+                ->body("An inventory item has been automatically created with SKU: {$inventoryItem->sku}")
                 ->icon('heroicon-o-cube')
                 ->send();
         }

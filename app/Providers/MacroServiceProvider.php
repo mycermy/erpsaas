@@ -255,7 +255,7 @@ class MacroServiceProvider extends ServiceProvider
                 $oldCurrency = $column->evaluate($currency);
                 $newCurrency = CurrencyAccessor::getDefaultCurrency();
 
-                if ($oldCurrency === $newCurrency) {
+                if ($oldCurrency === null || $oldCurrency === $newCurrency) {
                     return null;
                 }
 
@@ -298,7 +298,7 @@ class MacroServiceProvider extends ServiceProvider
                 $oldCurrency = $entry->evaluate($currency);
                 $newCurrency = CurrencyAccessor::getDefaultCurrency();
 
-                if ($oldCurrency === $newCurrency) {
+                if ($oldCurrency === null || $oldCurrency === $newCurrency) {
                     return null;
                 }
 

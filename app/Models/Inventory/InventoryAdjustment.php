@@ -5,11 +5,14 @@ namespace App\Models\Inventory;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Inventory\AdjustmentStatus;
+use App\Observers\InventoryAdjustmentObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(InventoryAdjustmentObserver::class)]
 class InventoryAdjustment extends Model
 {
     use Blamable;
@@ -34,6 +37,22 @@ class InventoryAdjustment extends Model
         'status' => AdjustmentStatus::class,
         'approved_at' => 'datetime',
     ];
+
+    /**
+     * Backwards-compatibility accessor for `reference_number`.
+     */
+    public function getReferenceNumberAttribute(): ?string
+    {
+        return $this->attributes['adjustment_number'] ?? null;
+    }
+
+    /**
+     * Backwards-compatibility mutator for `reference_number`.
+     */
+    public function setReferenceNumberAttribute(?string $value): void
+    {
+        $this->attributes['adjustment_number'] = $value;
+    }
 
     public function warehouse(): BelongsTo
     {

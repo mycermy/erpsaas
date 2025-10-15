@@ -26,14 +26,14 @@ class UserCompanySeeder extends Seeder
                         ->state([
                             'name' => 'ERPSAAS',
                         ])
-                        ->withTransactions(250)
-                        ->withOfferings()
+                        // ->withTransactions(250)
+                        // ->withOfferings()
+                        // ->withInvoices(30)
+                        // ->withRecurringInvoices()
+                        // ->withEstimates(30)
+                        // ->withBills(30)
                         ->withClients()
-                        ->withVendors()
-                        ->withInvoices(30)
-                        ->withRecurringInvoices()
-                        ->withEstimates(30)
-                        ->withBills(30);
+                        ->withVendors();
                 })
                 ->create([
                     'name' => 'Admin',
@@ -41,6 +41,28 @@ class UserCompanySeeder extends Seeder
                     'password' => bcrypt('password'),
                     'current_company_id' => 1,  // Assuming this will be the ID of the created company
                 ]);
+
+            // Ensure user is attached to their personal company
+            $company = Company::find($user->current_company_id);
+            if ($company && ! $user->companies()->where('company_id', $company->id)->exists()) {
+                $user->companies()->attach($company->id, [
+                    'role' => 'admin',
+                ]);
+                $this->command->info("✓ Attached user '{$user->name}' to company '{$company->name}' as admin");
+            }
+        } else {
+            $this->command->info("User '{$user->name}' already exists");
+
+            // Verify user is attached to their current company
+            if ($user->current_company_id) {
+                $company = Company::find($user->current_company_id);
+                if ($company && ! $user->companies()->where('company_id', $company->id)->exists()) {
+                    $user->companies()->attach($company->id, [
+                        'role' => 'admin',
+                    ]);
+                    $this->command->info("✓ Attached existing user to company '{$company->name}'");
+                }
+            }
         }
 
         // $additionalCompanies = [

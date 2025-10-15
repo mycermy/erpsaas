@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class InventoryAdjustmentResource extends Resource
 {
@@ -33,9 +34,10 @@ class InventoryAdjustmentResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Adjustment Information')
                     ->schema([
-                        Forms\Components\TextInput::make('reference_number')
+                        Forms\Components\TextInput::make('adjustment_number')
                             ->required()
-                            ->default(fn () => 'ADJ-' . date('YmdHis'))
+                            ->label('Reference Number')
+                            ->default(fn () => 'ADJ-' . date('ymd') . '-' . rand(100, 999))
                             ->maxLength(100)
                             ->disabled(fn (?string $operation) => $operation === 'edit'),
 
@@ -44,15 +46,15 @@ class InventoryAdjustmentResource extends Resource
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->disabled(fn (?string $operation, ?InventoryAdjustment $record) => 
-                                $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                            ->disabled(
+                                fn (?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
                             ),
 
                         Forms\Components\DatePicker::make('adjustment_date')
                             ->required()
                             ->default(now())
-                            ->disabled(fn (?string $operation, ?InventoryAdjustment $record) => 
-                                $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                            ->disabled(
+                                fn (?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
                             ),
 
                         Forms\Components\Select::make('status')
@@ -75,11 +77,41 @@ class InventoryAdjustmentResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('inventory_item_id')
                                     ->label('Item')
-                                    ->relationship('inventoryItem.offering', 'name')
                                     ->searchable()
-                                    ->preload()
                                     ->required()
                                     ->live()
+                                    ->getSearchResultsUsing(function (?string $search) {
+                                        $companyId = session('current_company_id') ?? (Auth::user()?->current_company_id ?? null);
+
+                                        $query = \App\Models\Inventory\InventoryItem::with('offering')
+                                            ->when($companyId, fn ($q) => $q->where('company_id', $companyId));
+
+                                        if ($search) {
+                                            $query->where(function ($q) use ($search) {
+                                                $q->whereHas('offering', function ($q2) use ($search) {
+                                                    $q2->where('name', 'like', "%{$search}%");
+                                                })
+                                                    ->orWhere('sku', 'like', "%{$search}%");
+                                            });
+                                        }
+
+                                        return $query->limit(50)->orderByDesc('id')->get()->mapWithKeys(function ($i) {
+                                            return [$i->id => $i->offering->name ?? $i->sku];
+                                        })->toArray();
+                                    })
+                                    ->getOptionLabelUsing(function (?int $value): ?string {
+                                        if (! $value) {
+                                            return null;
+                                        }
+
+                                        $companyId = session('current_company_id') ?? (Auth::user()?->current_company_id ?? null);
+
+                                        $item = \App\Models\Inventory\InventoryItem::with('offering')
+                                            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+                                            ->find($value);
+
+                                        return $item?->offering->name ?? $item?->sku;
+                                    })
                                     ->afterStateUpdated(function (Forms\Set $set, ?int $state, Get $get) {
                                         if (! $state) {
                                             return;
@@ -97,8 +129,8 @@ class InventoryAdjustmentResource extends Resource
                                         $set('quantity_before', $stockLevel?->quantity_on_hand ?? 0);
                                         $set('unit_cost', $stockLevel?->average_unit_cost?->getAmount() ?? 0);
                                     })
-                                    ->disabled(fn (?string $operation, ?InventoryAdjustment $record) => 
-                                        $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                                    ->disabled(
+                                        fn (?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
                                     ),
 
                                 Forms\Components\TextInput::make('quantity_before')
@@ -117,8 +149,8 @@ class InventoryAdjustmentResource extends Resource
                                         $before = (float) ($get('quantity_before') ?? 0);
                                         $set('quantity_adjusted', $state - $before);
                                     })
-                                    ->disabled(fn (?string $operation, ?InventoryAdjustment $record) => 
-                                        $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                                    ->disabled(
+                                        fn (?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
                                     ),
 
                                 Forms\Components\TextInput::make('quantity_adjusted')
@@ -138,8 +170,8 @@ class InventoryAdjustmentResource extends Resource
                                 Forms\Components\Textarea::make('reason')
                                     ->rows(2)
                                     ->columnSpanFull()
-                                    ->disabled(fn (?string $operation, ?InventoryAdjustment $record) => 
-                                        $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                                    ->disabled(
+                                        fn (?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
                                     ),
                             ])
                             ->columns(5)
@@ -147,8 +179,8 @@ class InventoryAdjustmentResource extends Resource
                             ->addActionLabel('Add Item')
                             ->reorderable(false)
                             ->collapsible()
-                            ->disabled(fn (?string $operation, ?InventoryAdjustment $record) => 
-                                $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                            ->disabled(
+                                fn (?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
                             ),
                     ])
                     ->visible(fn (?string $operation) => $operation !== 'view'),
@@ -159,7 +191,8 @@ class InventoryAdjustmentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('reference_number')
+                Tables\Columns\TextColumn::make('adjustment_number')
+                    ->label('Reference Number')
                     ->searchable()
                     ->sortable(),
 
@@ -242,7 +275,7 @@ class InventoryAdjustmentResource extends Resource
 
                         $record->update([
                             'status' => AdjustmentStatus::Approved,
-                            'approved_by' => auth()->id(),
+                            'approved_by' => Auth::id(),
                             'approved_at' => now(),
                         ]);
                     }),

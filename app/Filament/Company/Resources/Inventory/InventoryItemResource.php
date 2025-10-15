@@ -5,6 +5,7 @@ namespace App\Filament\Company\Resources\Inventory;
 use App\Enums\Inventory\TrackMethod;
 use App\Filament\Company\Resources\Inventory\InventoryItemResource\Pages;
 use App\Filament\Company\Resources\Inventory\InventoryItemResource\RelationManagers\BatchesRelationManager;
+use App\Filament\Company\Resources\Inventory\InventoryItemResource\RelationManagers\MovementsRelationManager;
 use App\Filament\Company\Resources\Inventory\InventoryItemResource\RelationManagers\StockLevelsRelationManager;
 use App\Models\Inventory\InventoryItem;
 use Filament\Forms;
@@ -124,9 +125,10 @@ class InventoryItemResource extends Resource
                     ->label('Total Stock')
                     ->getStateUsing(fn (InventoryItem $record) => $record->stockLevels()->sum('quantity_on_hand'))
                     ->numeric()
-                    ->sortable(query: fn (Builder $query, string $direction) => $query
-                        ->withSum('stockLevels', 'quantity_on_hand')
-                        ->orderBy('stock_levels_sum_quantity_on_hand', $direction)
+                    ->sortable(
+                        query: fn (Builder $query, string $direction) => $query
+                            ->withSum('stockLevels', 'quantity_on_hand')
+                            ->orderBy('stock_levels_sum_quantity_on_hand', $direction)
                     ),
 
                 Tables\Columns\TextColumn::make('total_available')
@@ -198,6 +200,7 @@ class InventoryItemResource extends Resource
         return [
             StockLevelsRelationManager::class,
             BatchesRelationManager::class,
+            MovementsRelationManager::class,
         ];
     }
 
