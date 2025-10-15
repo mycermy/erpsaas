@@ -111,41 +111,41 @@ class OfferingResource extends Resource
         return Forms\Components\Section::make('Inventory Information')
             ->description('Configure inventory tracking settings for this product')
             ->schema([
-                Forms\Components\Group::make()
-                    ->schema([
-                        Forms\Components\TextInput::make('inventoryItem.sku')
-                            ->label('SKU')
-                            ->maxLength(255)
-                            ->helperText('Stock Keeping Unit - unique identifier for this item')
-                            ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
-                                if ($record && $record->inventoryItem) {
-                                    $component->state($record->inventoryItem->sku);
-                                }
-                            }),
+                // Forms\Components\Group::make()
+                //     ->schema([
+                Forms\Components\TextInput::make('inventoryItem.sku')
+                    ->label('SKU')
+                    ->maxLength(255)
+                    ->helperText('Stock Keeping Unit - unique identifier for this item')
+                    ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
+                        if ($record && $record->inventoryItem) {
+                            $component->state($record->inventoryItem->sku);
+                        }
+                    }),
 
-                        Forms\Components\Select::make('inventoryItem.track_method')
-                            ->label('Cost Tracking Method')
-                            ->options(TrackMethod::class)
-                            ->default(TrackMethod::FIFO)
-                            ->helperText('Method used to calculate cost of goods sold')
-                            ->required(fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? []))
-                            ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
-                                if ($record && $record->inventoryItem) {
-                                    $component->state($record->inventoryItem->track_method);
-                                }
-                            }),
+                Forms\Components\Select::make('inventoryItem.track_method')
+                    ->label('Cost Tracking Method')
+                    ->options(TrackMethod::class)
+                    ->default(TrackMethod::FIFO)
+                    ->helperText('Method used to calculate cost of goods sold')
+                    ->required(fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? []))
+                    ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
+                        if ($record && $record->inventoryItem) {
+                            $component->state($record->inventoryItem->track_method);
+                        }
+                    }),
 
-                        Forms\Components\Toggle::make('inventoryItem.track_batches')
-                            ->label('Track Batches/Lots')
-                            ->default(true)
-                            ->helperText('Enable batch/lot tracking for detailed cost tracking')
-                            ->afterStateHydrated(function (Forms\Components\Toggle $component, ?Offering $record) {
-                                if ($record && $record->inventoryItem) {
-                                    $component->state($record->inventoryItem->track_batches);
-                                }
-                            }),
-                    ])
-                    ->columns(3),
+                Forms\Components\Toggle::make('inventoryItem.track_batches')
+                    ->label('Track Batches/Lots')
+                    ->default(true)
+                    ->helperText('Enable batch/lot tracking for detailed cost tracking')
+                    ->afterStateHydrated(function (Forms\Components\Toggle $component, ?Offering $record) {
+                        if ($record && $record->inventoryItem) {
+                            $component->state($record->inventoryItem->track_batches);
+                        }
+                    }),
+                // ])
+                // ->columns(3),
 
                 Forms\Components\Group::make()
                     ->schema([
@@ -177,7 +177,7 @@ class OfferingResource extends Resource
 
                 Forms\Components\Fieldset::make('Account Mapping')
                     ->schema([
-                        CreateAccountSelect::make('inventoryItem.inventory_account_id')
+                        CreateAccountSelect::make('inventoryItem.asset_account_id')
                             ->label('Inventory Asset Account')
                             ->category(AccountCategory::Asset)
                             ->type(AccountType::CurrentAsset)
@@ -188,7 +188,7 @@ class OfferingResource extends Resource
                                 }
                             }),
 
-                        CreateAccountSelect::make('inventoryItem.cogs_account_id')
+                        CreateAccountSelect::make('expense_account_id')
                             ->label('COGS Expense Account')
                             ->category(AccountCategory::Expense)
                             ->type(AccountType::OperatingExpense)

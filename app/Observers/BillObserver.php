@@ -14,12 +14,10 @@ class BillObserver
 {
     public function created(Bill $bill): void
     {
-        // Handle inventory inbound when bill is created (goods received)
-        if ($bill->status !== BillStatus::Void) {
-            $this->processInventoryInbound($bill);
-        }
+        // NOTE: Don't process inventory here - line items don't exist yet!
+        // Inventory will be processed via DocumentLineItemObserver when line items are added
 
-        // $bill->createInitialTransaction();
+        // Don't create accounting transaction here either - needs line items
     }
 
     public function saving(Bill $bill): void
@@ -90,6 +88,26 @@ class BillObserver
                 referenceId: $bill->id,
                 notes: "Purchase from Bill #{$bill->bill_number}"
             );
+
+            // After receiving stock, find any invoices that were flagged for this item
+            // and clear the flag if sufficient stock now exists to cover their quantities.
+            $flaggedInvoices = \App\Models\Accounting\Invoice::where('inventory_flagged', true)
+                ->where('company_id', $bill->company_id)
+                ->get();
+
+            foreach ($flaggedInvoices as $invoice) {
+                foreach ($invoice->lineItems as $invLine) {
+                    if ($invLine->offering && $invLine->offering->inventoryItem && $invLine->offering->inventoryItem->id === $inventoryItem->id) {
+                        // Check if we now have sufficient stock for this invoice line
+                        if ($inventoryService->hasSufficientStock($inventoryItem, $warehouse, $invLine->quantity)) {
+                            // Clear invoice flag and continue to next invoice
+                            $invoice->clearInventoryFlag();
+
+                            break 2;
+                        }
+                    }
+                }
+            }
         }
     }
 }

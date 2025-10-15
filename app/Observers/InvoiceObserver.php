@@ -21,6 +21,11 @@ class InvoiceObserver
 
         if ($wasDraft && $isNoLongerDraft) {
             $this->processInventoryOutbound($invoice);
+
+            // Create approval transaction (revenue recognition and accounts receivable)
+            if ($invoice->lineItems()->exists()) {
+                $invoice->createApprovalTransaction();
+            }
         }
 
         if (! $invoice->wasApproved()) {
@@ -80,11 +85,20 @@ class InvoiceObserver
                 continue;
             }
 
-            // Record sale movement (negative quantity)
+            $quantityToRemove = abs($lineItem->quantity);
+
+            // If there's not enough available stock, still create movement (allow negative)
+            // but flag the invoice so admins can reconcile later.
+            if (! $inventoryService->hasSufficientStock($inventoryItem, $warehouse, $quantityToRemove)) {
+                // Flag invoice for inventory shortage
+                $invoice->flagInventoryShortage();
+            }
+
+            // Create outbound movement (may result in negative stock)
             $inventoryService->recordMovement(
                 item: $inventoryItem,
                 warehouse: $warehouse,
-                quantity: -abs($lineItem->quantity), // Ensure negative
+                quantity: -$quantityToRemove, // Negative for outbound
                 movementType: MovementType::Sale,
                 unitCost: 0, // COGS will be calculated by InventoryService
                 movementDate: $invoice->date,

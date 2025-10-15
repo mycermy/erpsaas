@@ -87,6 +87,8 @@ class Invoice extends Document
         'discount_method' => DocumentDiscountMethod::class,
         'discount_computation' => AdjustmentComputation::class,
         'discount_rate' => RateCast::class,
+        'inventory_flagged' => 'boolean',
+        'inventory_flagged_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -133,6 +135,28 @@ class Invoice extends Document
     public function withdrawals(): MorphMany
     {
         return $this->transactions()->where('type', TransactionType::Withdrawal)->where('is_payment', true);
+    }
+
+    /**
+     * Mark invoice as flagged for inventory shortage
+     */
+    public function flagInventoryShortage(?\DateTime $when = null): void
+    {
+        $this->inventory_flagged = true;
+        $this->inventory_flagged_at = $when ?? now();
+        // Don't call update() here as it may cause recursion in observers
+        // The save will happen automatically when the observer finishes
+    }
+
+    /**
+     * Clear inventory shortage flag
+     */
+    public function clearInventoryFlag(): void
+    {
+        $this->update([
+            'inventory_flagged' => false,
+            'inventory_flagged_at' => null,
+        ]);
     }
 
     public function approvalTransaction(): MorphOne
@@ -403,12 +427,42 @@ class Invoice extends Document
             $lineItemDescription = "{$baseDescription} › {$lineItem->offering->name}";
             $lineItemSubtotalInInvoiceCurrency = $lineItem->subtotal;
 
+            // Revenue entry
             $journalEntryData[] = [
                 'type' => JournalEntryType::Credit,
                 'account_id' => $lineItem->offering->income_account_id,
                 'amount_in_invoice_currency' => $lineItemSubtotalInInvoiceCurrency,
                 'description' => $lineItemDescription,
             ];
+
+            // COGS entry for stockable items: debit COGS, credit Inventory
+            // Get actual COGS from inventory movements (calculated by InventoryService with FIFO/LIFO)
+            if ($lineItem->offering->inventoryItem) {
+                $movements = \App\Models\Inventory\InventoryMovement::where('reference_type', Invoice::class)
+                    ->where('reference_id', $this->id)
+                    ->where('inventory_item_id', $lineItem->offering->inventoryItem->id)
+                    ->get();
+
+                $cogsAmount = $movements->sum('total_cost'); // Already in cents, calculated by FIFO/LIFO
+
+                if ($cogsAmount > 0) {
+                    // Debit COGS
+                    $journalEntryData[] = [
+                        'type' => JournalEntryType::Debit,
+                        'account_id' => $lineItem->offering->expense_account_id, // COGS account
+                        'amount_in_invoice_currency' => $cogsAmount,
+                        'description' => "{$lineItemDescription} (COGS)",
+                    ];
+
+                    // Credit Inventory
+                    $journalEntryData[] = [
+                        'type' => JournalEntryType::Credit,
+                        'account_id' => Account::getInventoryAccount($this->company_id)->id,
+                        'amount_in_invoice_currency' => $cogsAmount,
+                        'description' => "{$lineItemDescription} (COGS)",
+                    ];
+                }
+            }
 
             foreach ($lineItem->adjustments as $adjustment) {
                 $adjustmentAmountInInvoiceCurrency = $lineItem->calculateAdjustmentTotalAmount($adjustment);

@@ -25,7 +25,7 @@ class InventoryItem extends Model
         'track_method',
         'reorder_level',
         'reorder_quantity',
-        'inventory_account_id',
+        'asset_account_id',
         'cogs_account_id',
         'track_batches',
         'active',
@@ -46,14 +46,9 @@ class InventoryItem extends Model
         return $this->belongsTo(Offering::class);
     }
 
-    public function inventoryAccount(): BelongsTo
+    public function assetAccount(): BelongsTo
     {
-        return $this->belongsTo(Account::class, 'inventory_account_id');
-    }
-
-    public function cogsAccount(): BelongsTo
-    {
-        return $this->belongsTo(Account::class, 'cogs_account_id');
+        return $this->belongsTo(Account::class, 'asset_account_id');
     }
 
     public function batches(): HasMany

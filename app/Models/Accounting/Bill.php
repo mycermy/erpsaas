@@ -275,9 +275,16 @@ class Bill extends Document
             $lineItemDescription = "{$baseDescription} › {$lineItem->offering->name}";
             $lineItemSubtotalInBillCurrency = $lineItem->getRawOriginal('subtotal');
 
+            // Determine which account to debit:
+            // - For stockable items (with inventory): debit Inventory asset account
+            // - For non-stockable items: debit the offering's expense account
+            $debitAccountId = $lineItem->offering->inventoryItem
+                ? Account::getInventoryAccount($this->company_id)->id
+                : $lineItem->offering->expense_account_id;
+
             $journalEntryData[] = [
                 'type' => JournalEntryType::Debit,
-                'account_id' => $lineItem->offering->expense_account_id,
+                'account_id' => $debitAccountId,
                 'amount_in_bill_currency' => $lineItemSubtotalInBillCurrency,
                 'description' => $lineItemDescription,
             ];
@@ -288,7 +295,7 @@ class Bill extends Document
                 if ($adjustment->isNonRecoverablePurchaseTax()) {
                     $journalEntryData[] = [
                         'type' => JournalEntryType::Debit,
-                        'account_id' => $lineItem->offering->expense_account_id,
+                        'account_id' => $debitAccountId, // Use same account as line item (Inventory or Expense)
                         'amount_in_bill_currency' => $adjustmentAmountInBillCurrency,
                         'description' => "{$lineItemDescription} ({$adjustment->name})",
                     ];

@@ -79,6 +79,30 @@ class EnhancedInventorySeeder extends Seeder
     {
         $offerings = [];
 
+        // Get accounts from the company's chart of accounts
+        // Use nullable chaining and provide fallback IDs
+        $incomeAccount = $this->company->accounts()->where('type', 'operating_revenue')->where('name', 'Product Sales')->first();
+        $inventoryAccount = $this->company->accounts()->where('type', 'current_asset')->where('name', 'Inventory')->first();
+        $expenseAccount = $this->company->accounts()->where('type', 'operating_expense')->where('name', 'Cost of Goods Sold')->first();
+
+        if (! $incomeAccount || ! $inventoryAccount || ! $expenseAccount) {
+            $this->command->warn('  Required accounts not found. Trying to find any matching accounts...');
+            $incomeAccount = $incomeAccount ?? $this->company->accounts()->where('type', 'operating_revenue')->first();
+            $inventoryAccount = $inventoryAccount ?? $this->company->accounts()->where('type', 'current_asset')->first();
+            $expenseAccount = $expenseAccount ?? $this->company->accounts()->where('type', 'operating_expense')->first();
+        }
+
+        if (! $incomeAccount || ! $inventoryAccount || ! $expenseAccount) {
+            $this->command->error('  Critical: Cannot find required accounts. Please seed accounts first.');
+            $this->command->info('  Run: php artisan db:seed --class=AccountSeeder');
+
+            return [];
+        }
+
+        $incomeAccountId = $incomeAccount->id;
+        $inventoryAccountId = $inventoryAccount->id;
+        $expenseAccountId = $expenseAccount->id;
+
         // Use same products as InventorySeeder for easy comparison
         $products = [
             [
@@ -89,6 +113,7 @@ class EnhancedInventorySeeder extends Seeder
                 'description' => 'High-performance laptop computer',
                 'price' => 150000, // MYR 1500
                 'unit_cost' => 100000, // MYR 1000
+                'asset_account_id' => $inventoryAccountId,
             ],
             [
                 'name' => 'Wireless Mouse',
@@ -98,6 +123,8 @@ class EnhancedInventorySeeder extends Seeder
                 'description' => 'Ergonomic wireless mouse',
                 'price' => 5000, // MYR 50
                 'unit_cost' => 3000, // MYR 30
+                'asset_account_id' => $inventoryAccountId,
+
             ],
             [
                 'name' => 'Monitor 27"',
@@ -107,6 +134,7 @@ class EnhancedInventorySeeder extends Seeder
                 'description' => '27-inch 4K monitor',
                 'price' => 80000, // MYR 800
                 'unit_cost' => 60000, // MYR 600
+                'asset_account_id' => $inventoryAccountId,
             ],
             [
                 'name' => 'Keyboard Mechanical',
@@ -116,6 +144,7 @@ class EnhancedInventorySeeder extends Seeder
                 'description' => 'Mechanical keyboard with RGB',
                 'price' => 30000, // MYR 300
                 'unit_cost' => 20000, // MYR 200
+                'asset_account_id' => $inventoryAccountId,
             ],
         ];
 
@@ -132,6 +161,9 @@ class EnhancedInventorySeeder extends Seeder
                     'price' => $productData['price'],
                     'sellable' => true,
                     'purchasable' => true,
+                    'stockable' => true,
+                    'income_account_id' => $incomeAccountId,
+                    'expense_account_id' => $expenseAccountId,
                 ]
             );
 
@@ -144,6 +176,7 @@ class EnhancedInventorySeeder extends Seeder
                 [
                     'sku' => $productData['sku'],
                     'track_method' => $productData['track_method'],
+                    'asset_account_id' => $productData['asset_account_id'],
                     'active' => true,
                     'track_batches' => true,
                     'reorder_level' => $this->faker->numberBetween(5, 20),
@@ -288,6 +321,8 @@ class EnhancedInventorySeeder extends Seeder
                     BillStatus::Partial, // Partially paid
                     BillStatus::Paid,    // Fully paid
                 ]),
+                'currency_code' => 'MYR',
+                'discount_method' => \App\Enums\Accounting\DocumentDiscountMethod::PerLineItem,
                 'subtotal' => 0,
                 'total' => 0,
             ]);
@@ -324,9 +359,30 @@ class EnhancedInventorySeeder extends Seeder
                 'total' => $subtotal,
             ]);
 
-            // Manually trigger inventory processing since line items are added after bill creation
-            $bill->refresh(); // Reload to get line items
-            app(\App\Observers\BillObserver::class)->processInventoryInbound($bill);
+            // NOTE: Inventory processing and accounting transaction are now handled automatically
+            // by DocumentLineItemObserver when line items are created (no manual trigger needed)
+
+            // Record payment for Paid/Partial bills
+            if ($bill->status === BillStatus::Paid || $bill->status === BillStatus::Partial) {
+                $bankAccount = \App\Models\Banking\BankAccount::first();
+
+                $paymentAmount = $bill->status === BillStatus::Paid
+                    ? $bill->total // Full payment
+                    : (int) ($bill->total * $this->faker->randomFloat(2, 0.3, 0.7)); // Partial: 30-70%
+
+                // Ensure payment date is between bill date and today (not in future)
+                $maxDaysUntilToday = max(1, $now->diffInDays($billDate));
+                $daysToAdd = $this->faker->numberBetween(5, min(25, $maxDaysUntilToday));
+                $paymentDate = $billDate->copy()->addDays($daysToAdd);
+
+                $bill->recordPayment([
+                    'amount' => $paymentAmount,
+                    'posted_at' => $paymentDate,
+                    'payment_method' => $this->faker->randomElement(['cash', 'bank_payment', 'check']),
+                    'bank_account_id' => $bankAccount->id,
+                    'notes' => 'Payment recorded by seeder',
+                ]);
+            }
         }
     }
 
@@ -353,6 +409,8 @@ class EnhancedInventorySeeder extends Seeder
                 'date' => $invoiceDate,
                 'due_date' => $invoiceDate->copy()->addDays(30),
                 'status' => InvoiceStatus::Draft, // Start as Draft
+                'currency_code' => 'MYR',
+                'discount_method' => \App\Enums\Accounting\DocumentDiscountMethod::PerLineItem,
                 'subtotal' => 0,
                 'total' => 0,
             ]);
@@ -395,6 +453,28 @@ class EnhancedInventorySeeder extends Seeder
                 InvoiceStatus::Paid,    // Fully paid
             ]);
             $invoice->update(['status' => $finalStatus]);
+
+            // Record payment for Paid/Partial invoices
+            if ($finalStatus === InvoiceStatus::Paid || $finalStatus === InvoiceStatus::Partial) {
+                $bankAccount = \App\Models\Banking\BankAccount::first();
+
+                $paymentAmount = $finalStatus === InvoiceStatus::Paid
+                    ? $invoice->total // Full payment
+                    : (int) ($invoice->total * $this->faker->randomFloat(2, 0.3, 0.7)); // Partial: 30-70%
+
+                // Ensure payment date is between invoice date and today (not in future)
+                $maxDaysUntilToday = max(1, $now->diffInDays($invoiceDate));
+                $daysToAdd = $this->faker->numberBetween(5, min(25, $maxDaysUntilToday));
+                $paymentDate = $invoiceDate->copy()->addDays($daysToAdd);
+
+                $invoice->recordPayment([
+                    'amount' => $paymentAmount,
+                    'posted_at' => $paymentDate,
+                    'payment_method' => $this->faker->randomElement(['cash', 'bank_payment', 'check']),
+                    'bank_account_id' => $bankAccount->id,
+                    'notes' => 'Payment recorded by seeder',
+                ]);
+            }
         }
     }
 

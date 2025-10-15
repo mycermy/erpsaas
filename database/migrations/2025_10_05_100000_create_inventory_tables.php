@@ -20,8 +20,7 @@ return new class extends Migration
             $table->enum('track_method', ['fifo', 'lifo', 'average'])->default('fifo');
             $table->decimal('reorder_level', 10, 2)->default(0);
             $table->decimal('reorder_quantity', 10, 2)->default(0);
-            $table->foreignId('inventory_account_id')->nullable()->constrained('accounts')->nullOnDelete();
-            $table->foreignId('cogs_account_id')->nullable()->constrained('accounts')->nullOnDelete();
+            $table->foreignId('asset_account_id')->nullable()->constrained('accounts')->nullOnDelete();
             $table->boolean('track_batches')->default(true);
             $table->boolean('active')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
