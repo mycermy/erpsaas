@@ -35,8 +35,8 @@ class InventoryItem extends Model
 
     protected $casts = [
         'track_method' => TrackMethod::class,
-        'reorder_level' => 'decimal:2',
-        'reorder_quantity' => 'decimal:2',
+        'reorder_level' => 'integer',
+        'reorder_quantity' => 'integer',
         'track_batches' => 'boolean',
         'active' => 'boolean',
     ];

@@ -155,6 +155,7 @@ class Offering extends Model
             'track_batches' => true,
             'reorder_level' => 0,
             'reorder_quantity' => 0,
+            'asset_account_id' => Account::getInventoryAccount($this->company_id)->id,
             'active' => true,
             'created_by' => $this->created_by ?? Auth::id(),
         ]);

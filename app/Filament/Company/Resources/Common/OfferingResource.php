@@ -14,6 +14,7 @@ use App\Filament\Forms\Components\CreateAccountSelect;
 use App\Filament\Forms\Components\CreateAdjustmentSelect;
 use App\Models\Common\Offering;
 use Filament\Forms;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -111,8 +112,6 @@ class OfferingResource extends Resource
         return Forms\Components\Section::make('Stock Information')
             ->description('Configure inventory tracking settings for this product')
             ->schema([
-                // Forms\Components\Group::make()
-                //     ->schema([
                 Forms\Components\TextInput::make('inventoryItem.sku')
                     ->label('SKU')
                     ->maxLength(255)
@@ -144,8 +143,6 @@ class OfferingResource extends Resource
                             $component->state($record->inventoryItem->track_batches);
                         }
                     }),
-                // ])
-                // ->columns(3),
 
                 Forms\Components\Group::make()
                     ->schema([
@@ -153,6 +150,7 @@ class OfferingResource extends Resource
                             ->label('Reorder Level')
                             ->numeric()
                             ->default(0)
+                            ->step(1)
                             ->minValue(0)
                             ->helperText('Alert when stock falls below this level')
                             ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
@@ -165,6 +163,7 @@ class OfferingResource extends Resource
                             ->label('Reorder Quantity')
                             ->numeric()
                             ->default(0)
+                            ->step(1)
                             ->minValue(0)
                             ->helperText('Suggested quantity to order when restocking')
                             ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Offering $record) {
@@ -184,28 +183,33 @@ class OfferingResource extends Resource
                             ->helperText('Balance sheet account to track inventory value')
                             ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
                                 if ($record && $record->inventoryItem) {
-                                    $component->state($record->inventoryItem->inventory_account_id);
+                                    $component->state($record->inventoryItem->asset_account_id);
                                 }
-                            }),
+                            })
+                            ->required()
+                            ->validationMessages([
+                                'required' => 'The asset account is required for stockable offerings.',
+                            ]),
 
                         CreateAccountSelect::make('expense_account_id')
                             ->label('COGS Expense Account')
                             ->category(AccountCategory::Expense)
                             ->type(AccountType::OperatingExpense)
-                            ->helperText('Income statement account for cost of goods sold')
+                            ->helperText('Expense statement account for cost of goods sold')
                             ->afterStateHydrated(function (Forms\Components\Select $component, ?Offering $record) {
                                 if ($record && $record->inventoryItem) {
-                                    $component->state($record->inventoryItem->cogs_account_id);
+                                    $component->state($record->expense_account_id);
                                 }
-                            }),
+                            })
+                            ->required()
+                            ->validationMessages([
+                                'required' => 'The expense account is required for stockable offerings.',
+                            ]),
                     ])
                     ->columns(2),
             ])
             ->columns()
-            ->visible(
-                static fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? []) &&
-                $get('type') === OfferingType::Product->value
-            );
+            ->visible(static fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? []));
     }
 
     public static function getSellableSection(): Forms\Components\Section
@@ -251,9 +255,9 @@ class OfferingResource extends Resource
                     ->validationMessages([
                         'required' => 'The expense account is required for purchasable offerings.',
                     ]),
-                Forms\Components\Placeholder::make('inventory_note')
+                Placeholder::make('inventory_note')
                     ->label('Inventory Asset Account')
-                    ->content('Purchases will be recorded to the Inventory Asset Account configured in the Inventory Information section above.')
+                    ->content('Purchases will be recorded to the Inventory Asset Account configured in the Stock Information section above.')
                     ->visible(static fn (Forms\Get $get) => in_array('Stockable', $get('attributes') ?? [])),
                 CreateAdjustmentSelect::make('purchaseTaxes')
                     ->label('Purchase tax')

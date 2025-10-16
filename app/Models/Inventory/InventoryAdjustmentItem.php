@@ -25,9 +25,9 @@ class InventoryAdjustmentItem extends Model
     ];
 
     protected $casts = [
-        'quantity_before' => 'decimal:2',
-        'quantity_after' => 'decimal:2',
-        'quantity_adjusted' => 'decimal:2',
+        'quantity_before' => 'integer',
+        'quantity_after' => 'integer',
+        'quantity_adjusted' => 'integer',
         'unit_cost' => MoneyCast::class,
     ];
 

@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignId('offering_id')->constrained()->cascadeOnDelete();
             $table->string('sku')->nullable()->index();
             $table->enum('track_method', ['fifo', 'lifo', 'average'])->default('fifo');
-            $table->decimal('reorder_level', 10, 2)->default(0);
-            $table->decimal('reorder_quantity', 10, 2)->default(0);
+            $table->integer('reorder_level')->default(0);
+            $table->integer('reorder_quantity')->default(0);
             $table->foreignId('asset_account_id')->nullable()->constrained('accounts')->nullOnDelete();
             $table->boolean('track_batches')->default(true);
             $table->boolean('active')->default(true);
@@ -63,8 +63,8 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->constrained()->cascadeOnDelete();
             $table->string('batch_number', 100)->nullable();
             $table->string('lot_number', 100)->nullable();
-            $table->decimal('quantity_received', 10, 2);
-            $table->decimal('quantity_remaining', 10, 2);
+            $table->integer('quantity_received')->default(0);
+            $table->integer('quantity_remaining')->default(0);
             $table->bigInteger('unit_cost')->default(0); // In cents for Money
             $table->date('received_date');
             $table->date('expiry_date')->nullable();
@@ -83,9 +83,9 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('inventory_item_id')->constrained()->cascadeOnDelete();
             $table->foreignId('warehouse_id')->constrained()->cascadeOnDelete();
-            $table->decimal('quantity_on_hand', 10, 2)->default(0);
-            $table->decimal('quantity_reserved', 10, 2)->default(0);
-            $table->decimal('quantity_available', 10, 2)->default(0);
+            $table->integer('quantity_on_hand')->default(0);
+            $table->integer('quantity_reserved')->default(0);
+            $table->integer('quantity_available')->default(0);
             $table->bigInteger('average_cost')->default(0); // Weighted average
             $table->timestamp('last_movement_at')->nullable();
             $table->timestamps();
@@ -103,7 +103,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->constrained()->cascadeOnDelete();
             $table->foreignId('batch_id')->nullable()->constrained('inventory_batches')->nullOnDelete();
             $table->string('movement_type'); // purchase, sale, adjustment, transfer_in, transfer_out, return
-            $table->decimal('quantity', 10, 2); // Positive for IN, negative for OUT
+            $table->integer('quantity'); // Positive for IN, negative for OUT
             $table->bigInteger('unit_cost')->default(0);
             $table->bigInteger('total_cost')->default(0);
             $table->string('reference_type')->nullable(); // Polymorphic
@@ -143,9 +143,9 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('adjustment_id')->constrained('inventory_adjustments')->cascadeOnDelete();
             $table->foreignId('inventory_item_id')->constrained()->cascadeOnDelete();
-            $table->decimal('quantity_before', 10, 2)->default(0);
-            $table->decimal('quantity_after', 10, 2)->default(0);
-            $table->decimal('quantity_adjusted', 10, 2)->default(0); // Can be positive or negative
+            $table->integer('quantity_before')->default(0);
+            $table->integer('quantity_after')->default(0);
+            $table->integer('quantity_adjusted')->default(0); // Can be positive or negative
             $table->bigInteger('unit_cost')->default(0);
             $table->text('reason')->nullable();
             $table->timestamps();
@@ -178,9 +178,9 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('transfer_id')->constrained('inventory_transfers')->cascadeOnDelete();
             $table->foreignId('inventory_item_id')->constrained()->cascadeOnDelete();
-            $table->decimal('quantity_requested', 10, 2);
-            $table->decimal('quantity_shipped', 10, 2)->default(0);
-            $table->decimal('quantity_received', 10, 2)->default(0);
+            $table->integer('quantity_requested')->default(0);
+            $table->integer('quantity_shipped')->default(0);
+            $table->integer('quantity_received')->default(0);
             $table->text('notes')->nullable();
             $table->timestamps();
 

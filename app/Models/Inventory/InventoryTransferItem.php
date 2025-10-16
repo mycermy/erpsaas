@@ -23,9 +23,9 @@ class InventoryTransferItem extends Model
     ];
 
     protected $casts = [
-        'quantity_requested' => 'decimal:2',
-        'quantity_shipped' => 'decimal:2',
-        'quantity_received' => 'decimal:2',
+        'quantity_requested' => 'integer',
+        'quantity_shipped' => 'integer',
+        'quantity_received' => 'integer',
     ];
 
     public function transfer(): BelongsTo

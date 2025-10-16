@@ -68,6 +68,7 @@ class InventoryItemResource extends Resource
                             ->label('Reorder Level')
                             ->numeric()
                             ->default(0)
+                            ->step(1)
                             ->minValue(0)
                             ->helperText('Alert when stock falls below this level'),
 
@@ -75,6 +76,7 @@ class InventoryItemResource extends Resource
                             ->label('Reorder Quantity')
                             ->numeric()
                             ->default(0)
+                            ->step(1)
                             ->minValue(0)
                             ->helperText('Suggested quantity to order when restocking'),
                     ])

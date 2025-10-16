@@ -37,7 +37,7 @@ class InventoryMovement extends Model
 
     protected $casts = [
         'movement_type' => MovementType::class,
-        'quantity' => 'decimal:2',
+        'quantity' => 'integer',
         'unit_cost' => MoneyCast::class,
         'total_cost' => MoneyCast::class,
         'movement_date' => 'date',

@@ -33,8 +33,8 @@ class InventoryBatch extends Model
     ];
 
     protected $casts = [
-        'quantity_received' => 'decimal:2',
-        'quantity_remaining' => 'decimal:2',
+        'quantity_received' => 'integer',
+        'quantity_remaining' => 'integer',
         'unit_cost' => MoneyCast::class,
         'received_date' => 'date',
         'expiry_date' => 'date',

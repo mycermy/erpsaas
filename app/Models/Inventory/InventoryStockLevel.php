@@ -25,9 +25,9 @@ class InventoryStockLevel extends Model
     ];
 
     protected $casts = [
-        'quantity_on_hand' => 'decimal:2',
-        'quantity_reserved' => 'decimal:2',
-        'quantity_available' => 'decimal:2',
+        'quantity_on_hand' => 'integer',
+        'quantity_reserved' => 'integer',
+        'quantity_available' => 'integer',
         'average_cost' => MoneyCast::class,
         'last_movement_at' => 'datetime',
     ];
