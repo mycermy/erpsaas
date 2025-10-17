@@ -27,7 +27,8 @@ class InventoryService
         ?int $referenceId = null,
         ?int $transactionId = null,
         ?string $notes = null,
-        ?\DateTime $movementDate = null
+        ?\DateTime $movementDate = null,
+        ?int $createdBy = null
     ): InventoryMovement {
         return DB::transaction(function () use (
             $item,
@@ -39,11 +40,183 @@ class InventoryService
             $referenceId,
             $transactionId,
             $notes,
-            $movementDate
-        ) {
+            $movementDate,
+            $createdBy
+        ) {            // Idempotency: if this movement references a specific reference (e.g. an adjustment)
+            // and we've already recorded a movement for this item/reference, return the existing one
+            if ($referenceType && $referenceId) {
+                $existing = InventoryMovement::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+                    ->where('company_id', $item->company_id)
+                    ->where('inventory_item_id', $item->id)
+                    ->where('reference_type', $referenceType)
+                    ->where('reference_id', $referenceId)
+                    ->where('movement_type', is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType)
+                    ->first();
+
+                if ($existing) {
+                    return $existing;
+                }
+            }
+
             $totalCost = abs($quantity) * $unitCost;
             $batchId = null;
             $batchAllocations = [];
+
+            // Special handling for adjustments: treat by sign
+            if ($movementType === MovementType::Adjustment) {
+                // Inbound adjustment (found stock): create a new batch when tracking batches
+                if ($quantity > 0) {
+                    if ($item->track_batches) {
+                        // Use provided unitCost if available, otherwise fallback to current average_cost
+                        $appliedUnitCost = $unitCost > 0 ? $unitCost : ($item->stockLevels()->where('warehouse_id', $warehouse->id)->value('average_cost') ?? 0);
+
+                        $batch = $this->createBatch($item, $warehouse, $quantity, $appliedUnitCost, $movementDate ?? now(), 'ADJ-' . $referenceId, null, null, null, $createdBy);
+
+                        $movement = InventoryMovement::create([
+                            'company_id' => $item->company_id,
+                            'inventory_item_id' => $item->id,
+                            'warehouse_id' => $warehouse->id,
+                            'batch_id' => $batch->id,
+                            'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
+                            'quantity' => $quantity,
+                            'unit_cost' => $appliedUnitCost,
+                            'total_cost' => abs($quantity) * $appliedUnitCost,
+                            'reference_type' => $referenceType,
+                            'reference_id' => $referenceId,
+                            'transaction_id' => $transactionId,
+                            'notes' => $notes,
+                            'movement_date' => $movementDate ?? now(),
+                            'created_by' => $createdBy ?? Auth::id(),
+                        ]);
+
+                        // Update stock level
+                        $this->updateStockLevel($item, $warehouse, $quantity, $appliedUnitCost);
+
+                        return $movement;
+                    }
+
+                    // Non-batch tracked inbound adjustment: simple movement
+                    $movement = InventoryMovement::create([
+                        'company_id' => $item->company_id,
+                        'inventory_item_id' => $item->id,
+                        'warehouse_id' => $warehouse->id,
+                        'batch_id' => null,
+                        'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $totalCost,
+                        'reference_type' => $referenceType,
+                        'reference_id' => $referenceId,
+                        'transaction_id' => $transactionId,
+                        'notes' => $notes,
+                        'movement_date' => $movementDate ?? now(),
+                        'created_by' => $createdBy ?? Auth::id(),
+                    ]);
+
+                    $this->updateStockLevel($item, $warehouse, $quantity, $unitCost);
+
+                    return $movement;
+                }
+
+                // Outbound adjustment (lost/damaged stock): consume batches if tracked
+                if ($quantity < 0) {
+                    $absQty = abs($quantity);
+
+                    if ($item->track_batches) {
+                        $cogsCalculation = $this->calculateCOGS($item, $warehouse, $absQty);
+
+                        if (isset($cogsCalculation['batches']) && ! empty($cogsCalculation['batches'])) {
+                            $batchAllocations = $cogsCalculation['batches'];
+                            $totalCost = $cogsCalculation['total_cost'];
+
+                            if (count($batchAllocations) > 1) {
+                                foreach ($batchAllocations as $allocation) {
+                                    InventoryMovement::create([
+                                        'company_id' => $item->company_id,
+                                        'inventory_item_id' => $item->id,
+                                        'warehouse_id' => $warehouse->id,
+                                        'batch_id' => $allocation['batch_id'],
+                                        'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
+                                        'quantity' => -$allocation['quantity'], // Negative for outbound
+                                        'unit_cost' => $allocation['unit_cost'],
+                                        'total_cost' => $allocation['total_cost'],
+                                        'reference_type' => $referenceType,
+                                        'reference_id' => $referenceId,
+                                        'transaction_id' => $transactionId,
+                                        'notes' => $notes,
+                                        'movement_date' => $movementDate ?? now(),
+                                        'created_by' => $createdBy ?? Auth::id(),
+                                    ]);
+                                }
+
+                                // Update stock level once with total
+                                $this->updateStockLevel($item, $warehouse, $quantity, $unitCost);
+
+                                // Reduce batch quantities
+                                $this->reduceBatches($batchAllocations);
+
+                                return InventoryMovement::where('inventory_item_id', $item->id)
+                                    ->where('reference_type', $referenceType)
+                                    ->where('reference_id', $referenceId)
+                                    ->where('movement_type', is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType)
+                                    ->latest()
+                                    ->first();
+                            }
+
+                            // Single batch: create single movement below using $batchAllocations[0]
+                            $batchId = $batchAllocations[0]['batch_id'] ?? null;
+                            $unitCost = $batchAllocations[0]['unit_cost'] ?? $unitCost;
+                            $totalCost = $batchAllocations[0]['total_cost'] ?? $totalCost;
+                        }
+                    }
+
+                    // Fall back to standard single movement for outbound (no batches)
+                    $movement = InventoryMovement::create([
+                        'company_id' => $item->company_id,
+                        'inventory_item_id' => $item->id,
+                        'warehouse_id' => $warehouse->id,
+                        'batch_id' => $batchId ?? null,
+                        'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $totalCost,
+                        'reference_type' => $referenceType,
+                        'reference_id' => $referenceId,
+                        'transaction_id' => $transactionId,
+                        'notes' => $notes,
+                        'movement_date' => $movementDate ?? now(),
+                        'created_by' => $createdBy ?? Auth::id(),
+                    ]);
+
+                    // Update stock level
+                    $this->updateStockLevel($item, $warehouse, $quantity, $unitCost);
+
+                    // Reduce batches if single allocation
+                    if (! empty($batchAllocations) && count($batchAllocations) === 1) {
+                        $this->reduceBatches($batchAllocations);
+                    }
+
+                    return $movement;
+                }
+
+                // quantity == 0 -> noop
+                return InventoryMovement::create([
+                    'company_id' => $item->company_id,
+                    'inventory_item_id' => $item->id,
+                    'warehouse_id' => $warehouse->id,
+                    'batch_id' => null,
+                    'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
+                    'quantity' => 0,
+                    'unit_cost' => 0,
+                    'total_cost' => 0,
+                    'reference_type' => $referenceType,
+                    'reference_id' => $referenceId,
+                    'transaction_id' => $transactionId,
+                    'notes' => $notes,
+                    'movement_date' => $movementDate ?? now(),
+                    'created_by' => $createdBy ?? Auth::id(),
+                ]);
+            }
 
             // Handle batch tracking for outbound movements (Sales, Adjustments, Transfers)
             if ($movementType->isOutbound() && $item->track_batches) {
@@ -70,7 +243,7 @@ class InventoryService
                                 'inventory_item_id' => $item->id,
                                 'warehouse_id' => $warehouse->id,
                                 'batch_id' => $allocation['batch_id'],
-                                'movement_type' => $movementType,
+                                'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
                                 'quantity' => -$allocation['quantity'], // Negative for outbound
                                 'unit_cost' => $allocation['unit_cost'],
                                 'total_cost' => $allocation['total_cost'],
@@ -79,6 +252,7 @@ class InventoryService
                                 'transaction_id' => $transactionId,
                                 'notes' => $notes,
                                 'movement_date' => $movementDate ?? now(),
+                                'created_by' => $createdBy ?? Auth::id(),
                             ]);
                         }
 
@@ -89,10 +263,11 @@ class InventoryService
                         $this->reduceBatches($batchAllocations);
 
                         // Return the first movement as the primary record
-                        return InventoryMovement::where('inventory_item_id', $item->id)
+                        return InventoryMovement::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+                            ->where('inventory_item_id', $item->id)
                             ->where('reference_type', $referenceType)
                             ->where('reference_id', $referenceId)
-                            ->where('movement_type', $movementType)
+                            ->where('movement_type', is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType)
                             ->latest()
                             ->first();
                     }
@@ -108,7 +283,7 @@ class InventoryService
                 'inventory_item_id' => $item->id,
                 'warehouse_id' => $warehouse->id,
                 'batch_id' => $batchId ?? null,
-                'movement_type' => $movementType,
+                'movement_type' => is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType,
                 'quantity' => $quantity,
                 'unit_cost' => $unitCost,
                 'total_cost' => $totalCost,
@@ -117,6 +292,7 @@ class InventoryService
                 'transaction_id' => $transactionId,
                 'notes' => $notes,
                 'movement_date' => $movementDate ?? now(),
+                'created_by' => $createdBy ?? Auth::id(),
             ]);
 
             // Update stock level
@@ -124,7 +300,7 @@ class InventoryService
 
             // Handle batch tracking for inbound movements
             if ($movementType->isInbound() && $item->track_batches) {
-                $batch = $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $referenceId);
+                $batch = $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $referenceId, null, null, null, $createdBy);
 
                 // Link the movement to the created batch
                 $movement->update(['batch_id' => $batch->id]);
@@ -263,21 +439,48 @@ class InventoryService
         float $quantity,
         int $unitCost
     ): void {
-        $stockLevel = InventoryStockLevel::firstOrCreate(
-            [
+        // Query for existing stock level
+        $stockLevel = InventoryStockLevel::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+            ->where('company_id', $item->company_id)
+            ->where('inventory_item_id', $item->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->first();
+
+        if (! $stockLevel) {
+            try {
+                $stockLevel = InventoryStockLevel::create([
+                    'company_id' => $item->company_id,
+                    'inventory_item_id' => $item->id,
+                    'warehouse_id' => $warehouse->id,
+                    'quantity_on_hand' => 0,
+                    'quantity_reserved' => 0,
+                    'quantity_available' => 0,
+                    'average_cost' => 0,
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Duplicate insertion in concurrent/test scenario; re-query
+                $stockLevel = InventoryStockLevel::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+                    ->where('company_id', $item->company_id)
+                    ->where('inventory_item_id', $item->id)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->first();
+            }
+        }
+
+        // Update quantity - ensure $stockLevel is not null
+        if (! $stockLevel) {
+            // Create an in-memory model with defaults
+            $stockLevel = new InventoryStockLevel([
                 'company_id' => $item->company_id,
                 'inventory_item_id' => $item->id,
                 'warehouse_id' => $warehouse->id,
-            ],
-            [
                 'quantity_on_hand' => 0,
                 'quantity_reserved' => 0,
                 'quantity_available' => 0,
                 'average_cost' => 0,
-            ]
-        );
+            ]);
+        }
 
-        // Update quantity
         $oldQuantity = $stockLevel->quantity_on_hand;
         $newQuantity = $oldQuantity + $quantity;
 
@@ -293,7 +496,12 @@ class InventoryService
         $stockLevel->quantity_on_hand = $newQuantity;
         $stockLevel->quantity_available = $newQuantity - $stockLevel->quantity_reserved;
         $stockLevel->last_movement_at = now();
-        $stockLevel->save();
+
+        try {
+            $stockLevel->save();
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     /**
@@ -308,7 +516,8 @@ class InventoryService
         ?string $batchNumber = null,
         ?int $billId = null,
         ?string $lotNumber = null,
-        ?\DateTime $expiryDate = null
+        ?\DateTime $expiryDate = null,
+        ?int $createdBy = null
     ): InventoryBatch {
         return InventoryBatch::create([
             'company_id' => $item->company_id,
@@ -322,7 +531,7 @@ class InventoryService
             'received_date' => $receivedDate,
             'expiry_date' => $expiryDate,
             'bill_id' => $billId,
-            'created_by' => Auth::id(),
+            'created_by' => $createdBy ?? Auth::id(),
         ]);
     }
 
@@ -359,7 +568,9 @@ class InventoryService
         Warehouse $warehouse,
         float $quantity
     ): bool {
-        $stockLevel = InventoryStockLevel::where('inventory_item_id', $item->id)
+        $stockLevel = InventoryStockLevel::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+            ->where('company_id', $item->company_id)
+            ->where('inventory_item_id', $item->id)
             ->where('warehouse_id', $warehouse->id)
             ->first();
 
@@ -371,7 +582,9 @@ class InventoryService
      */
     public function getStockQuantity(InventoryItem $item, Warehouse $warehouse): float
     {
-        $stockLevel = InventoryStockLevel::where('inventory_item_id', $item->id)
+        $stockLevel = InventoryStockLevel::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+            ->where('company_id', $item->company_id)
+            ->where('inventory_item_id', $item->id)
             ->where('warehouse_id', $warehouse->id)
             ->first();
 

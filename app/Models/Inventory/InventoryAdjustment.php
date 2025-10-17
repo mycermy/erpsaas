@@ -97,4 +97,10 @@ class InventoryAdjustment extends Model
     {
         return $this->status === AdjustmentStatus::Cancelled;
     }
+
+    protected static function booted(): void
+    {
+        // Ensure observer is registered in all environments (some test harnesses may not pick up attributes)
+        static::observe(\App\Observers\InventoryAdjustmentObserver::class);
+    }
 }
