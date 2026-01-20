@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5fac039925c3a001bf8807df4a66b299",
+    "content-hash": "9277341829a5daccd3c5f7747ba86a91",
     "packages": [
         {
             "name": "akaunting/laravel-money",
@@ -2911,27 +2911,27 @@
         },
         {
             "name": "jaocero/radio-deck",
-            "version": "v1.3",
+            "version": "v1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/199ocero/radio-deck.git",
-                "reference": "453d25f14a2666dddfa025ab0ada7edf0d47ee25"
+                "reference": "4c865a74e30e4d8c92603a845794d6c2d6321c17"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/199ocero/radio-deck/zipball/453d25f14a2666dddfa025ab0ada7edf0d47ee25",
-                "reference": "453d25f14a2666dddfa025ab0ada7edf0d47ee25",
+                "url": "https://api.github.com/repos/199ocero/radio-deck/zipball/4c865a74e30e4d8c92603a845794d6c2d6321c17",
+                "reference": "4c865a74e30e4d8c92603a845794d6c2d6321c17",
                 "shasum": ""
             },
             "require": {
-                "filament/forms": "^3.0 | ^4.0",
-                "illuminate/contracts": "^10.0 | ^11.0 | ^12.0",
+                "filament/forms": "^3.0",
+                "illuminate/contracts": "^10.0|^11.0|^12.0",
                 "php": "^8.1",
                 "spatie/laravel-package-tools": "^1.15.0"
             },
             "require-dev": {
                 "nunomaduro/collision": "^7.9",
-                "orchestra/testbench": "^8.0 | ^9.0",
+                "orchestra/testbench": "^8.0|^9.0",
                 "pestphp/pest": "^2.0",
                 "pestphp/pest-plugin-arch": "^2.0",
                 "pestphp/pest-plugin-laravel": "^2.0"
@@ -2981,7 +2981,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-08-22T00:45:45+00:00"
+            "time": "2025-08-28T14:15:53+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",

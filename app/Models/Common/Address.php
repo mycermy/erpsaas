@@ -80,7 +80,7 @@ class Address extends Model
                 implode(', ', $street), // Street 1 & 2 on same line if both exist
                 implode(', ', array_filter([
                     $this->city,
-                    $this->state->name,
+                    $this->state?->name,
                     $this->postal_code,
                 ])),
             ]);
