@@ -42,7 +42,7 @@ class DateRangeService
             'Custom' => [],
         ];
 
-        $period = CarbonPeriod::create($earliestDate, '1 month', $currentDate);
+        $period = CarbonPeriod::create($earliestDate, '1 month', $currentDate->endOfMonth());
 
         foreach ($period as $date) {
             $options['Fiscal Year']['FY-' . $date->year] = $date->year;
