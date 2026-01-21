@@ -267,6 +267,7 @@ class EnhancedInventorySeeder extends Seeder
 
         foreach ($offerings as $index => $offeringData) {
             $inventoryItem = $offeringData['inventoryItem'];
+            $baseUnitCost = $offeringData['unit_cost'];
 
             // Each item gets same date (all initial stock on same day)
             $quantity = $this->faker->numberBetween(50, 200);
@@ -286,6 +287,7 @@ class EnhancedInventorySeeder extends Seeder
                 'adjustment_id' => $adjustment->id,
                 'inventory_item_id' => $inventoryItem->id,
                 'quantity_adjusted' => $quantity, // Use quantity_adjusted field
+                'unit_cost' => $baseUnitCost, // Set initial cost
                 'reason' => 'Initial stock',
             ]);
 
@@ -336,9 +338,14 @@ class EnhancedInventorySeeder extends Seeder
             foreach ($selectedOfferings as $offeringData) {
                 $offering = $offeringData['offering'];
                 $inventoryItem = $offeringData['inventoryItem'];
-                $unitCost = $offeringData['unit_cost'];
+                $baseUnitCost = $offeringData['unit_cost'];
+
+                // Vary cost over time: ±20% variation based on bill index (simulate price changes)
+                $costVariation = ($billIndex - 3) * 0.1; // -0.2, -0.1, 0, 0.1, 0.2
+                $unitCost = (int) ($baseUnitCost * (1 + $costVariation));
+
                 $quantity = $this->faker->numberBetween(10, 50);
-                $unitPrice = $unitCost; // Use the defined unit cost
+                $unitPrice = $unitCost; // Use the varied unit cost
 
                 DocumentLineItem::create([
                     'documentable_type' => Bill::class,

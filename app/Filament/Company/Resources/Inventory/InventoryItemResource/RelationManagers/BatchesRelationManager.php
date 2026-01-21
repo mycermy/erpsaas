@@ -90,7 +90,7 @@ class BatchesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('unit_cost')
                     ->label('Unit Cost')
-                    ->money('usd')
+                    ->currencyWithConversion('MYR')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('expiry_date')

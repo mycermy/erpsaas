@@ -64,13 +64,13 @@ class MovementsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('unit_cost')
                     ->label('Unit Cost')
-                    ->money('MYR')
+                    ->currencyWithConversion('MYR')
                     ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('total_cost')
                     ->label('Total Cost')
-                    ->money('MYR')
+                    ->currencyWithConversion('MYR')
                     ->sortable()
                     ->toggleable(),
 
@@ -179,11 +179,11 @@ class MovementsRelationManager extends RelationManager
                                 'record' => $record->reference_id,
                                 'tenant' => filament()->getTenant(),
                             ]),
-                            'InventoryAdjustment' => \App\Filament\Company\Resources\Inventory\InventoryAdjustmentResource::getUrl('view', [
+                            'InventoryAdjustment' => \App\Filament\Company\Resources\Inventory\InventoryAdjustmentResource::getUrl('edit', [
                                 'record' => $record->reference_id,
                                 'tenant' => filament()->getTenant(),
                             ]),
-                            'InventoryTransfer' => \App\Filament\Company\Resources\Inventory\InventoryTransferResource::getUrl('view', [
+                            'InventoryTransfer' => \App\Filament\Company\Resources\Inventory\InventoryTransferResource::getUrl('edit', [
                                 'record' => $record->reference_id,
                                 'tenant' => filament()->getTenant(),
                             ]),
