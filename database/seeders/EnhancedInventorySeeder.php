@@ -305,7 +305,7 @@ class EnhancedInventorySeeder extends Seeder
         $startDate = $now->copy()->subDays(60);
 
         // Create 5 purchase bills (60 days ago to 30 days ago, evenly spaced)
-        foreach (range(1, 5) as $billIndex) {
+        foreach (range(1, 2) as $billIndex) {
             $vendor = $vendors[array_rand($vendors)];
 
             // Calculate date: each bill is ~6 days apart (30 days / 5 bills)
@@ -402,7 +402,7 @@ class EnhancedInventorySeeder extends Seeder
         $startDate = $now->copy()->subDays(29);
 
         // Create 5 sales invoices (29 days ago to 1 day ago, evenly spaced)
-        foreach (range(1, 5) as $invoiceIndex) {
+        foreach (range(1, 3) as $invoiceIndex) {
             $client = $clients[array_rand($clients)];
 
             // Calculate date: each invoice is ~7 days apart (28 days / 4 intervals)

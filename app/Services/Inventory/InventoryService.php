@@ -48,6 +48,16 @@ class InventoryService
             $batchAllocations
         ) {            // Idempotency: if this movement references a specific reference (e.g. an adjustment)
             // and we've already recorded a movement for this item/reference, return the existing one
+            \Illuminate\Support\Facades\Log::info('recordMovement called', [
+                'item_id' => $item->id,
+                'warehouse_id' => $warehouse->id,
+                'quantity' => $quantity,
+                'movement_type' => is_object($movementType) ? $movementType->value : $movementType,
+                'unit_cost' => $unitCost,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId
+            ]);
+
             if ($referenceType && $referenceId) {
                 $existing = InventoryMovement::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
                     ->where('company_id', $item->company_id)
