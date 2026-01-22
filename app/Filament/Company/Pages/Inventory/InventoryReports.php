@@ -42,7 +42,7 @@ class InventoryReports extends Page implements HasForms
             'start_date' => now()->startOfMonth(),
             'end_date' => now(),
         ]);
-        
+
         // Generate initial report
         $this->generateReport();
     }
@@ -69,17 +69,17 @@ class InventoryReports extends Page implements HasForms
                             ])
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn () => $this->selectedReport = $this->data['report_type'] ?? 'valuation'),
+                            ->afterStateUpdated(fn() => $this->selectedReport = $this->data['report_type'] ?? 'valuation'),
 
                         DatePicker::make('start_date')
                             ->label('Start Date')
                             ->default(now()->startOfMonth())
-                            ->visible(fn ($get) => in_array($get('report_type'), ['movements', 'turnover'])),
+                            ->visible(fn($get) => in_array($get('report_type'), ['movements', 'turnover'])),
 
                         DatePicker::make('end_date')
                             ->label('End Date')
                             ->default(now())
-                            ->visible(fn ($get) => in_array($get('report_type'), ['movements', 'turnover'])),
+                            ->visible(fn($get) => in_array($get('report_type'), ['movements', 'turnover'])),
 
                         Select::make('warehouse_id')
                             ->label('Warehouse (Optional)')
@@ -103,41 +103,58 @@ class InventoryReports extends Page implements HasForms
 
     public function getInventoryValuation(): array
     {
-        $query = InventoryStockLevel::with(['inventoryItem.offering', 'warehouse'])
-            ->whereHas('inventoryItem', function ($q) {
-                $q->where('company_id', filament()->getTenant()->id);
-            })
-            ->where('quantity_on_hand', '>', 0); // Only show items with stock
+        $companyId = filament()->getTenant()->id;
 
-        if (!empty($this->data['warehouse_id'])) {
-            $query->where('warehouse_id', $this->data['warehouse_id']);
+        // Get warehouse filter if specified
+        $warehouseId = $this->data['warehouse_id'] ?? null;
+
+        // Calculate inventory value from actual batches (accurate for FIFO/LIFO/Average)
+        $batchQuery = \App\Models\Inventory\InventoryBatch::with(['inventoryItem.offering', 'warehouse'])
+            ->whereHas('inventoryItem', function ($q) use ($companyId) {
+                $q->where('company_id', $companyId);
+            })
+            ->where('quantity_remaining', '>', 0);
+
+        if ($warehouseId) {
+            $batchQuery->where('warehouse_id', $warehouseId);
         }
 
-        $stockLevels = $query->get();
+        $batches = $batchQuery->get();
 
         $totalValue = 0;
-        $items = [];
+        $itemGroups = [];
 
-        foreach ($stockLevels as $level) {
-            if (!$level->average_cost) {
-                continue;
+        // Group batches by item + warehouse for display
+        foreach ($batches as $batch) {
+            $key = $batch->inventory_item_id . '-' . $batch->warehouse_id;
+
+            if (!isset($itemGroups[$key])) {
+                $itemGroups[$key] = [
+                    'item' => $batch->inventoryItem->offering->name ?? 'N/A',
+                    'sku' => $batch->inventoryItem->sku ?? 'N/A',
+                    'warehouse' => $batch->warehouse->name ?? 'N/A',
+                    'quantity' => 0,
+                    'total_cost' => 0,
+                ];
             }
 
-            // Handle both Money object and integer (cents)
-            $averageCost = is_object($level->average_cost) 
-                ? $level->average_cost->getAmount() 
-                : $level->average_cost;
-            
-            $value = $level->quantity_on_hand * $averageCost;
-            $totalValue += $value;
+            $batchValue = $batch->quantity_remaining * $batch->unit_cost;
+            $itemGroups[$key]['quantity'] += $batch->quantity_remaining;
+            $itemGroups[$key]['total_cost'] += $batchValue;
+            $totalValue += $batchValue;
+        }
 
+        // Calculate average cost per item group and format for display
+        $items = [];
+        foreach ($itemGroups as $group) {
+            $avgCost = $group['quantity'] > 0 ? $group['total_cost'] / $group['quantity'] : 0;
             $items[] = [
-                'item' => $level->inventoryItem->offering->name ?? 'N/A',
-                'sku' => $level->inventoryItem->sku ?? 'N/A',
-                'warehouse' => $level->warehouse->name ?? 'N/A',
-                'quantity' => $level->quantity_on_hand,
-                'unit_cost' => $averageCost / 100,
-                'total_value' => $value / 100,
+                'item' => $group['item'],
+                'sku' => $group['sku'],
+                'warehouse' => $group['warehouse'],
+                'quantity' => $group['quantity'],
+                'unit_cost' => $avgCost / 100,
+                'total_value' => $group['total_cost'] / 100,
             ];
         }
 
@@ -173,8 +190,8 @@ class InventoryReports extends Page implements HasForms
                     'warehouse' => $movement->warehouse->name ?? 'N/A',
                     'type' => $movement->movement_type->getLabel(),
                     'quantity' => $movement->quantity,
-                    'unit_cost' => $movement->unit_cost && is_object($movement->unit_cost) 
-                        ? $movement->unit_cost->getAmount() / 100 
+                    'unit_cost' => $movement->unit_cost && is_object($movement->unit_cost)
+                        ? $movement->unit_cost->getAmount() / 100
                         : ($movement->unit_cost ? $movement->unit_cost / 100 : 0),
                     'notes' => $movement->notes ?? '',
                 ];

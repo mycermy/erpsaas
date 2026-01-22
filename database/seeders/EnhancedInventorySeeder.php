@@ -367,8 +367,19 @@ class EnhancedInventorySeeder extends Seeder
                 'total' => $subtotal,
             ]);
 
-            // NOTE: Inventory processing and accounting transaction are now handled automatically
-            // by DocumentLineItemObserver when line items are created (no manual trigger needed)
+            // Reload bill completely with line items to ensure they're available
+            $bill = $bill->fresh(['lineItems.offering', 'vendor']);
+
+            echo "  Bill #{$bill->id}: {$bill->bill_number} - {$bill->lineItems->count()} line items\n";
+
+            // Delete any existing transaction and recreate it with all line items
+            if ($bill->initialTransaction) {
+                $bill->initialTransaction->delete();
+            }
+
+            $bill->createInitialTransaction();
+            $bill = $bill->fresh();
+            echo "    Created transaction #{$bill->initialTransaction->id} with {$bill->initialTransaction->journalEntries->count()} journal entries\n";
 
             // Record payment for Paid/Partial bills
             if ($bill->status === BillStatus::Paid || $bill->status === BillStatus::Partial) {

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Company\Widgets\Inventory;
 
+use App\Models\Inventory\InventoryBatch;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Inventory\InventoryStockLevel;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -15,17 +16,15 @@ class InventoryStatsWidget extends BaseWidget
     {
         $companyId = filament()->getTenant()->id;
 
-        // Total inventory value
-                    $totalValue = InventoryStockLevel::whereHas('inventoryItem', function ($q) {
-                $q->where('company_id', filament()->getTenant()->id);
-            })->get()->sum(function ($stockLevel) {
-                if (!$stockLevel->average_cost) {
-                    return 0;
-                }
-                $cost = is_object($stockLevel->average_cost) 
-                    ? $stockLevel->average_cost->getAmount() 
-                    : $stockLevel->average_cost;
-                return $stockLevel->quantity_on_hand * $cost;
+        // Total inventory value - Calculate from actual batch costs
+        // This ensures FIFO/LIFO items use actual costs instead of averaged costs
+        $totalValue = InventoryBatch::whereHas('inventoryItem', function ($q) use ($companyId) {
+            $q->where('company_id', $companyId);
+        })
+            ->where('quantity_remaining', '>', 0)
+            ->get()
+            ->sum(function ($batch) {
+                return $batch->quantity_remaining * $batch->unit_cost;
             });
 
         // Total items
