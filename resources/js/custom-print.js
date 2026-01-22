@@ -1,5 +1,6 @@
 function printPdf(url, title) {
     if (title) {
+        document.body.setAttribute('originalTitle', document.title);
         document.title = title;
     }
 
@@ -13,6 +14,10 @@ function printPdf(url, title) {
 
     iframe.onload = function () {
         try {
+            iframe.contentWindow.addEventListener('afterprint', function () {
+                document.body.removeChild(iframe);
+                document.title = document.body.getAttribute('originalTitle') || document.title;
+            });
             iframe.contentWindow.print();
         } catch (e) {
             console.error('Error printing PDF:', e);

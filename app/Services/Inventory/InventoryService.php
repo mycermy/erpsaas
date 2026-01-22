@@ -62,6 +62,7 @@ class InventoryService
             $batchId = null;
             $batchAllocations = [];
 
+<<<<<<< HEAD
             // Special handling for adjustments: treat by sign
             if ($movementType === MovementType::Adjustment) {
                 // Inbound adjustment (found stock): create a new batch when tracking batches
@@ -218,8 +219,12 @@ class InventoryService
                 ]);
             }
 
-            // Handle batch tracking for outbound movements (Sales, Adjustments, Transfers)
-            if ($movementType->isOutbound() && $item->track_batches) {
+            // Handle batch tracking for outbound movements or negative adjustments
+            if (($movementType->isOutbound() || ($movementType === MovementType::Adjustment && $quantity < 0)) && $item->track_batches) {
+=======
+            // Handle batch tracking for outbound movements or negative adjustments
+            if (($movementType->isOutbound() || ($movementType === MovementType::Adjustment && $quantity < 0)) && $item->track_batches) {
+>>>>>>> bengkel/dev/inventory
                 // Calculate COGS and get batch allocations
                 $cogsCalculation = $this->calculateCOGS($item, $warehouse, abs($quantity));
 
@@ -298,9 +303,31 @@ class InventoryService
             // Update stock level
             $this->updateStockLevel($item, $warehouse, $quantity, $unitCost);
 
-            // Handle batch tracking for inbound movements
-            if ($movementType->isInbound() && $item->track_batches) {
-                $batch = $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $referenceId, null, null, null, $createdBy);
+<<<<<<< HEAD
+            // Handle batch tracking for inbound movements or positive adjustments
+            if (($movementType->isInbound() || ($movementType === MovementType::Adjustment && $quantity > 0)) && $item->track_batches) {
+                $batchNumber = null;
+                $billId = null;
+
+                // If this is a purchase bill, link the batch to the bill
+                if ($referenceType === 'App\\Models\\Accounting\\Bill') {
+                    $billId = $referenceId;
+                }
+
+                $batch = $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $batchNumber, $billId, null, null, $movementType);
+=======
+            // Handle batch tracking for inbound movements or positive adjustments
+            if (($movementType->isInbound() || ($movementType === MovementType::Adjustment && $quantity > 0)) && $item->track_batches) {
+                $batchNumber = null;
+                $billId = null;
+
+                // If this is a purchase bill, link the batch to the bill
+                if ($referenceType === 'App\\Models\\Accounting\\Bill') {
+                    $billId = $referenceId;
+                }
+
+                $batch = $this->createBatch($item, $warehouse, $quantity, $unitCost, $movementDate ?? now(), $batchNumber, $billId, null, null, $movementType);
+>>>>>>> bengkel/dev/inventory
 
                 // Link the movement to the created batch
                 $movement->update(['batch_id' => $batch->id]);
@@ -517,14 +544,14 @@ class InventoryService
         ?int $billId = null,
         ?string $lotNumber = null,
         ?\DateTime $expiryDate = null,
-        ?int $createdBy = null
+        ?MovementType $movementType = null
     ): InventoryBatch {
         return InventoryBatch::create([
             'company_id' => $item->company_id,
             'inventory_item_id' => $item->id,
             'warehouse_id' => $warehouse->id,
             'batch_number' => $batchNumber ?? $this->generateBatchNumber($item, $warehouse),
-            'lot_number' => $lotNumber,
+            'lot_number' => $lotNumber ?? $this->generateLotNumber($item, $warehouse, $movementType),
             'quantity_received' => $quantity,
             'quantity_remaining' => $quantity,
             'unit_cost' => $unitCost,
@@ -553,11 +580,76 @@ class InventoryService
      */
     protected function generateBatchNumber(InventoryItem $item, Warehouse $warehouse): string
     {
+        // Use year-based sequential numbering: 2024-001, 2024-002, etc.
+        $year = now()->format('Y');
+        
+        // Get the next sequential number for this year
+        $lastBatch = InventoryBatch::where('company_id', $item->company_id)
+            ->where('batch_number', 'like', "{$year}-%")
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if ($lastBatch) {
+            // Extract the sequential number and increment
+            $parts = explode('-', $lastBatch->batch_number);
+            $sequential = (int) $parts[1] + 1;
+        } else {
+            $sequential = 1;
+        }
+        
+        return sprintf('%s-%03d', $year, $sequential);
+    }
+
+    /**
+     * Generate a unique lot number
+     */
+    protected function generateLotNumber(InventoryItem $item, Warehouse $warehouse, ?MovementType $movementType = null): string
+    {
         $prefix = strtoupper(substr($warehouse->code ?? 'WH', 0, 3));
         $itemCode = strtoupper(substr($item->sku ?? $item->id, 0, 4));
-        $timestamp = now()->format('ymdHis');
+        $yearMonth = now()->format('Ym'); // 202601 for January 2026
+        
+        // Determine activity prefix based on movement type
+        $activityPrefix = $this->getActivityPrefix($movementType);
+        
+        // Get the next sequential number for this activity-warehouse-item-yearmonth combination
+        $pattern = "{$activityPrefix}-{$prefix}-{$itemCode}-{$yearMonth}-%";
+        $lastLot = InventoryBatch::where('company_id', $item->company_id)
+            ->whereNotNull('lot_number')
+            ->where('lot_number', 'like', $pattern)
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if ($lastLot) {
+            // Extract the sequential number and increment
+            $parts = explode('-', $lastLot->lot_number);
+            $sequential = (int) $parts[4] + 1;
+        } else {
+            $sequential = 1;
+        }
+        
+        return sprintf('%s-%s-%s-%s-%03d', $activityPrefix, $prefix, $itemCode, $yearMonth, $sequential);
+    }
 
-        return "{$prefix}-{$itemCode}-{$timestamp}";
+    /**
+     * Get activity prefix based on movement type
+     */
+    protected function getActivityPrefix(?MovementType $movementType): string
+    {
+        if (!$movementType) {
+            return 'UNK'; // Unknown activity
+        }
+
+        return match ($movementType) {
+            MovementType::Purchase => 'PUR',    // Purchase stock
+            MovementType::Sale => 'SLS',        // Sales stock
+            MovementType::Adjustment => 'DMG',  // Damage/write-off adjustments
+            MovementType::TransferIn => 'TRI',  // Transfer in
+            MovementType::TransferOut => 'TRO', // Transfer out
+            MovementType::Return => 'RTN',      // Returns
+            MovementType::Initial => 'INIT',    // Initial stock setup
+            default => 'UNK'                    // Unknown activity
+        };
     }
 
     /**

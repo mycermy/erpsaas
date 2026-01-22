@@ -64,13 +64,13 @@ class MovementsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('unit_cost')
                     ->label('Unit Cost')
-                    ->money('MYR')
+                    ->currencyWithConversion('MYR')
                     ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('total_cost')
                     ->label('Total Cost')
-                    ->money('MYR')
+                    ->currencyWithConversion('MYR')
                     ->sortable()
                     ->toggleable(),
 

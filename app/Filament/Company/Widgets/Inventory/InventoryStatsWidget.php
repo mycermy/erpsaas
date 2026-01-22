@@ -26,7 +26,7 @@ class InventoryStatsWidget extends BaseWidget
                     ? $stockLevel->average_cost->getAmount() 
                     : $stockLevel->average_cost;
                 return $stockLevel->quantity_on_hand * $cost;
-            }) / 100;
+            });
 
         // Total items
         $totalItems = InventoryItem::where('company_id', $companyId)
@@ -51,7 +51,7 @@ class InventoryStatsWidget extends BaseWidget
             ->count();
 
         return [
-            Stat::make('Total Inventory Value', money($totalValue, 'USD'))
+            Stat::make('Total Inventory Value', money($totalValue, 'MYR'))
                 ->description('Across all warehouses')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
@@ -67,7 +67,7 @@ class InventoryStatsWidget extends BaseWidget
                 ->color($lowStockCount > 0 ? 'warning' : 'success')
                 ->url(\App\Filament\Company\Resources\Inventory\InventoryItemResource::getUrl('index', [
                     'tenant' => filament()->getTenant(),
-                    'tableFilters' => ['low_stock' => ['isActive' => true]],
+                    'tableFilters' => ['low_stock' => ['value' => true]],
                 ])),
 
             Stat::make('Out of Stock', $outOfStockCount)

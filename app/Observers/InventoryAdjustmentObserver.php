@@ -19,7 +19,6 @@ class InventoryAdjustmentObserver
         $wasNotApproved = $adjustment->getOriginal('status') !== AdjustmentStatus::Approved;
         $isApproved = $adjustment->status === AdjustmentStatus::Approved;
 
-        // We only want to process adjustments that transitioned to Approved
         if ($wasNotApproved && $isApproved) {
             $this->processInventoryAdjustment($adjustment);
         }
@@ -62,19 +61,43 @@ class InventoryAdjustmentObserver
             // Ensure movement_date is a DateTime (InventoryService accepts DateTime/Carbon)
             $movementDate = $adjustment->adjustment_date;
 
+            // Determine movement type based on adjustment reason
+            $movementType = $this->getMovementTypeForAdjustment($adjustment);
+
             // Record adjustment movement
             $inventoryService->recordMovement(
                 item: $inventoryItem,
                 warehouse: $adjustment->warehouse,
                 quantity: $quantity, // positive = increase, negative = decrease
-                movementType: MovementType::Adjustment,
-                unitCost: 0, // Adjustments typically don't change cost
+                movementType: $movementType,
+                unitCost: $adjustmentItem->unit_cost ?? 0, // Use the specified unit cost for adjustments
+                movementDate: $movementDate,
                 referenceType: InventoryAdjustment::class,
                 referenceId: $adjustment->id,
                 notes: $notes,
-                movementDate: $movementDate,
                 createdBy: $adjustment->created_by ?? null
             );
         }
+    }
+
+    /**
+     * Determine the appropriate movement type for an adjustment
+     */
+    protected function getMovementTypeForAdjustment(InventoryAdjustment $adjustment): MovementType
+    {
+        $reason = strtolower($adjustment->reason ?? '');
+
+        // Check for initial stock setup
+        if (str_contains($reason, 'initial') || str_contains($reason, 'setup')) {
+            return MovementType::Initial;
+        }
+
+        // Check for damage/write-off
+        if (str_contains($reason, 'damage') || str_contains($reason, 'write-off') || str_contains($reason, 'loss')) {
+            return MovementType::Adjustment; // Keep as ADJ for damage
+        }
+
+        // Default to adjustment for other cases
+        return MovementType::Adjustment;
     }
 }

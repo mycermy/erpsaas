@@ -66,7 +66,7 @@ class StockLevelsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('average_cost')
                     ->label('Avg Unit Cost')
-                    ->money('USD')
+                    ->currencyWithConversion('MYR')
                     ->getStateUsing(function ($record) {
                         if (!$record->average_cost) {
                             return null;
@@ -79,7 +79,7 @@ class StockLevelsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('total_value')
                     ->label('Total Value')
-                    ->money('USD')
+                    ->currencyWithConversion('MYR')
                     ->getStateUsing(function ($record) {
                         if (!$record->average_cost) {
                             return 0;
