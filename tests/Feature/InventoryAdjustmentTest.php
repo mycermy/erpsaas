@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\Inventory\AdjustmentStatus;
+use App\Enums\Inventory\AdjustmentType;
 use App\Enums\Inventory\MovementType;
 use App\Enums\Inventory\TrackMethod;
 use App\Models\Common\Offering;
 use App\Models\Company;
 use App\Models\Inventory\InventoryAdjustment;
+use App\Models\Inventory\InventoryAdjustmentBatch;
 use App\Models\Inventory\InventoryAdjustmentItem;
 use App\Models\Inventory\InventoryItem;
 use App\Models\Inventory\Warehouse;
@@ -282,5 +284,140 @@ class InventoryAdjustmentTest extends TestCase
         $secondStock = $service->getStockQuantity($item, $this->warehouse);
 
         $this->assertEquals($firstStock, $secondStock, 'Re-processing should not double apply the adjustment');
+    }
+
+    public function test_damage_adjustment_with_manual_batch_selection()
+    {
+        $offering = Offering::withoutEvents(function () {
+            return Offering::firstOrCreate([
+                'company_id' => $this->company->id,
+                'name' => 'Test Laptop 4',
+            ], [
+                'type' => 'product',
+                'price' => 100000,
+                'sellable' => true,
+                'purchasable' => true,
+                'stockable' => true,
+            ]);
+        });
+
+        $item = InventoryItem::create([
+            'company_id' => $this->company->id,
+            'offering_id' => $offering->id,
+            'sku' => 'TEST-LAP-004',
+            'track_method' => TrackMethod::FIFO,
+            'track_batches' => true,
+            'active' => true,
+        ]);
+
+        $service = app(InventoryService::class);
+
+        // Authenticate a user
+        \Illuminate\Support\Facades\Auth::loginUsingId(1);
+
+        // Create initial stock with multiple batches
+        $batch1 = $service->recordMovement($item, $this->warehouse, 10, MovementType::Purchase, 50000, null, null, null, 'Purchase PO-TST-1', now()->subDays(10), 1);
+        $batch2 = $service->recordMovement($item, $this->warehouse, 15, MovementType::Purchase, 55000, null, null, null, 'Purchase PO-TST-2', now()->subDays(5), 1);
+        $batch3 = $service->recordMovement($item, $this->warehouse, 8, MovementType::Purchase, 60000, null, null, null, 'Purchase PO-TST-3', now()->subDays(2), 1);
+
+        \Illuminate\Support\Facades\Auth::logout();
+
+        $this->assertEquals(33, $service->getStockQuantity($item, $this->warehouse));
+
+        // Get the actual batch IDs
+        $batches = \App\Models\Inventory\InventoryBatch::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+            ->where('inventory_item_id', $item->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->orderBy('received_date')
+            ->get();
+
+        $this->assertCount(3, $batches);
+
+        $adjustment = InventoryAdjustment::create([
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'adjustment_number' => 'ADJ-DMG-001',
+            'adjustment_date' => now(),
+            'adjustment_type' => AdjustmentType::Damage,
+            'status' => AdjustmentStatus::Draft,
+            'reason' => 'Damaged goods',
+            'created_by' => 1,
+        ]);
+
+        $adjustmentItem = InventoryAdjustmentItem::create([
+            'company_id' => $this->company->id,
+            'adjustment_id' => $adjustment->id,
+            'inventory_item_id' => $item->id,
+            'quantity_before' => 33,
+            'quantity_after' => 21, // 33 - 12 = 21
+            'quantity_adjusted' => -12,
+            'unit_cost' => 0,
+            'reason' => 'Damaged items found',
+        ]);
+
+        // Create manual batch allocations
+        $batchAlloc1 = InventoryAdjustmentBatch::create([
+            'company_id' => $this->company->id,
+            'adjustment_item_id' => $adjustmentItem->id,
+            'inventory_batch_id' => $batches[0]->id, // Oldest batch
+            'quantity' => 7,
+            'unit_cost' => 50000,
+            'total_cost' => 350000,
+        ]);
+
+        $batchAlloc2 = InventoryAdjustmentBatch::create([
+            'company_id' => $this->company->id,
+            'adjustment_item_id' => $adjustmentItem->id,
+            'inventory_batch_id' => $batches[2]->id, // Newest batch
+            'quantity' => 5,
+            'unit_cost' => 60000,
+            'total_cost' => 300000,
+        ]);
+
+        // Debug: Check if batch allocations were created
+        $this->assertNotNull($batchAlloc1->id, 'First batch allocation should be created');
+        $this->assertNotNull($batchAlloc2->id, 'Second batch allocation should be created');
+
+        // Approve the adjustment
+        $adjustment->status = AdjustmentStatus::Approved;
+        $adjustment->save();
+
+        // Debug: Check if adjustment was saved
+        $adjustment->refresh();
+        $this->assertEquals(AdjustmentStatus::Approved, $adjustment->status, 'Adjustment should be approved');
+
+        // Debug: Check adjustment
+        $adjustment->refresh();
+        $this->assertEquals(AdjustmentType::Damage, $adjustment->adjustment_type, 'Adjustment should be damage type');
+
+        // Assert movements were created for the manually selected batches
+        $movements = \App\Models\Inventory\InventoryMovement::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+            ->where('reference_type', InventoryAdjustment::class)
+            ->where('reference_id', $adjustment->id)
+            ->where('inventory_item_id', $item->id)
+            ->orderBy('batch_id')
+            ->get();
+
+        $this->assertCount(2, $movements, 'Should create 2 movements for manual batch selection');
+
+        // Check first movement (oldest batch)
+        $this->assertEquals($batches[0]->id, $movements[0]->batch_id);
+        $this->assertEquals(-7, $movements[0]->quantity);
+        $this->assertEquals(50000, $movements[0]->unit_cost);
+
+        // Check second movement (newest batch)
+        $this->assertEquals($batches[2]->id, $movements[1]->batch_id);
+        $this->assertEquals(-5, $movements[1]->quantity);
+        $this->assertEquals(60000, $movements[1]->unit_cost);
+
+        // Check batch quantities were reduced correctly
+        $batches[0]->refresh();
+        $batches[2]->refresh();
+
+        $this->assertEquals(3, $batches[0]->quantity_remaining, 'Oldest batch should have 10-7=3 remaining');
+        $this->assertEquals(3, $batches[2]->quantity_remaining, 'Newest batch should have 8-5=3 remaining');
+
+        // Stock should be reduced by 12
+        $this->assertEquals(21, $service->getStockQuantity($item, $this->warehouse));
     }
 }

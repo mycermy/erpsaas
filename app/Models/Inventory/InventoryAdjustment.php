@@ -5,6 +5,7 @@ namespace App\Models\Inventory;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Inventory\AdjustmentStatus;
+use App\Enums\Inventory\AdjustmentType;
 use App\Observers\InventoryAdjustmentObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,7 @@ class InventoryAdjustment extends Model
         'warehouse_id',
         'adjustment_number',
         'adjustment_date',
+        'adjustment_type',
         'status',
         'reason',
         'approved_by',
@@ -34,6 +36,7 @@ class InventoryAdjustment extends Model
 
     protected $casts = [
         'adjustment_date' => 'date',
+        'adjustment_type' => AdjustmentType::class,
         'status' => AdjustmentStatus::class,
         'approved_at' => 'datetime',
     ];

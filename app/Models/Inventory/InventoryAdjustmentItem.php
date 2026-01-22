@@ -7,6 +7,7 @@ use App\Concerns\CompanyOwned;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryAdjustmentItem extends Model
 {
@@ -46,8 +47,8 @@ class InventoryAdjustmentItem extends Model
         return $this->quantity_adjusted > 0;
     }
 
-    public function isDecrease(): bool
+    public function batchAllocations(): HasMany
     {
-        return $this->quantity_adjusted < 0;
+        return $this->hasMany(InventoryAdjustmentBatch::class, 'adjustment_item_id');
     }
 }

@@ -127,6 +127,7 @@ return new class extends Migration
             $table->string('adjustment_number')->nullable();
             $table->date('adjustment_date');
             $table->enum('status', ['draft', 'approved', 'cancelled'])->default('draft');
+            $table->enum('adjustment_type', ['stocktake', 'damage'])->default('stocktake');
             $table->text('reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
@@ -151,6 +152,20 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['adjustment_id', 'inventory_item_id'], 'inv_adj_item_idx');
+        });
+
+        Schema::create('inventory_adjustment_batches', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            $table->foreignId('adjustment_item_id')->constrained('inventory_adjustment_items')->onDelete('cascade');
+            $table->foreignId('inventory_batch_id')->constrained('inventory_batches')->onDelete('cascade');
+            $table->integer('quantity')->unsigned(); // Quantity to consume from this batch
+            $table->integer('unit_cost')->unsigned(); // Cost per unit from this batch
+            $table->integer('total_cost')->unsigned(); // Total cost for this allocation
+            $table->timestamps();
+
+            $table->index(['adjustment_item_id']);
+            $table->index(['inventory_batch_id']);
         });
 
         // Warehouse Transfers
@@ -195,6 +210,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('inventory_transfer_items');
         Schema::dropIfExists('inventory_transfers');
+        Schema::dropIfExists('inventory_adjustment_batches');
         Schema::dropIfExists('inventory_adjustment_items');
         Schema::dropIfExists('inventory_adjustments');
         Schema::dropIfExists('inventory_movements');

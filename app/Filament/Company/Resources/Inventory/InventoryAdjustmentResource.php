@@ -3,13 +3,14 @@
 namespace App\Filament\Company\Resources\Inventory;
 
 use App\Enums\Inventory\AdjustmentStatus;
-use App\Enums\Inventory\MovementType;
+use App\Enums\Inventory\AdjustmentType;
 use App\Filament\Company\Resources\Inventory\InventoryAdjustmentResource\Pages;
 use App\Models\Inventory\InventoryAdjustment;
 use App\Services\Inventory\InventoryService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -37,9 +38,9 @@ class InventoryAdjustmentResource extends Resource
                         Forms\Components\TextInput::make('adjustment_number')
                             ->required()
                             ->label('Reference Number')
-                            ->default(fn () => 'ADJ-' . date('ymd') . '-' . rand(100, 999))
+                            ->default(fn() => 'ADJ-' . date('ymd') . '-' . rand(100, 999))
                             ->maxLength(100)
-                            ->disabled(fn (?string $operation) => $operation === 'edit'),
+                            ->disabled(fn(?string $operation) => $operation === 'edit'),
 
                         Forms\Components\Select::make('warehouse_id')
                             ->relationship('warehouse', 'name')
@@ -47,21 +48,37 @@ class InventoryAdjustmentResource extends Resource
                             ->searchable()
                             ->preload()
                             ->disabled(
-                                fn (?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                                fn(?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
                             ),
 
                         Forms\Components\DatePicker::make('adjustment_date')
                             ->required()
                             ->default(now())
                             ->disabled(
-                                fn (?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                                fn(?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
                             ),
 
                         Forms\Components\Select::make('status')
                             ->options(AdjustmentStatus::class)
                             ->default(AdjustmentStatus::Draft)
                             ->required()
-                            ->disabled(fn (?string $operation) => $operation === 'create'),
+                            ->disabled(fn(?string $operation) => $operation === 'create'),
+
+                        Forms\Components\Select::make('adjustment_type')
+                            ->label('Adjustment Type')
+                            ->options(AdjustmentType::class)
+                            ->default(AdjustmentType::Stocktake)
+                            ->required()
+                            ->live()
+                            ->helperText(function ($state) {
+                                if ($state instanceof AdjustmentType) {
+                                    return $state->description();
+                                }
+                                return $state ? AdjustmentType::from($state)->description() : null;
+                            })
+                            ->disabled(
+                                fn(?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                            ),
 
                         Forms\Components\Textarea::make('reason')
                             ->columnSpanFull()
@@ -84,7 +101,7 @@ class InventoryAdjustmentResource extends Resource
                                         $companyId = session('current_company_id') ?? (Auth::user()?->current_company_id ?? null);
 
                                         $query = \App\Models\Inventory\InventoryItem::with('offering')
-                                            ->when($companyId, fn ($q) => $q->where('company_id', $companyId));
+                                            ->when($companyId, fn($q) => $q->where('company_id', $companyId));
 
                                         if ($search) {
                                             $query->where(function ($q) use ($search) {
@@ -107,7 +124,7 @@ class InventoryAdjustmentResource extends Resource
                                         $companyId = session('current_company_id') ?? (Auth::user()?->current_company_id ?? null);
 
                                         $item = \App\Models\Inventory\InventoryItem::with('offering')
-                                            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+                                            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
                                             ->find($value);
 
                                         return $item?->offering->name ?? $item?->sku;
@@ -130,7 +147,7 @@ class InventoryAdjustmentResource extends Resource
                                         $set('unit_cost', $stockLevel?->average_unit_cost?->getAmount() ?? 0);
                                     })
                                     ->disabled(
-                                        fn (?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
+                                        fn(?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
                                     ),
 
                                 Forms\Components\TextInput::make('quantity_before')
@@ -147,10 +164,12 @@ class InventoryAdjustmentResource extends Resource
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Set $set, ?float $state, Get $get) {
                                         $before = (float) ($get('quantity_before') ?? 0);
-                                        $set('quantity_adjusted', $state - $before);
+                                        $quantityAdjusted = $state - $before;
+                                        $set('quantity_adjusted', $quantityAdjusted);
+                                        $set('quantity', abs($quantityAdjusted));
                                     })
                                     ->disabled(
-                                        fn (?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
+                                        fn(?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
                                     ),
 
                                 Forms\Components\TextInput::make('quantity_adjusted')
@@ -167,11 +186,201 @@ class InventoryAdjustmentResource extends Resource
                                     ->disabled()
                                     ->dehydrated(),
 
+                                // Batch allocation section - only visible for damage adjustments with outbound quantities
+                                Forms\Components\Repeater::make('batch_allocations')
+                                    ->label('Batch Allocations')
+                                    ->relationship('batchAllocations')
+                                    ->schema([
+                                        Forms\Components\Select::make('inventory_batch_id')
+                                            ->label('Batch')
+                                            ->options(function (Get $get) {
+                                                $itemId = $get('../../inventory_item_id');
+                                                $warehouseId = $get('../../../../warehouse_id');
+
+                                                if (! $itemId || ! $warehouseId) {
+                                                    return [];
+                                                }
+
+                                                return \App\Models\Inventory\InventoryBatch::where('inventory_item_id', $itemId)
+                                                    ->where('warehouse_id', $warehouseId)
+                                                    ->where('quantity_remaining', '>', 0)
+                                                    ->get()
+                                                    ->mapWithKeys(function ($batch) {
+                                                        return [$batch->id => $batch->batch_number . ' (Available: ' . $batch->quantity_remaining . ' @ $' . number_format($batch->unit_cost / 100, 2) . ')'];
+                                                    })
+                                                    ->toArray();
+                                            })
+                                            ->required()
+                                            ->live()
+                                            ->afterStateUpdated(function (Forms\Set $set, ?int $state, Get $get) {
+                                                if (! $state) {
+                                                    return;
+                                                }
+
+                                                $batch = \App\Models\Inventory\InventoryBatch::find($state);
+                                                if ($batch) {
+                                                    $set('unit_cost', $batch->unit_cost);
+                                                    // Recalculate total_cost when unit_cost changes
+                                                    $quantity = $get('quantity') ?? 0;
+                                                    $set('total_cost', $quantity * $batch->unit_cost);
+                                                }
+                                            }),
+
+                                        Forms\Components\TextInput::make('quantity')
+                                            ->label('Quantity')
+                                            ->numeric()
+                                            ->required()
+                                            ->minValue(1)
+                                            ->maxValue(function (Get $get) {
+                                                $batchId = $get('inventory_batch_id');
+                                                $adjustmentType = $get('../../../../adjustment_type');
+                                                $quantityAdjusted = $get('../../quantity_adjusted') ?? 0;
+                                                $currentAllocations = $get('batch_allocations') ?? [];
+
+                                                if (! $batchId) {
+                                                    return null;
+                                                }
+
+                                                $batch = \App\Models\Inventory\InventoryBatch::find($batchId);
+                                                if (! $batch) {
+                                                    return null;
+                                                }
+
+                                                $maxFromBatch = $batch->quantity_remaining;
+
+                                                // For damage adjustments, also limit by remaining needed quantity
+                                                if ($adjustmentType === AdjustmentType::Damage->value && $quantityAdjusted < 0) {
+                                                    $requiredTotal = abs($quantityAdjusted);
+                                                    $currentTotal = collect($currentAllocations)->sum('quantity');
+                                                    $remainingNeeded = $requiredTotal - $currentTotal;
+
+                                                    return min($maxFromBatch, $remainingNeeded);
+                                                }
+
+                                                return $maxFromBatch;
+                                            })
+                                            ->rules([
+                                                function (Get $get) {
+                                                    return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                        if ($value < 1) {
+                                                            $fail('Quantity must be at least 1.');
+
+                                                            return;
+                                                        }
+
+                                                        $batchId = $get('inventory_batch_id');
+                                                        $adjustmentType = $get('../../../../adjustment_type');
+                                                        $quantityAdjusted = $get('../../quantity_adjusted') ?? 0;
+                                                        $currentAllocations = $get('batch_allocations') ?? [];
+
+                                                        if (! $batchId) {
+                                                            return;
+                                                        }
+
+                                                        $batch = \App\Models\Inventory\InventoryBatch::find($batchId);
+                                                        if (! $batch) {
+                                                            return;
+                                                        }
+
+                                                        $maxFromBatch = $batch->quantity_remaining;
+
+                                                        // For damage adjustments, also limit by remaining needed quantity
+                                                        if ($adjustmentType === AdjustmentType::Damage->value && $quantityAdjusted < 0) {
+                                                            $requiredTotal = abs($quantityAdjusted);
+                                                            $currentTotal = collect($currentAllocations)->sum('quantity');
+                                                            $remainingNeeded = $requiredTotal - $currentTotal;
+
+                                                            $maxAllowed = min($maxFromBatch, $remainingNeeded);
+                                                        } else {
+                                                            $maxAllowed = $maxFromBatch;
+                                                        }
+
+                                                        if ($value > $maxAllowed) {
+                                                            $fail("Quantity cannot exceed {$maxAllowed} (batch available: {$maxFromBatch}).");
+                                                        }
+                                                    };
+                                                },
+                                            ])
+                                            ->live()
+
+                                            ->afterStateUpdated(function (Forms\Set $set, ?int $state, Get $get) {
+                                                $unitCost = $get('unit_cost') ?? 0;
+                                                $set('total_cost', $state * $unitCost);
+                                            }),
+
+                                        Forms\Components\TextInput::make('unit_cost')
+                                            ->label('Unit Cost')
+                                            ->numeric()
+                                            ->prefix('$')
+                                            ->disabled()
+                                            ->dehydrated(),
+
+                                        Forms\Components\TextInput::make('total_cost')
+                                            ->label('Total Cost')
+                                            ->numeric()
+                                            ->prefix('$')
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->live()
+                                            ->afterStateUpdated(function (Forms\Set $set, ?int $state, Get $get) {
+                                                $batchId = $get('inventory_batch_id');
+                                                $adjustmentType = $get('../../../../adjustment_type');
+                                                $quantityAdjusted = $get('../../quantity_adjusted') ?? 0;
+                                                $currentAllocations = $get('batch_allocations') ?? [];
+
+                                                $text = 'Adjustment Type: ' . ($adjustmentType ? AdjustmentType::from($adjustmentType)->label() : 'N/A') . '. ';
+                                                $text .= 'Quantity Adjusted: ' . abs($quantityAdjusted) . '. ';
+                                                $totalAllocated = collect($currentAllocations)->sum('quantity');
+                                                $text .= 'Total Allocated: ' . $totalAllocated . '. ';
+                                                $remaining = max(0, abs($quantityAdjusted) - $totalAllocated);
+                                                $text .= 'Remaining to Allocate: ' . $remaining . '. ';
+
+                                                $batch = \App\Models\Inventory\InventoryBatch::find($batchId);
+                                                if ($batch) {
+                                                    $text .= 'Max available in batch: ' . $batch->quantity_remaining . '. ';
+                                                }
+
+                                                $maxFromBatch = $batch->quantity_remaining ?? 0;
+
+                                                $requiredTotal = abs($quantityAdjusted);
+                                                $currentTotal = collect($currentAllocations)->sum('quantity');
+                                                $remainingNeeded = $requiredTotal - $currentTotal;
+                                                $maxAllowed = min($maxFromBatch, $remainingNeeded);
+
+                                                $text .= 'Max allowed to allocate: ' . $maxAllowed . '.';
+
+                                                Notification::make()
+                                                    ->title($text)
+                                                    ->icon('heroicon-o-document-text')
+                                                    ->iconColor('success')
+                                                    ->send();
+                                            }),
+                                    ])
+                                    // ->columnSpanFull()
+                                    ->addActionLabel('Add Batch')
+                                    ->visible(fn(Get $get) => $get('../../adjustment_type') === AdjustmentType::Damage->value && ($get('quantity_adjusted') ?? 0) < 0)
+                                    ->helperText('Select which batches to consume for this damage adjustment. Total allocated quantity must equal the adjustment amount.')
+                                    ->rules([
+                                        fn(Get $get) => function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $adjustmentType = $get('../../adjustment_type');
+                                            $quantityAdjusted = $get('quantity_adjusted') ?? 0;
+
+                                            if ($adjustmentType === AdjustmentType::Damage->value && $quantityAdjusted < 0) {
+                                                $totalAllocated = collect($value ?? [])->sum('quantity');
+                                                $requiredQuantity = abs($quantityAdjusted);
+
+                                                if ($totalAllocated !== $requiredQuantity) {
+                                                    $fail("Total allocated quantity ({$totalAllocated}) must equal the adjustment amount ({$requiredQuantity}).");
+                                                }
+                                            }
+                                        },
+                                    ]),
+
                                 Forms\Components\Textarea::make('reason')
                                     ->rows(2)
                                     ->columnSpanFull()
                                     ->disabled(
-                                        fn (?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
+                                        fn(?string $operation, Get $get) => $operation === 'edit' && $get('../../status') !== AdjustmentStatus::Draft->value
                                     ),
                             ])
                             ->columns(5)
@@ -180,10 +389,10 @@ class InventoryAdjustmentResource extends Resource
                             ->reorderable(false)
                             ->collapsible()
                             ->disabled(
-                                fn (?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
+                                fn(?string $operation, ?InventoryAdjustment $record) => $operation === 'edit' && $record?->status !== AdjustmentStatus::Draft
                             ),
                     ])
-                    ->visible(fn (?string $operation) => $operation !== 'view'),
+                    ->visible(fn(?string $operation) => $operation !== 'view'),
             ]);
     }
 
@@ -202,6 +411,10 @@ class InventoryAdjustmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('adjustment_date')
                     ->date()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('adjustment_type')
+                    ->badge()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
@@ -240,6 +453,10 @@ class InventoryAdjustmentResource extends Resource
                     ->options(AdjustmentStatus::class)
                     ->multiple(),
 
+                Tables\Filters\SelectFilter::make('adjustment_type')
+                    ->options(AdjustmentType::class)
+                    ->multiple(),
+
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->relationship('warehouse', 'name')
                     ->searchable()
@@ -251,33 +468,9 @@ class InventoryAdjustmentResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
+                    ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
                     ->action(function (InventoryAdjustment $record) {
-                        $inventoryService = app(InventoryService::class);
-
-                        foreach ($record->items as $item) {
-                            if ($item->quantity_adjusted == 0) {
-                                continue;
-                            }
-
-                            $inventoryService->recordMovement(
-                                item: $item->inventoryItem,
-                                warehouse: $record->warehouse,
-                                quantity: $item->quantity_adjusted,
-                                movementType: MovementType::Adjustment,
-                                unitCost: $item->unit_cost,
-                                referenceType: InventoryAdjustment::class,
-                                referenceId: $record->id,
-                                notes: $item->reason,
-                                movementDate: $record->adjustment_date
-                            );
-                        }
-
-                        $record->update([
-                            'status' => AdjustmentStatus::Approved,
-                            'approved_by' => Auth::id(),
-                            'approved_at' => now(),
-                        ]);
+                        $record->approve(Auth::id());
                     }),
 
                 Tables\Actions\Action::make('cancel')
@@ -285,13 +478,13 @@ class InventoryAdjustmentResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn (InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
+                    ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
                     ->action(function (InventoryAdjustment $record) {
                         $record->update(['status' => AdjustmentStatus::Cancelled]);
                     }),
 
                 Tables\Actions\EditAction::make()
-                    ->visible(fn (InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft),
+                    ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft),
 
                 Tables\Actions\ViewAction::make(),
             ])
@@ -328,6 +521,6 @@ class InventoryAdjustmentResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['warehouse', 'items.inventoryItem']);
+        return parent::getEloquentQuery()->with(['warehouse', 'items.inventoryItem', 'items.batchAllocations.inventoryBatch']);
     }
 }

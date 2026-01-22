@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Enums\Inventory\AdjustmentStatus;
+use App\Enums\Inventory\AdjustmentType;
 use App\Enums\Inventory\MovementType;
 use App\Models\Inventory\InventoryAdjustment;
 use App\Services\Inventory\InventoryService;
@@ -19,6 +20,14 @@ class InventoryAdjustmentObserver
         $wasNotApproved = $adjustment->getOriginal('status') !== AdjustmentStatus::Approved;
         $isApproved = $adjustment->status === AdjustmentStatus::Approved;
 
+        \Illuminate\Support\Facades\Log::info('AdjustmentObserver triggered', [
+            'adjustment_id' => $adjustment->id,
+            'was_not_approved' => $wasNotApproved,
+            'is_approved' => $isApproved,
+            'adjustment_type' => $adjustment->adjustment_type->value ?? 'null',
+        ]);
+
+        // We only want to process adjustments that transitioned to Approved
         if ($wasNotApproved && $isApproved) {
             $this->processInventoryAdjustment($adjustment);
         }
@@ -32,6 +41,9 @@ class InventoryAdjustmentObserver
         // Load items without global scope since scope may not work in observer context
         $items = \App\Models\Inventory\InventoryAdjustmentItem::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
             ->where('adjustment_id', $adjustment->id)
+            ->with(['batchAllocations' => function ($query) {
+                $query->withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class);
+            }])
             ->get();
         $adjustment->setRelation('items', $items);
         $adjustment->load(['warehouse' => function ($query) {
@@ -65,17 +77,28 @@ class InventoryAdjustmentObserver
             $movementType = $this->getMovementTypeForAdjustment($adjustment);
 
             // Record adjustment movement
+            $batchAllocations = $adjustmentItem->batchAllocations()->withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)->get()->map(function ($batch) {
+                return [
+                    'batch_id' => $batch->inventory_batch_id,
+                    'quantity' => $batch->quantity,
+                    'unit_cost' => $batch->unit_cost,
+                    'total_cost' => $batch->total_cost,
+                ];
+            })->toArray();
+
             $inventoryService->recordMovement(
                 item: $inventoryItem,
                 warehouse: $adjustment->warehouse,
                 quantity: $quantity, // positive = increase, negative = decrease
                 movementType: $movementType,
                 unitCost: $adjustmentItem->unit_cost ?? 0, // Use the specified unit cost for adjustments
-                movementDate: $movementDate,
                 referenceType: InventoryAdjustment::class,
                 referenceId: $adjustment->id,
                 notes: $notes,
-                createdBy: $adjustment->created_by ?? null
+                movementDate: $movementDate,
+                createdBy: $adjustment->created_by ?? null,
+                adjustmentType: $adjustment->adjustment_type,
+                batchAllocations: $batchAllocations
             );
         }
     }
