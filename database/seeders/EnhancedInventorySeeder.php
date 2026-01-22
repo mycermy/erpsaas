@@ -278,6 +278,7 @@ class EnhancedInventorySeeder extends Seeder
                 'warehouse_id' => $warehouse->id,
                 'adjustment_number' => 'INIT-' . $inventoryItem->sku . '-' . $adjustmentDate->format('Ymd'),
                 'adjustment_date' => $adjustmentDate,
+                'adjustment_type' => \App\Enums\Inventory\AdjustmentType::Stocktake,
                 'status' => AdjustmentStatus::Draft,
                 'reason' => 'Initial stock',
             ]);
@@ -508,6 +509,7 @@ class EnhancedInventorySeeder extends Seeder
                 'warehouse_id' => $warehouse->id,
                 'adjustment_number' => 'DMG-' . $inventoryItem->sku . '-' . $adjustmentDate->format('Ymd'),
                 'adjustment_date' => $adjustmentDate,
+                'adjustment_type' => \App\Enums\Inventory\AdjustmentType::Damage,
                 'status' => AdjustmentStatus::Draft,
                 'reason' => 'Damaged goods',
             ]);
