@@ -13,6 +13,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserCompanySeeder::class,
+            // Other seeders can be added here
+            UpdateCompany1DefaultsSeeder::class,
+            AttachUserToCompanySeeder::class,
         ]);
     }
 }
