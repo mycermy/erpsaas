@@ -21,11 +21,15 @@ class InventoryAdjustmentResource extends Resource
 {
     protected static ?string $model = InventoryAdjustment::class;
 
+    protected static ?string $panel = 'company';
+
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
     protected static ?string $navigationGroup = 'Inventory';
 
     protected static ?int $navigationSort = 3;
+
+    protected static ?string $slug = 'inventory/adjustments';
 
     protected static ?string $navigationLabel = 'Adjustments';
 
@@ -399,6 +403,7 @@ class InventoryAdjustmentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->where('company_id', filament()->getTenant()->id))
             ->columns([
                 Tables\Columns\TextColumn::make('adjustment_number')
                     ->label('Reference Number')
@@ -522,5 +527,13 @@ class InventoryAdjustmentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['warehouse', 'items.inventoryItem', 'items.batchAllocations.inventoryBatch']);
+    }
+
+    public static function getBreadcrumbs(): array
+    {
+        return [
+            'Inventory' => \Modules\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
+            'Adjustments' => static::getUrl(),
+        ];
     }
 }

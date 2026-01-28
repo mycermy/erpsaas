@@ -12,7 +12,22 @@ class InventoryDashboard extends Page
 
     protected static string $view = 'inventory::filament.pages.dashboard';
 
-    protected static ?string $slug = 'inventory';
+    protected static ?string $slug = 'inventory/dashboard';
 
-    protected static ?int $navigationSort = -2;
+    protected static ?int $navigationSort = 2;
+
+    public function getWidgets(): array
+    {
+        return [
+            \Modules\Inventory\Filament\Widgets\InventoryStatsWidget::class,
+            \Modules\Inventory\Filament\Widgets\LowStockAlertWidget::class,
+        ];
+    }
+
+    // public function getBreadcrumbs(): array
+    // {
+    //     return [
+    //         'Inventory' => static::getUrl(),
+    //     ];
+    // }
 }

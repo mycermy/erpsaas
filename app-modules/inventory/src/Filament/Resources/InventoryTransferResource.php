@@ -18,6 +18,8 @@ class InventoryTransferResource extends Resource
 {
     protected static ?string $model = InventoryTransfer::class;
 
+    protected static ?string $panel = 'company';
+
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
 
     protected static ?string $navigationGroup = 'Inventory';
@@ -25,6 +27,8 @@ class InventoryTransferResource extends Resource
     protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'Transfers';
+
+    protected static ?string $slug = 'inventory/transfers';
 
     public static function form(Form $form): Form
     {
@@ -147,6 +151,7 @@ class InventoryTransferResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->where('company_id', filament()->getTenant()->id))
             ->columns([
                 Tables\Columns\TextColumn::make('reference_number')
                     ->searchable()
@@ -301,5 +306,13 @@ class InventoryTransferResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['fromWarehouse', 'toWarehouse', 'items.inventoryItem']);
+    }
+
+    public static function getBreadcrumbs(): array
+    {
+        return [
+            'Inventory' => \Modules\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
+            'Transfers' => static::getUrl(),
+        ];
     }
 }

@@ -68,10 +68,10 @@ readonly class DocumentDTO
             null;
 
         return new self(
-            header: $document->header,
-            subheader: $document->subheader,
-            footer: $document->footer,
-            terms: $document->terms,
+            header: $document->header ?? $settings->header ?? '',
+            subheader: $document->subheader ?? $settings->subheader,
+            footer: $document->footer ?? $settings->footer,
+            terms: $document->terms ?? $settings->terms,
             logo: $document->logo_url ?? $settings->logo_url,
             number: $document->documentNumber(),
             referenceNumber: $document->referenceNumber(),

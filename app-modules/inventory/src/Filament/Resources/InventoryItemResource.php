@@ -19,6 +19,8 @@ class InventoryItemResource extends Resource
 {
     protected static ?string $model = InventoryItem::class;
 
+    protected static ?string $panel = 'company';
+
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
     protected static ?string $navigationGroup = 'Inventory';
@@ -26,6 +28,8 @@ class InventoryItemResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'offering.name';
+
+    protected static ?string $slug = 'inventory/items';
 
     public static function form(Form $form): Form
     {
@@ -106,6 +110,7 @@ class InventoryItemResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->where('company_id', filament()->getTenant()->id))
             ->columns([
                 Tables\Columns\TextColumn::make('offering.name')
                     ->label('Item')
@@ -215,5 +220,13 @@ class InventoryItemResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['offering', 'stockLevels']);
+    }
+
+    public static function getBreadcrumbs(): array
+    {
+        return [
+            'Inventory' => \Modules\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
+            'Items' => static::getUrl(),
+        ];
     }
 }

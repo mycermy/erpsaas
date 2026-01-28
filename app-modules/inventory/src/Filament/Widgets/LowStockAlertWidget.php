@@ -22,6 +22,7 @@ class LowStockAlertWidget extends BaseWidget
             ->query(
                 // Join inventory_stock_levels so we can safely compare quantity_available to the item's reorder_level
                 InventoryItem::query()
+                    ->where('inventory_items.company_id', filament()->getTenant()->id)
                     ->where('inventory_items.active', true)
                     ->join('inventory_stock_levels', 'inventory_items.id', '=', 'inventory_stock_levels.inventory_item_id')
                     ->whereColumn('inventory_stock_levels.quantity_available', '<=', 'inventory_items.reorder_level')

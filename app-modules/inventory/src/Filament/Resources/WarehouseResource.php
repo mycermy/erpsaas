@@ -14,11 +14,15 @@ class WarehouseResource extends Resource
 {
     protected static ?string $model = Warehouse::class;
 
+    protected static ?string $panel = 'company';
+
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 
     protected static ?string $navigationGroup = 'Inventory';
 
     protected static ?int $navigationSort = 2;
+
+    protected static ?string $slug = 'inventory/warehouses';
 
     public static function form(Form $form): Form
     {
@@ -86,6 +90,7 @@ class WarehouseResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->where('company_id', filament()->getTenant()->id))
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
@@ -165,6 +170,14 @@ class WarehouseResource extends Resource
             'index' => Pages\ListWarehouses::route('/'),
             'create' => Pages\CreateWarehouse::route('/create'),
             'edit' => Pages\EditWarehouse::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getBreadcrumbs(): array
+    {
+        return [
+            'Inventory' => \Modules\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
+            'Warehouses' => static::getUrl(),
         ];
     }
 }

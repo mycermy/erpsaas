@@ -24,15 +24,6 @@ class InventoryServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/config.php', 'inventory');
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'inventory');
         $this->loadTranslationsFrom(__DIR__ . '/../../resources/lang', 'inventory');
-
-        Panel::configureUsing(function (Panel $panel): void {
-            match ($panel->getId()) {
-                'company' => $panel->plugin(
-                    InventoryPlugin::make(),
-                ),
-                default => null,
-            };
-        });
     }
 
     /**

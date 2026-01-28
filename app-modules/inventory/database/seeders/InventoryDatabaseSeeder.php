@@ -3,6 +3,17 @@
 namespace Modules\Inventory\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Faker\Factory as Faker;
+use App\Models\Company;
+use App\Models\Common\Vendor;
+use App\Models\Common\Client;
+use App\Models\Accounting\Bill;
+use App\Enums\Accounting\BillStatus;
+use App\Models\Accounting\Invoice;
+use App\Enums\Accounting\InvoiceStatus;
+use App\Models\Accounting\DocumentLineItem;
+use App\Models\Setting\CompanyDefault;
+use App\Services\CompanySettingsService;
 use Modules\Inventory\Enums\AdjustmentStatus;
 use Modules\Inventory\Enums\AdjustmentType;
 use Modules\Inventory\Models\InventoryAdjustment;
@@ -32,6 +43,29 @@ class InventoryDatabaseSeeder extends Seeder
 
             return;
         }
+
+        // Set default currency to MYR
+        $currency = \App\Models\Setting\Currency::updateOrCreate(
+            ['code' => 'MYR'],
+            [
+                'company_id' => $this->company->id,
+                'name' => 'Malaysian Ringgit',
+                'rate' => 1,
+                'precision' => 2,
+                'symbol' => 'RM',
+                'symbol_first' => true,
+                'decimal_mark' => '.',
+                'thousands_separator' => ',',
+                'enabled' => true,
+            ]
+        );
+
+        \App\Models\Setting\CompanyDefault::updateOrCreate(
+            ['company_id' => $this->company->id],
+            ['currency_code' => 'MYR']
+        );
+
+        \App\Services\CompanySettingsService::invalidateSettings($this->company->id);
 
         $this->inventoryService = app(InventoryService::class);
 
@@ -144,7 +178,7 @@ class InventoryDatabaseSeeder extends Seeder
 
         foreach ($products as $productData) {
             // Create or find offering
-            $offering = \App\Model\Offering::updateOrCreate(
+            $offering = \App\Models\Common\Offering::updateOrCreate(
                 [
                     'company_id' => $this->company->id,
                     'name' => $productData['name'],

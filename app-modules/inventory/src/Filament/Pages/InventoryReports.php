@@ -31,6 +31,8 @@ class InventoryReports extends Page implements HasForms
 
     protected static ?string $title = 'Inventory Reports';
 
+    protected static ?string $slug = 'inventory/reports';
+
     public ?array $data = [];
 
     public ?string $selectedReport = 'valuation';
@@ -240,5 +242,13 @@ class InventoryReports extends Page implements HasForms
             'low_stock' => $this->getLowStockItems(),
             default => [],
         };
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            'Inventory' => \Modules\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
+            'Reports' => static::getUrl(),
+        ];
     }
 }

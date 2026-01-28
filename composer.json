@@ -48,7 +48,8 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Modules\\Inventory\\": "src/"
+            "Modules\\Inventory\\": "app-modules/inventory/src/",
+            "Modules\\Inventory\\Database\\Seeders\\": "app-modules/inventory/database/seeders/"
         },
         "files": [
             "app/Helpers/helpers.php"

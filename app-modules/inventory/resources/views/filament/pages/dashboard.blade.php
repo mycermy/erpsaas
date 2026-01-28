@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <x-filament-widgets::widgets
-        :widgets="$this->getVisibleWidgets()"
-        :columns="$this->getColumns()"
+        :widgets="$this->getWidgets()"
+        :columns="2"
     />
 </x-filament-panels::page>
