@@ -4,9 +4,16 @@ namespace Modules\Inventory;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Filament\Panel\Concerns\HasNavigation;
+use Filament\View\PanelsRenderHook;
+use ReflectionClass;
 
 class InventoryPlugin implements Plugin
 {
+    use HasNavigation;
+
+    protected string $renderHook = PanelsRenderHook::TOPBAR_AFTER;
+
     public function getId(): string
     {
         return 'inventory';
@@ -20,24 +27,25 @@ class InventoryPlugin implements Plugin
     public function register(Panel $panel): void
     {
         $panel
-            ->resources([
-                \Modules\Inventory\Filament\Resources\InventoryItemResource::class,
-                \Modules\Inventory\Filament\Resources\WarehouseResource::class,
-                \Modules\Inventory\Filament\Resources\InventoryAdjustmentResource::class,
-                \Modules\Inventory\Filament\Resources\InventoryTransferResource::class,
-            ])
-            ->pages([
-                \Modules\Inventory\Filament\Pages\InventoryDashboard::class,
-                \Modules\Inventory\Filament\Pages\InventoryReports::class,
-            ])
-            ->widgets([
-                \Modules\Inventory\Filament\Widgets\InventoryStatsWidget::class,
-                \Modules\Inventory\Filament\Widgets\LowStockAlertWidget::class,
-            ]);
+            ->when($panel->getId() == 'company', function (Panel $panel) {
+                $panel
+                    ->discoverResources(in: $this->getPluginBasePath('/Filament/Resources'), for: 'Modules\\Inventory\\Filament\\Resources')
+                    ->discoverPages(in: $this->getPluginBasePath('/Filament/Pages'), for: 'Modules\\Inventory\\Filament\\Pages')
+                    ->discoverClusters(in: $this->getPluginBasePath('/Filament/Clusters'), for: 'Modules\\Inventory\\Filament\\Clusters')
+                    ->discoverWidgets(in: $this->getPluginBasePath('/Filament/Widgets'), for: 'Modules\\Inventory\\Filament\\Widgets')
+                ;
+            });
     }
 
     public function boot(Panel $panel): void
     {
         //
+    }
+
+    protected function getPluginBasePath($path = null): string
+    {
+        $reflector = new ReflectionClass(get_class($this));
+
+        return dirname($reflector->getFileName()) . ($path ?? '');
     }
 }

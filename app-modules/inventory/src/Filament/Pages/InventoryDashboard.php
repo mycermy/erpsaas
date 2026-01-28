@@ -14,7 +14,7 @@ class InventoryDashboard extends Page
 
     protected static ?string $slug = 'inventory/dashboard';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 0;
 
     public function getWidgets(): array
     {
