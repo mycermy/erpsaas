@@ -1,0 +1,26 @@
+{
+	"name": "zrm/inventory",
+	"description": "inventory module for zr",
+	"type": "library",
+	"version": "1.0",
+	"license": "proprietary",
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Zrm\\Inventory\\Providers\\InventoryServiceProvider"
+			]
+		}
+	},
+	"autoload": {
+		"psr-4": {
+			"Zrm\\Inventory\\": "src/",	
+			"Zrm\\Inventory\\Database\\Factories\\": "database/factories/",
+			"Zrm\\Inventory\\Database\\Seeders\\": "database/seeders/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Zrm\\Inventory\\Tests\\": "tests/"
+		}
+	}
+}

@@ -29,7 +29,8 @@
         "laravel/tinker": "^2.10.1",
         "squirephp/model": "^3.4",
         "squirephp/repository": "^3.4",
-        "symfony/intl": "^6.3"
+        "symfony/intl": "^6.3",
+        "wikimedia/composer-merge-plugin": "^2.1"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.15",
@@ -47,9 +48,7 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/",
-            "Modules\\Inventory\\": "app-modules/inventory/src/",
-            "Modules\\Inventory\\Database\\Seeders\\": "app-modules/inventory/database/seeders/"
+            "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
             "app/Helpers/helpers.php"
@@ -88,9 +87,11 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": [],
-            "providers": [
-                "Modules\\Inventory\\Providers\\InventoryServiceProvider"
+            "dont-discover": []
+        },
+        "merge-plugin": {
+            "include": [
+                "plugins/*/*/composer.json"
             ]
         }
     },

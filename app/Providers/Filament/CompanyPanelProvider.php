@@ -60,7 +60,7 @@ use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Widgets;
-use Modules\Inventory\InventoryPlugin;
+use Zrm\Inventory\InventoryPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -68,12 +68,12 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Modules\Inventory\Filament\Pages\InventoryDashboard;
-use Modules\Inventory\Filament\Pages\InventoryReports;
-use Modules\Inventory\Filament\Resources\InventoryAdjustmentResource;
-use Modules\Inventory\Filament\Resources\InventoryItemResource;
-use Modules\Inventory\Filament\Resources\InventoryTransferResource;
-use Modules\Inventory\Filament\Resources\WarehouseResource;
+use Zrm\Inventory\Filament\Pages\InventoryDashboard;
+use Zrm\Inventory\Filament\Pages\InventoryReports;
+use Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource;
+use Zrm\Inventory\Filament\Resources\InventoryItemResource;
+use Zrm\Inventory\Filament\Resources\InventoryTransferResource;
+use Zrm\Inventory\Filament\Resources\WarehouseResource;
 use Wallo\FilamentCompanies\Actions\GenerateRedirectForProvider;
 use Wallo\FilamentCompanies\Enums\Feature;
 use Wallo\FilamentCompanies\Enums\Provider;
@@ -129,7 +129,6 @@ class CompanyPanelProvider extends PanelProvider
                         return $builder
                             ->items(Account::getNavigationItems());
                     }),
-                InventoryPlugin::make(),
             ])
             ->colors([
                 'primary' => Color::Indigo,

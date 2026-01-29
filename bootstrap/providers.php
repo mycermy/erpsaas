@@ -9,4 +9,5 @@ return [
     App\Providers\SquireServiceProvider::class,
     App\Providers\TranslationServiceProvider::class,
     App\Providers\CurrencyServiceProvider::class,
+    Zrm\Inventory\Providers\InventoryServiceProvider::class,
 ];
