@@ -15,11 +15,11 @@ use App\Models\Setting\CompanyProfile;
 use App\Models\Setting\Currency;
 use App\Models\Setting\DocumentDefault;
 use App\Models\Setting\Localization;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Facades\Auth;
 use Wallo\FilamentCompanies\Company as FilamentCompaniesCompany;
 use Wallo\FilamentCompanies\Events\CompanyCreated;
 use Wallo\FilamentCompanies\Events\CompanyDeleted;
@@ -156,7 +156,7 @@ class Company extends FilamentCompaniesCompany implements HasAvatar
 
         // Create a minimal default record if possible
         try {
-            $user = $this->owner ?? Auth::user() ?? \App\Models\User::first();
+            $user = $this->owner ?? Filament::auth()->user() ?? \App\Models\User::first();
             $country = $this->profile?->address?->country_code ?? 'US';
             $currency = config('money.defaults.currency') ?? 'USD';
 

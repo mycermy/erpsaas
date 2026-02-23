@@ -5,6 +5,7 @@ namespace App\Concerns;
 use App\Models\Notification;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +16,15 @@ trait CompanyOwned
 {
     public static function bootCompanyOwned(): void
     {
-        static::creating(static function ($model) {
+        /** @var \App\Models\User|null $user */
+        $user = Filament::auth()->user();
+        $userId = $user ? $user->id : null;
+
+        static::creating(static function ($model) use ($user, $userId) {
             if (empty($model->company_id)) {
                 $companyId = session('current_company_id');
 
-                if (! $companyId && ($user = Auth::user()) && ($companyId = $user->current_company_id)) {
+                if (! $companyId && ($user) && ($companyId = $user->current_company_id)) {
                     session(['current_company_id' => $companyId]);
                 }
 
@@ -34,7 +39,7 @@ trait CompanyOwned
                 if ($companyId) {
                     $model->company_id = $companyId;
                 } else {
-                    Log::error('CurrentCompanyScope: No company_id found for user ' . Auth::id());
+                    Log::error('CurrentCompanyScope: No company_id found for user ' . $userId);
 
                     throw new ModelNotFoundException('CurrentCompanyScope: No company_id set in the session, user, or database.');
                 }

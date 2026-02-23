@@ -97,10 +97,10 @@ class ViewInventoryAdjustment extends ViewRecord
                             ->label('Created At')
                             ->dateTime()
                             ->icon('heroicon-o-clock'),
-                        TextEntry::make('created_by_user.name')
+                        TextEntry::make('createdBy.name')
                             ->label('Created By')
                             ->icon('heroicon-o-user'),
-                        TextEntry::make('approved_by_user.name')
+                        TextEntry::make('approver.name')
                             ->label('Approved By')
                             ->icon('heroicon-o-user-circle')
                             ->placeholder('Not approved yet')

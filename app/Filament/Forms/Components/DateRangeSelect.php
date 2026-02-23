@@ -3,10 +3,10 @@
 namespace App\Filament\Forms\Components;
 
 use App\Services\DateRangeService;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Set;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 
 class DateRangeSelect extends Select
 {
@@ -22,7 +22,7 @@ class DateRangeSelect extends Select
     {
         parent::setUp();
 
-        $company = Auth::user()->currentCompany;
+        $company = Filament::auth()->user()->currentCompany;
         $this->fiscalYearStartDate = $company->locale->fiscalYearStartDate();
         $this->fiscalYearEndDate = $company->locale->fiscalYearEndDate();
 

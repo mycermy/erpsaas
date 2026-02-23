@@ -42,7 +42,7 @@ use Filament\Tables\Table;
 use Guava\FilamentClusters\Forms\Cluster;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 
 class BillResource extends Resource
 {
@@ -50,7 +50,7 @@ class BillResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $company = Auth::user()->currentCompany;
+        $company = Filament::auth()->user()->currentCompany;
 
         $settings = $company->defaultBill;
 

@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\CompanyDefaultEvent;
 use App\Models\Setting\CompanyDefault;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 
 class SyncWithCompanyDefaults
@@ -30,11 +31,11 @@ class SyncWithCompanyDefaults
     {
         $model = $event->model;
 
-        if (! $model->getAttribute('enabled') || ! auth()->check() || ! Auth::user()->currentCompany) {
+        if (! $model->getAttribute('enabled') || ! Filament::auth()->check() || ! Filament::auth()->user()->currentCompany) {
             return;
         }
 
-        $companyId = Auth::user()->current_company_id;
+        $companyId = Filament::auth()->user()->current_company_id;
 
         if (! $companyId) {
             return;

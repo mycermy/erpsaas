@@ -23,10 +23,10 @@ use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Support\Exceptions\Halt;
+use Filament\Facades\Filament;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -68,7 +68,7 @@ class CompanyProfile extends Page
     public function mount(): void
     {
         $this->record = CompanyProfileModel::firstOrNew([
-            'company_id' => Auth::user()->current_company_id,
+            'company_id' => Filament::auth()->user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -176,7 +176,7 @@ class CompanyProfile extends Page
                     ->uploadProgressIndicatorPosition('center bottom')
                     ->getUploadedFileNameForStorageUsing(
                         static fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
-                            ->prepend(Auth::user()->currentCompany->id . '_'),
+                            ->prepend(Filament::auth()->user()->currentCompany->id . '_'),
                     )
                     ->extraAttributes(['class' => 'w-32 h-32'])
                     ->acceptedFileTypes(['image/png', 'image/jpeg']),

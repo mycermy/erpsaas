@@ -6,6 +6,7 @@ use App\Filament\Company\Pages\CreateCompany;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Transaction;
 use App\Models\Company;
+use Filament\Facades\Filament;
 
 use function Pest\Livewire\livewire;
 
@@ -23,7 +24,7 @@ function createCompany(string $name): Company
         ->call('register')
         ->assertHasNoErrors();
 
-    return Auth::user()->currentCompany;
+    return Filament::auth()->user()->currentCompany;
 }
 
 /**

@@ -2,8 +2,8 @@
 
 namespace Zrm\Inventory\Providers;
 
+use Filament\Facades\Filament;
 use Filament\Panel;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Zrm\Inventory\InventoryPlugin;
 use Illuminate\Support\Facades\Blade;
@@ -149,7 +149,7 @@ class InventoryServiceProvider extends ServiceProvider
                                     })
                                     ->shouldShow(function () {
                                         try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Auth::user());
+                                            return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Filament::auth()->user());
                                         } catch (\Throwable $e) {
                                             return false;
                                         }
@@ -168,7 +168,7 @@ class InventoryServiceProvider extends ServiceProvider
                                     })
                                     ->shouldShow(function () {
                                         try {
-                                            return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Auth::user());
+                                            return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Filament::auth()->user());
                                         } catch (\Throwable $e) {
                                             return false;
                                         }
@@ -187,7 +187,7 @@ class InventoryServiceProvider extends ServiceProvider
                                     })
                                     ->shouldShow(function () {
                                         try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Auth::user());
+                                            return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Filament::auth()->user());
                                         } catch (\Throwable $e) {
                                             return false;
                                         }
@@ -206,7 +206,7 @@ class InventoryServiceProvider extends ServiceProvider
                                     })
                                     ->shouldShow(function () {
                                         try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Auth::user());
+                                            return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Filament::auth()->user());
                                         } catch (\Throwable $e) {
                                             return false;
                                         }
@@ -276,7 +276,7 @@ class InventoryServiceProvider extends ServiceProvider
                                             })
                                             ->shouldShow(function () {
                                                 try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Auth::user());
+                                                    return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Filament::auth()->user());
                                                 } catch (\Throwable $e) {
                                                     return false;
                                                 }
@@ -295,7 +295,7 @@ class InventoryServiceProvider extends ServiceProvider
                                             })
                                             ->shouldShow(function () {
                                                 try {
-                                                    return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Auth::user());
+                                                    return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Filament::auth()->user());
                                                 } catch (\Throwable $e) {
                                                     return false;
                                                 }
@@ -314,7 +314,7 @@ class InventoryServiceProvider extends ServiceProvider
                                             })
                                             ->shouldShow(function () {
                                                 try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Auth::user());
+                                                    return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Filament::auth()->user());
                                                 } catch (\Throwable $e) {
                                                     return false;
                                                 }
@@ -333,7 +333,7 @@ class InventoryServiceProvider extends ServiceProvider
                                             })
                                             ->shouldShow(function () {
                                                 try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Auth::user());
+                                                    return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Filament::auth()->user());
                                                 } catch (\Throwable $e) {
                                                     return false;
                                                 }

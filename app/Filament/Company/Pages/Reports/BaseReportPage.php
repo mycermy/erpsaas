@@ -17,9 +17,9 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Set;
 use Filament\Pages\Page;
 use Filament\Support\Enums\IconPosition;
+use Filament\Facades\Filament;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -58,7 +58,7 @@ abstract class BaseReportPage extends Page
 
     protected function initializeProperties(): void
     {
-        $this->company = Auth::user()->currentCompany;
+        $this->company = Filament::auth()->user()->currentCompany;
         $this->fiscalYearStartDate = $this->company->locale->fiscalYearStartDate();
         $this->fiscalYearEndDate = $this->company->locale->fiscalYearEndDate();
     }

@@ -20,7 +20,6 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Wallo\FilamentCompanies\FilamentCompanies;
 use Wallo\FilamentCompanies\Pages\User\PersonalAccessTokens;
@@ -48,7 +47,8 @@ class UserPanelProvider extends PanelProvider
                                     ->label('Company Dashboard')
                                     ->icon('heroicon-s-building-office-2')
                                     ->url(static function (): ?string {
-                                        $user = Auth::user();
+                                        /** @var \App\Models\User|null $user */
+                                        $user = Filament::auth()->user();
                                         $companyPanel = FilamentCompanies::getCompanyPanel();
 
                                         if ($company = $user?->primaryCompany()) {

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Company\Resources\Core\DepartmentResource\RelationManagers;
 
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -30,7 +31,7 @@ class ChildrenRelationManager extends RelationManager
                         name: 'manager',
                         titleAttribute: 'name',
                         modifyQueryUsing: static function (Builder $query) {
-                            $company = Auth::user()->currentCompany;
+                            $company = Filament::auth()->user()->currentCompany;
                             $companyUsers = $company->allUsers()->pluck('id')->toArray();
 
                             return $query->whereIn('id', $companyUsers);

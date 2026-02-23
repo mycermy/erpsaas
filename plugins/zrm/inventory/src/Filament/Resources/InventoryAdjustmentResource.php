@@ -2,6 +2,7 @@
 
 namespace Zrm\Inventory\Filament\Resources;
 
+use Filament\Facades\Filament;
 use Zrm\Inventory\Enums\AdjustmentStatus;
 use Zrm\Inventory\Enums\AdjustmentType;
 use Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource\Pages;
@@ -14,7 +15,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
 
 class InventoryAdjustmentResource extends Resource
 {
@@ -101,7 +101,7 @@ class InventoryAdjustmentResource extends Resource
                                     ->required()
                                     ->live()
                                     ->getSearchResultsUsing(function (?string $search) {
-                                        $companyId = session('current_company_id') ?? (Auth::user()?->current_company_id ?? null);
+                                        $companyId = session('current_company_id') ?? (Filament::auth()->user()?->current_company_id ?? null);
 
                                         $query = \Zrm\Inventory\Models\InventoryItem::with('offering')
                                             ->when($companyId, fn($q) => $q->where('company_id', $companyId));
@@ -124,7 +124,7 @@ class InventoryAdjustmentResource extends Resource
                                             return null;
                                         }
 
-                                        $companyId = session('current_company_id') ?? (Auth::user()?->current_company_id ?? null);
+                                        $companyId = session('current_company_id') ?? (Filament::auth()->user()?->current_company_id ?? null);
 
                                         $item = \Zrm\Inventory\Models\InventoryItem::with('offering')
                                             ->when($companyId, fn($q) => $q->where('company_id', $companyId))
@@ -474,7 +474,7 @@ class InventoryAdjustmentResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
                     ->action(function (InventoryAdjustment $record) {
-                        $record->approve(Auth::id());
+                        $record->approve(Filament::auth()->id());
                     }),
 
                 Tables\Actions\Action::make('cancel')
@@ -488,7 +488,7 @@ class InventoryAdjustmentResource extends Resource
                         : 'Are you sure you want to cancel this adjustment?')
                     ->visible(fn(InventoryAdjustment $record) => in_array($record->status, [AdjustmentStatus::Draft, AdjustmentStatus::Approved]))
                     ->action(function (InventoryAdjustment $record) {
-                        $record->cancel();
+                        $record->cancel(Filament::auth()->id());
                     }),
 
                 Tables\Actions\EditAction::make()

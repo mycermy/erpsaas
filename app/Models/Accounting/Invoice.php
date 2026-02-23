@@ -22,6 +22,7 @@ use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
 use Filament\Actions\StaticAction;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
@@ -34,7 +35,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Zrm\Inventory\Models\InventoryMovement;
@@ -218,7 +218,7 @@ class Invoice extends Document
     #[Scope]
     protected function byNumber(Builder $query, string $number): Builder
     {
-        $invoicePrefix = DocumentDefault::invoice(Auth::user()?->current_company_id)->first()?->number_prefix ?? '';
+        $invoicePrefix = DocumentDefault::invoice(Filament::auth()->user()?->current_company_id)->first()?->number_prefix ?? '';
 
         return $query->where(function ($q) use ($number, $invoicePrefix) {
             $q->where('invoice_number', $number)
@@ -313,7 +313,7 @@ class Invoice extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= Auth::user()?->currentCompany;
+        $company ??= Filament::auth()->user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');

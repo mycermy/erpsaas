@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Facades\Accounting;
 use Carbon\CarbonPeriod;
+use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 
 class DateRangeService
 {
@@ -15,7 +15,7 @@ class DateRangeService
 
     public function __construct()
     {
-        $company = Auth::user()->currentCompany;
+        $company = Filament::auth()->user()->currentCompany;
         $this->fiscalYearStartDate = $company->locale->fiscalYearStartDate();
         $this->fiscalYearEndDate = $company->locale->fiscalYearEndDate();
     }

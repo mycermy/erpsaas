@@ -9,13 +9,13 @@ use App\Models\Locale\Country;
 use App\Models\Setting\Localization;
 use App\Services\CompanyDefaultService;
 use App\Utilities\Currency\CurrencyAccessor;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Wallo\FilamentCompanies\Events\AddingCompany;
@@ -91,7 +91,8 @@ class CreateCompany extends FilamentCreateCompany
 
     protected function handleRegistration(array $data): Model
     {
-        $user = Auth::user();
+        /** @var \App\Models\User|null $user */
+        $user = Filament::auth()->user();
 
         Gate::forUser($user)->authorize('create', FilamentCompanies::newCompanyModel());
 

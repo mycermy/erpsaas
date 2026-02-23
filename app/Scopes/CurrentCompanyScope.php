@@ -2,11 +2,11 @@
 
 namespace App\Scopes;
 
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CurrentCompanyScope implements Scope
@@ -41,14 +41,14 @@ class CurrentCompanyScope implements Scope
         }
 
         // Fall back to authenticated user's current company
-        if (! $companyId && ($user = Auth::user()) && ($companyId = $user->current_company_id)) {
+        if (! $companyId && ($user = Filament::auth()->user()) && ($companyId = $user->current_company_id)) {
             session(['current_company_id' => $companyId]);
         }
 
         if ($companyId) {
             $builder->where("{$model->getTable()}.company_id", $companyId);
         } else {
-            Log::error('CurrentCompanyScope: No company_id found for user ' . Auth::id());
+            Log::error('CurrentCompanyScope: No company_id found for user ' . Filament::auth()->id());
 
             throw new ModelNotFoundException('CurrentCompanyScope: No company_id set in the session or on the user.');
         }

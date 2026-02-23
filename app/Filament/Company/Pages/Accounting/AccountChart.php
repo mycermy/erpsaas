@@ -22,8 +22,8 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
+use Filament\Facades\Filament;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Unique;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -228,7 +228,7 @@ class AccountChart extends Page
                     TextInput::make('number')
                         ->label('Bank account number')
                         ->unique(ignoreRecord: true, modifyRuleUsing: static function (Unique $rule, $state) {
-                            $companyId = Auth::user()->currentCompany->id;
+                            $companyId = Filament::auth()->user()->currentCompany->id;
 
                             return $rule->where('company_id', $companyId)->where('number', $state);
                         })

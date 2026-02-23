@@ -6,7 +6,7 @@ use Akaunting\Money\Currency as ISOCurrencies;
 use App\Facades\Forex;
 use App\Models\Setting\Currency;
 use App\Services\CompanySettingsService;
-use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 
 class CurrencyAccessor
 {
@@ -54,7 +54,7 @@ class CurrencyAccessor
 
     public static function getDefaultCurrency(): ?string
     {
-        $companyId = Auth::user()?->current_company_id;
+        $companyId = Filament::auth()->user()?->current_company_id;
 
         if ($companyId === null) {
             return config('money.defaults.currency');

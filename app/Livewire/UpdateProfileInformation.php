@@ -39,7 +39,7 @@ class UpdateProfileInformation extends Component implements HasForms
 
     public function getUser(): Authenticatable | Model
     {
-        $user = Filament::Auth::user();
+        $user = Filament::auth()->user();
 
         if (! $user instanceof Model) {
             throw new RuntimeException('The authenticated user object must be an Eloquent model to allow profile information to be updated.');

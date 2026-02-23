@@ -18,6 +18,7 @@ use App\Observers\EstimateObserver;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -226,7 +227,7 @@ class Estimate extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= Auth::user()?->currentCompany;
+        $company ??= Filament::auth()->user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -473,8 +474,8 @@ class Estimate extends Document
             'total' => $this->total,
             'terms' => $this->terms,
             'footer' => $this->footer,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
+            'created_by' => Filament::auth()->id(),
+            'updated_by' => Filament::auth()->id(),
         ]);
 
         $this->replicateLineItems($invoice);

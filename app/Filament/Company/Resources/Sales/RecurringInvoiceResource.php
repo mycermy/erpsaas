@@ -35,7 +35,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 
 class RecurringInvoiceResource extends Resource
 {
@@ -43,7 +43,7 @@ class RecurringInvoiceResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $company = Auth::user()->currentCompany;
+        $company = Filament::auth()->user()->currentCompany;
 
         $settings = $company->defaultInvoice;
 

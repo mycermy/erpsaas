@@ -5,6 +5,7 @@ namespace App\Filament\Company\Resources\Core;
 use App\Filament\Company\Resources\Core\DepartmentResource\Pages;
 use App\Filament\Company\Resources\Core\DepartmentResource\RelationManagers\ChildrenRelationManager;
 use App\Models\Core\Department;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -43,7 +44,7 @@ class DepartmentResource extends Resource
                                 name: 'manager',
                                 titleAttribute: 'name',
                                 modifyQueryUsing: static function (Builder $query) {
-                                    $company = Auth::user()->currentCompany;
+                                    $company = Filament::auth()->user()->currentCompany;
                                     $companyUsers = $company->allUsers()->pluck('id')->toArray();
 
                                     return $query->whereIn('id', $companyUsers);

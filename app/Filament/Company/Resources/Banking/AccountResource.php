@@ -15,9 +15,9 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Unique;
 use Wallo\FilamentSelectify\Components\ToggleButton;
 
@@ -94,7 +94,7 @@ class AccountResource extends Resource
                                 Forms\Components\TextInput::make('number')
                                     ->localizeLabel('Account number')
                                     ->unique(ignoreRecord: true, modifyRuleUsing: static function (Unique $rule, $state) {
-                                        $companyId = Auth::user()->currentCompany->id;
+                                        $companyId = Filament::auth()->user()->currentCompany->id;
 
                                         return $rule->where('company_id', $companyId)->where('number', $state);
                                     })

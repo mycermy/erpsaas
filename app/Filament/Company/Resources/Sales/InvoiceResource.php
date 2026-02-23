@@ -44,7 +44,7 @@ use Guava\FilamentClusters\Forms\Cluster;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 
 class InvoiceResource extends Resource
 {
@@ -52,7 +52,7 @@ class InvoiceResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $company = Auth::user()->currentCompany;
+        $company = Filament::auth()->user()->currentCompany;
 
         $settings = $company->defaultInvoice;
 

@@ -12,6 +12,7 @@ use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetAllocation;
 use App\Models\Accounting\BudgetItem;
 use App\Utilities\Currency\CurrencyConverter;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Wizard\Step;
@@ -165,8 +166,9 @@ class CreateBudget extends CreateRecord
                             Forms\Components\Select::make('source_fiscal_year')
                                 ->label('Fiscal Year')
                                 ->options(function () {
-                                    $options = [];
-                                    $company = Auth::user()->currentCompany;
+                                    $options = []
+;
+                                    $company = Filament::auth()->user()->currentCompany;
                                     $earliestDate = Carbon::parse(Accounting::getEarliestTransactionDate());
                                     $fiscalYearStartCurrent = Carbon::parse($company->locale->fiscalYearStartDate());
 

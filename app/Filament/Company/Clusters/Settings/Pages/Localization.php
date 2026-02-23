@@ -26,10 +26,10 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Support\Exceptions\Halt;
 use Guava\FilamentClusters\Forms\Cluster;
+use Filament\Facades\Filament;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 
 use function Filament\authorize;
@@ -70,7 +70,7 @@ class Localization extends Page
     public function mount(): void
     {
         $this->record = LocalizationModel::firstOrNew([
-            'company_id' => Auth::user()->current_company_id,
+            'company_id' => Filament::auth()->user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);

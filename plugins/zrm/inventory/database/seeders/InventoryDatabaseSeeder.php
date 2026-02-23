@@ -14,7 +14,7 @@ use App\Enums\Accounting\InvoiceStatus;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Setting\CompanyDefault;
 use App\Services\CompanySettingsService;
-use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 use Zrm\Inventory\Enums\AdjustmentStatus;
 use Zrm\Inventory\Enums\AdjustmentType;
 use Zrm\Inventory\Models\InventoryAdjustment;
@@ -210,7 +210,6 @@ class InventoryDatabaseSeeder extends Seeder
                     'track_batches' => true,
                     'reorder_level' => $this->faker->numberBetween(5, 20),
                     'reorder_quantity' => $this->faker->numberBetween(20, 50),
-                    'created_by' => 1,
                 ]
             );
 
@@ -246,7 +245,7 @@ class InventoryDatabaseSeeder extends Seeder
                 'contact_email' => 'main@warehouse.test',
                 'is_default' => true,
                 'active' => true,
-                'created_by' => 1,
+                'created_by' => $this->company->owner->id,
             ]
         );
 
@@ -310,6 +309,7 @@ class InventoryDatabaseSeeder extends Seeder
                 'adjustment_type' => AdjustmentType::Stocktake,
                 'status' => AdjustmentStatus::Draft,
                 'reason' => 'Initial stock',
+                'created_by' => $this->company->owner->id,
             ]);
 
             InventoryAdjustmentItem::create([
@@ -326,7 +326,8 @@ class InventoryDatabaseSeeder extends Seeder
             // Approve to trigger observer which will create movement
             $adjustment->update([
                 'status' => AdjustmentStatus::Approved,
-                'approved_by' => Auth::id(),
+                'approved_by' => $this->company->owner->id,
+                'approved_at' => $adjustmentDate,
             ]);
         }
     }
@@ -662,6 +663,7 @@ class InventoryDatabaseSeeder extends Seeder
                 'adjustment_type' => AdjustmentType::Damage,
                 'status' => AdjustmentStatus::Draft,
                 'reason' => 'Damaged goods',
+                'created_by' => $this->company->owner->id,
             ]);
 
             InventoryAdjustmentItem::create([
@@ -679,7 +681,8 @@ class InventoryDatabaseSeeder extends Seeder
             // The observer will auto-calculate COGS and consume batches using FIFO/LIFO
             $adjustment->update([
                 'status' => AdjustmentStatus::Approved,
-                'approved_by' => Auth::id(),
+                'approved_by' => $this->company->owner->id,
+                'approved_at' => $adjustmentDate,
             ]);
         }
     }
