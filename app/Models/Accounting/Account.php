@@ -186,6 +186,16 @@ class Account extends Model
             ->firstOrFail();
     }
 
+
+    public static function getInventoryAccount(?int $companyId = null): self
+    {
+        return self::where('name', 'Inventory')
+            ->when($companyId, function (Builder $query) use ($companyId) {
+                $query->where('company_id', $companyId);
+            })
+            ->firstOrFail();
+    }
+
     protected static function newFactory(): Factory
     {
         return AccountFactory::new();

@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use App\Models\Common\Client;
+use App\Models\Common\Vendor;
 
 readonly class ClientDTO
 {
@@ -31,6 +32,22 @@ readonly class ClientDTO
         );
     }
 
+
+    public static function fromVendor(Vendor $vendor): self
+    {
+        $address = $vendor->address ?? null;
+
+        return new self(
+            name: $vendor->name,
+            addressLine1: $address?->address_line_1 ?? '',
+            addressLine2: $address?->address_line_2 ?? '',
+            city: $address?->city ?? '',
+            state: $address?->state?->name ?? '',
+            postalCode: $address?->postal_code ?? '',
+            country: $address?->country?->name ?? '',
+        );
+    }
+
     public function getFormattedAddressHtml(): ?string
     {
         if (empty($this->addressLine1)) {
@@ -49,7 +66,7 @@ readonly class ClientDTO
         ]);
 
         return collect($lines)
-            ->map(static fn ($line) => "<p>{$line}</p>")
+            ->map(static fn($line) => "<p>{$line}</p>")
             ->join('');
     }
 }

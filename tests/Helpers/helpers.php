@@ -23,7 +23,7 @@ function createCompany(string $name): Company
         ->call('register')
         ->assertHasNoErrors();
 
-    return auth()->user()->currentCompany;
+    return Auth::user()->currentCompany;
 }
 
 /**

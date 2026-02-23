@@ -20,7 +20,7 @@
                     </x-slot>
                     
                     <x-slot name="description">
-                        Total Value: ${{ number_format($reportData['total_value'] ?? 0, 2) }} | 
+                        Total Value: {{ number_format($reportData['total_value'] ?? 0, 2) }} | 
                         Total Items: {{ $reportData['total_items'] ?? 0 }}
                     </x-slot>
 
@@ -56,8 +56,8 @@
                                         <td class="px-4 py-3 text-sm">{{ $item['sku'] }}</td>
                                         <td class="px-4 py-3 text-sm">{{ $item['warehouse'] }}</td>
                                         <td class="px-4 py-3 text-sm text-right">{{ number_format($item['quantity'], 2) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right">${{ number_format($item['unit_cost'], 2) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-semibold">${{ number_format($item['total_value'], 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-right">{{ number_format($item['unit_cost'], 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-right font-semibold">{{ number_format($item['total_value'], 2) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

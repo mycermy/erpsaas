@@ -28,8 +28,12 @@ it('handles rate formatting correctly for different computations', function () {
     $localization = Localization::firstOrFail();
     $localization->update(['language' => 'en']);
 
-    // Test fixed amount formatting
-    expect(rateFormat(100000, 'fixed', 'USD'))->toBe('$100,000.00 USD');
+    $currency = config('money.defaults.currency');
+    
+    // Test fixed amount formatting using configured currency
+    $formatted = rateFormat(100000, 'fixed', $currency);
+    expect($formatted)->toContain('100,000.00');
+    expect($formatted)->toContain($currency);
 
     // Test percentage formatting
     $scaledRate = RateCalculator::decimalToScaledRate(0.000025); // 0.25%

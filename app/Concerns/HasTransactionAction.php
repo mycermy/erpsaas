@@ -260,7 +260,7 @@ trait HasTransactionAction
                             }
 
                             $entryType = JournalEntryType::parse($entry['type']);
-                            $amount = CurrencyConverter::convertToCents($entry['amount'], 'USD');
+                            $amount = CurrencyConverter::convertToCents($entry['amount'], config('money.defaults.currency'));
 
                             if ($entryType->isDebit()) {
                                 $hasDebit = true;

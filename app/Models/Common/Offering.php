@@ -14,7 +14,10 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Facades\Auth;
+use Zrm\Inventory\Models\InventoryItem;
 
 #[ObservedBy(OfferingObserver::class)]
 class Offering extends Model
@@ -31,6 +34,7 @@ class Offering extends Model
         'price',
         'sellable',
         'purchasable',
+        'stockable',
         'income_account_id',
         'expense_account_id',
         'created_by',
@@ -41,6 +45,7 @@ class Offering extends Model
         'type' => OfferingType::class,
         'sellable' => 'boolean',
         'purchasable' => 'boolean',
+        'stockable' => 'boolean',
     ];
 
     public function clearSellableAdjustments(): void
@@ -73,6 +78,11 @@ class Offering extends Model
     public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'expense_account_id');
+    }
+
+    public function inventoryItem(): HasOne
+    {
+        return $this->hasOne(InventoryItem::class);
     }
 
     public function adjustments(): MorphToMany
@@ -115,5 +125,47 @@ class Offering extends Model
         return $this->adjustments->contains(function (Adjustment $adjustment) {
             return $adjustment->isInactive();
         });
+    }
+
+    public function hasInventoryTracking(): bool
+    {
+        return $this->inventoryItem()->exists();
+    }
+
+    public function isInventoryEnabled(): bool
+    {
+        return $this->inventoryItem && $this->inventoryItem->active;
+    }
+
+    public function isStockable(): bool
+    {
+        return $this->stockable && $this->type === OfferingType::Product;
+    }
+
+    public function ensureInventoryItem(): InventoryItem
+    {
+        if ($this->inventoryItem) {
+            return $this->inventoryItem;
+        }
+
+        return $this->inventoryItem()->create([
+            'company_id' => $this->company_id,
+            'sku' => $this->generateSku(),
+            'track_method' => 'fifo',
+            'track_batches' => true,
+            'reorder_level' => 0,
+            'reorder_quantity' => 0,
+            'asset_account_id' => Account::getInventoryAccount($this->company_id)->id,
+            'active' => true,
+            'created_by' => $this->created_by ?? Auth::id(),
+        ]);
+    }
+
+    private function generateSku(): string
+    {
+        $prefix = strtoupper(substr($this->name, 0, 3));
+        $random = strtoupper(substr(md5(uniqid()), 0, 6));
+
+        return "{$prefix}-{$random}";
     }
 }

@@ -30,11 +30,11 @@ class SyncWithCompanyDefaults
     {
         $model = $event->model;
 
-        if (! $model->getAttribute('enabled') || ! auth()->check() || ! auth()->user()->currentCompany) {
+        if (! $model->getAttribute('enabled') || ! auth()->check() || ! Auth::user()->currentCompany) {
             return;
         }
 
-        $companyId = auth()->user()->current_company_id;
+        $companyId = Auth::user()->current_company_id;
 
         if (! $companyId) {
             return;

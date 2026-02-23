@@ -36,7 +36,7 @@ class UpdatePassword extends Component implements HasForms
 
     public function getUser(): Authenticatable | Model
     {
-        $user = Filament::auth()->user();
+        $user = Filament::Auth::user();
 
         if (! $user instanceof Model) {
             throw new RuntimeException('The authenticated user object must be an Eloquent model to allow profile information to be updated.');
@@ -86,7 +86,7 @@ class UpdatePassword extends Component implements HasForms
 
         if (session() !== null) {
             session()->put([
-                'password_hash_' . Filament::getAuthGuard() => Filament::auth()->user()?->getAuthPassword(),
+                'password_hash_' . Filament::getAuthGuard() => Filament::Auth::user()?->getAuthPassword(),
             ]);
         }
 

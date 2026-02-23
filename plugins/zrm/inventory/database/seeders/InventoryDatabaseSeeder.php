@@ -14,6 +14,7 @@ use App\Enums\Accounting\InvoiceStatus;
 use App\Models\Accounting\DocumentLineItem;
 use App\Models\Setting\CompanyDefault;
 use App\Services\CompanySettingsService;
+use Illuminate\Support\Facades\Auth;
 use Zrm\Inventory\Enums\AdjustmentStatus;
 use Zrm\Inventory\Enums\AdjustmentType;
 use Zrm\Inventory\Models\InventoryAdjustment;
@@ -92,10 +93,10 @@ class InventoryDatabaseSeeder extends Seeder
         $this->createInitialStock($offerings, $warehouse);
 
         $this->command->info('Creating purchase bills...');
-        $this->createPurchaseBills($offerings, $vendors->all());
+        $this->createPurchaseBills($offerings, $vendors->all(), $warehouse);
 
         $this->command->info('Creating sales invoices...');
-        $this->createSalesInvoices($offerings, $clients->all());
+        $this->createSalesInvoices($offerings, $clients->all(), $warehouse);
 
         $this->command->info('Creating damage adjustments...');
         $this->createDamageAdjustments($offerings, $warehouse);
@@ -298,7 +299,7 @@ class InventoryDatabaseSeeder extends Seeder
             $baseUnitCost = $offeringData['unit_cost'];
 
             // Each item gets same date (all initial stock on same day)
-            $quantity = $this->faker->numberBetween(50, 200);
+            $quantity = $this->faker->numberBetween(10, 20);
 
             // Create adjustment as Draft first
             $adjustment = InventoryAdjustment::create([
@@ -321,11 +322,14 @@ class InventoryDatabaseSeeder extends Seeder
             ]);
 
             // Approve to trigger observer which will create movement
-            $adjustment->update(['status' => AdjustmentStatus::Approved]);
+            $adjustment->update([
+                'status' => AdjustmentStatus::Approved,
+                'approved_by' => Auth::id(),
+            ]);
         }
     }
 
-    private function createPurchaseBills(array $offerings, array $vendors): void
+    private function createPurchaseBills(array $offerings, array $vendors, Warehouse $warehouse): void
     {
         $now = now();
 
@@ -409,6 +413,41 @@ class InventoryDatabaseSeeder extends Seeder
             $bill = $bill->fresh();
             echo "    Created transaction #{$bill->initialTransaction->id} with {$bill->initialTransaction->journalEntries->count()} journal entries\n";
 
+            // // Create inventory adjustment for goods receipt (increases stock) - for ALL bills
+            // $purchaseAdjustment = InventoryAdjustment::create([
+            //     'company_id' => $this->company->id,
+            //     'warehouse_id' => $warehouse->id,
+            //     'adjustment_number' => 'PURC-' . $bill->bill_number . '-' . now()->timestamp,
+            //     'adjustment_date' => $billDate,
+            //     'adjustment_type' => AdjustmentType::Purchase,
+            //     'status' => AdjustmentStatus::Draft,
+            //     'reason' => 'Goods receipt for Bill #' . $bill->bill_number,
+            //     'reference_type' => Bill::class,
+            //     'reference_id' => $bill->id,
+            // ]);
+
+            // // Create adjustment items for each line item in the bill
+            // foreach ($bill->lineItems as $lineItem) {
+            //     $inventoryItem = InventoryItem::where('offering_id', $lineItem->offering_id)
+            //         ->where('company_id', $this->company->id)
+            //         ->first();
+
+            //     if ($inventoryItem) {
+            //         InventoryAdjustmentItem::create([
+            //             'company_id' => $this->company->id,
+            //             'adjustment_id' => $purchaseAdjustment->id,
+            //             'inventory_item_id' => $inventoryItem->id,
+            //             'quantity_adjusted' => $lineItem->quantity,
+            //             'unit_cost' => $lineItem->unit_price,
+            //             'reason' => 'Purchase receipt',
+            //         ]);
+            //     }
+            // }
+
+            // // Approve to trigger observer which will process inventory movement
+            // $purchaseAdjustment->update(['status' => AdjustmentStatus::Approved]);
+            // echo "    Created purchase adjustment for inventory increase\n";
+
             // Record payment for Paid/Partial bills
             if ($bill->status === BillStatus::Paid || $bill->status === BillStatus::Partial) {
                 $bankAccount = \App\Models\Banking\BankAccount::first();
@@ -433,7 +472,7 @@ class InventoryDatabaseSeeder extends Seeder
         }
     }
 
-    private function createSalesInvoices(array $offerings, array $clients): void
+    private function createSalesInvoices(array $offerings, array $clients, Warehouse $warehouse): void
     {
         $now = now();
 
@@ -470,7 +509,23 @@ class InventoryDatabaseSeeder extends Seeder
 
             foreach ($selectedOfferings as $offeringData) {
                 $offering = $offeringData['offering'];
-                $quantity = $this->faker->numberBetween(5, 20);
+                $inventoryItem = $offeringData['inventoryItem'];
+                
+                // Get current stock level to prevent over-selling
+                $stockLevel = \Zrm\Inventory\Models\InventoryStockLevel::where('inventory_item_id', $inventoryItem->id)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->first();
+                
+                $availableQty = $stockLevel ? $stockLevel->quantity_on_hand : 0;
+                
+                // Only create line item if there's stock available
+                if ($availableQty <= 0) {
+                    continue; // Skip this item if no stock
+                }
+                
+                // Limit quantity to available stock (max 50% of available stock per invoice)
+                $maxQty = max(1, (int) floor($availableQty * 0.5));
+                $quantity = $this->faker->numberBetween(min(1, $maxQty), min(20, $maxQty));
                 $unitPrice = $offering->price ?? $this->faker->numberBetween(1000, 10000);
 
                 DocumentLineItem::create([
@@ -492,8 +547,45 @@ class InventoryDatabaseSeeder extends Seeder
                 'total' => $subtotal,
             ]);
 
-            // Change status from Draft to Sent/Unpaid to trigger observer
-            // This simulates the real flow: goods ship when invoice is approved/sent
+            // Approve the invoice (creates journal entries for AR and Revenue)
+            $invoice->approveDraft($invoiceDate);
+
+            // // Create inventory adjustment for goods shipment (decreases stock)
+            // $shipmentAdjustment = InventoryAdjustment::create([
+            //     'company_id' => $this->company->id,
+            //     'warehouse_id' => $warehouse->id,
+            //     'adjustment_number' => 'SHIP-' . $invoice->invoice_number . '-' . now()->timestamp,
+            //     'adjustment_date' => $invoiceDate,
+            //     'adjustment_type' => AdjustmentType::Sale,
+            //     'status' => AdjustmentStatus::Draft,
+            //     'reason' => 'Goods shipment for Invoice #' . $invoice->invoice_number,
+            //     'reference_type' => Invoice::class,
+            //     'reference_id' => $invoice->id,
+            // ]);
+
+            // // Create adjustment items for each line item in the invoice (NEGATIVE quantity = decrease)
+            // foreach ($invoice->lineItems as $lineItem) {
+            //     $inventoryItem = InventoryItem::where('offering_id', $lineItem->offering_id)
+            //         ->where('company_id', $this->company->id)
+            //         ->first();
+
+            //     if ($inventoryItem) {
+            //         InventoryAdjustmentItem::create([
+            //             'company_id' => $this->company->id,
+            //             'adjustment_id' => $shipmentAdjustment->id,
+            //             'inventory_item_id' => $inventoryItem->id,
+            //             'quantity_adjusted' => -$lineItem->quantity, // Negative = decrease
+            //             'unit_cost' => $lineItem->unit_price,
+            //             'reason' => 'Sales shipment',
+            //         ]);
+            //     }
+            // }
+
+            // // Approve to trigger observer which will process inventory movement
+            // $shipmentAdjustment->update(['status' => AdjustmentStatus::Approved]);
+            // echo "    Created shipment adjustment for inventory decrease\n";
+
+            // Determine final payment status
             $finalStatus = $this->faker->randomElement([
                 InvoiceStatus::Sent,    // Invoice sent, awaiting payment
                 InvoiceStatus::Partial, // Partially paid
@@ -536,11 +628,28 @@ class InventoryDatabaseSeeder extends Seeder
         foreach (range(1, 3) as $adjustmentIndex) {
             $offeringData = $offerings[array_rand($offerings)];
             $inventoryItem = $offeringData['inventoryItem'];
+            $baseUnitCost = $offeringData['unit_cost'];
 
             // Calculate date: each adjustment is ~5 days apart
             $dayOffset = ($adjustmentIndex - 1) * 5; // 0, 5, 10 days from start
             $adjustmentDate = $startDate->copy()->addDays($dayOffset);
-            $quantity = $this->faker->numberBetween(-10, -2); // Negative for damage
+            
+            // Get current stock level to prevent negative inventory
+            $stockLevel = \Zrm\Inventory\Models\InventoryStockLevel::where('inventory_item_id', $inventoryItem->id)
+                ->where('warehouse_id', $warehouse->id)
+                ->first();
+            
+            $availableQty = $stockLevel ? $stockLevel->quantity_on_hand : 0;
+            
+            // Skip if no stock available
+            if ($availableQty <= 0) {
+                $this->command->warn("  Skipping damage adjustment for {$inventoryItem->sku} - no stock available");
+                continue;
+            }
+            
+            // Limit damage to max 20% of available stock (negative for damage)
+            $maxDamage = max(1, (int) floor($availableQty * 0.2));
+            $quantity = -$this->faker->numberBetween(1, min(10, $maxDamage)); // Negative for damage
 
             // Create adjustment as Draft first
             $adjustment = InventoryAdjustment::create([
@@ -554,15 +663,20 @@ class InventoryDatabaseSeeder extends Seeder
             ]);
 
             InventoryAdjustmentItem::create([
-                'company_id' => $this->company->id, // Explicitly set company_id
+                'company_id' => $this->company->id,
                 'adjustment_id' => $adjustment->id,
                 'inventory_item_id' => $inventoryItem->id,
                 'quantity_adjusted' => $quantity, // Use quantity_adjusted field (negative for damage)
+                'unit_cost' => $baseUnitCost, // Set unit cost for proper valuation
                 'reason' => 'Damaged goods',
             ]);
 
             // Approve to trigger observer which will create movement
-            $adjustment->update(['status' => AdjustmentStatus::Approved]);
+            // The observer will auto-calculate COGS and consume batches using FIFO/LIFO
+            $adjustment->update([
+                'status' => AdjustmentStatus::Approved,
+                'approved_by' => Auth::id(),
+            ]);
         }
     }
 }

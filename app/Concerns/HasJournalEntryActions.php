@@ -185,7 +185,7 @@ trait HasJournalEntryActions
             return '0';
         }
 
-        $currency = currency('USD');
+        $currency = currency(config('money.defaults.currency'));
         $decimal = $currency->getDecimalMark();
 
         if (substr($amount, -1) === $decimal) {
@@ -202,6 +202,6 @@ trait HasJournalEntryActions
      */
     protected function convertAmountToCents(string $amount): int
     {
-        return CurrencyConverter::convertToCents($amount, 'USD');
+        return CurrencyConverter::convertToCents($amount, config('money.defaults.currency'));
     }
 }

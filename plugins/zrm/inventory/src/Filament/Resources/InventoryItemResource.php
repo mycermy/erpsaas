@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Zrm\Inventory\Filament\Pages\InventoryDashboard;
 
 class InventoryItemResource extends Resource
 {
@@ -220,13 +221,5 @@ class InventoryItemResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['offering', 'stockLevels']);
-    }
-
-    public static function getBreadcrumbs(): array
-    {
-        return [
-            'Inventory' => \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
-            'Items' => static::getUrl(),
-        ];
     }
 }

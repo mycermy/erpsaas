@@ -68,7 +68,7 @@ class CompanyProfile extends Page
     public function mount(): void
     {
         $this->record = CompanyProfileModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
+            'company_id' => Auth::user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);

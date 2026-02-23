@@ -259,7 +259,7 @@ class BillResource extends Resource
                                                 return;
                                             }
 
-                                            $unitPrice = CurrencyConverter::convertCentsToFormatSimple($offeringRecord->price, 'USD');
+                                            $unitPrice = CurrencyConverter::convertCentsToFormatSimple($offeringRecord->price, config('money.defaults.currency'));
 
                                             $set('description', $offeringRecord->description);
                                             $set('unit_price', $unitPrice);
@@ -323,8 +323,8 @@ class BillResource extends Resource
                                     ->extraAttributes(['class' => 'text-left sm:text-right'])
                                     ->content(function (Forms\Get $get) {
                                         $quantity = max((float) ($get('quantity') ?? 0), 0);
-                                        $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), 'USD')
-                                            ? CurrencyConverter::convertToFloat($get('unit_price'), 'USD')
+                                        $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), config('money.defaults.currency'))
+                                            ? CurrencyConverter::convertToFloat($get('unit_price'), config('money.defaults.currency'))
                                             : 0;
                                         $purchaseTaxes = $get('purchaseTaxes') ?? [];
                                         $purchaseDiscounts = $get('purchaseDiscounts') ?? [];
@@ -489,13 +489,13 @@ class BillResource extends Resource
                                             ->helperText(function (Bill $record, $state) {
                                                 $billCurrency = $record->currency_code;
 
-                                                if (! CurrencyConverter::isValidAmount($state, 'USD')) {
+                                                if (! CurrencyConverter::isValidAmount($state, config('money.defaults.currency'))) {
                                                     return null;
                                                 }
 
                                                 $amountDue = $record->amount_due;
 
-                                                $amount = CurrencyConverter::convertToCents($state, 'USD');
+                                                $amount = CurrencyConverter::convertToCents($state, config('money.defaults.currency'));
 
                                                 if ($amount <= 0) {
                                                     return 'Please enter a valid positive amount';
@@ -511,7 +511,7 @@ class BillResource extends Resource
                                             })
                                             ->rules([
                                                 static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
-                                                    if (! CurrencyConverter::isValidAmount($value, 'USD')) {
+                                                    if (! CurrencyConverter::isValidAmount($value, config('money.defaults.currency'))) {
                                                         $fail('Please enter a valid amount');
                                                     }
                                                 },
@@ -525,7 +525,7 @@ class BillResource extends Resource
 
                                         $billCurrency = $record->currency_code;
 
-                                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, 'USD')) {
+                                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, config('money.defaults.currency'))) {
                                             return null;
                                         }
 
@@ -542,7 +542,7 @@ class BillResource extends Resource
                                         }
 
                                         // Convert amount from bill currency to bank currency
-                                        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($amount, 'USD');
+                                        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($amount, config('money.defaults.currency'));
                                         $amountInBankCurrencyCents = CurrencyConverter::convertBalance(
                                             $amountInBillCurrencyCents,
                                             $billCurrency,

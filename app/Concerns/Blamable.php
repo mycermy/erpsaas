@@ -12,14 +12,35 @@ trait Blamable
     {
         static::creating(static function ($model) {
             if (Auth::check() && $authId = Auth::id()) {
-                $model->created_by = $model->created_by ?? $authId;
-                $model->updated_by = $model->updated_by ?? $authId;
+                try {
+                    $schema = $model->getConnection()->getSchemaBuilder();
+
+                    if ($schema->hasColumn($model->getTable(), 'created_by')) {
+                        $model->created_by = $model->created_by ?? $authId;
+                    }
+
+                    if ($schema->hasColumn($model->getTable(), 'updated_by')) {
+                        $model->updated_by = $model->updated_by ?? $authId;
+                    }
+                } catch (\Throwable $e) {
+                    // If schema introspection fails for any reason, fallback to safe behavior
+                    $model->created_by = $model->created_by ?? $authId;
+                    $model->updated_by = $model->updated_by ?? $authId;
+                }
             }
         });
 
         static::updating(static function ($model) {
             if (Auth::check() && $authId = Auth::id()) {
-                $model->updated_by = $authId;
+                try {
+                    $schema = $model->getConnection()->getSchemaBuilder();
+
+                    if ($schema->hasColumn($model->getTable(), 'updated_by')) {
+                        $model->updated_by = $authId;
+                    }
+                } catch (\Throwable $e) {
+                    $model->updated_by = $authId;
+                }
             }
         });
     }

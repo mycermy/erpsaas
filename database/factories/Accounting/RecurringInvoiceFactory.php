@@ -66,7 +66,7 @@ class RecurringInvoiceFactory extends Factory
 
                 return $client->currency_code ??
                     Company::find($attributes['company_id'])->default->currency_code ??
-                    'USD';
+                    config('money.defaults.currency');
             },
             'terms' => $this->faker->sentence,
             'footer' => $this->faker->sentence,

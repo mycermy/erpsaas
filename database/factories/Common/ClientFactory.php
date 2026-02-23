@@ -28,7 +28,7 @@ class ClientFactory extends Factory
         return [
             'company_id' => 1,
             'name' => $this->faker->company,
-            'currency_code' => fn (array $attributes) => Company::find($attributes['company_id'])->default->currency_code ?? 'USD',
+            'currency_code' => fn (array $attributes) => Company::find($attributes['company_id'])->default->currency_code ?? config('money.defaults.currency'),
             'account_number' => $this->faker->unique()->numerify(str_repeat('#', 12)),
             'website' => $this->faker->url,
             'notes' => $this->faker->sentence,

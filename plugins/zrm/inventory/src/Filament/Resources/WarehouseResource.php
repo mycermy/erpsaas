@@ -172,12 +172,4 @@ class WarehouseResource extends Resource
             'edit' => Pages\EditWarehouse::route('/{record}/edit'),
         ];
     }
-
-    public static function getBreadcrumbs(): array
-    {
-        return [
-            'Inventory' => \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
-            'Warehouses' => static::getUrl(),
-        ];
-    }
 }

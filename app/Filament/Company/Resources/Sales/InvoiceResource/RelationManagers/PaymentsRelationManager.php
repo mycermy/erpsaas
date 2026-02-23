@@ -88,13 +88,13 @@ class PaymentsRelationManager extends RelationManager
 
                                 $invoiceCurrency = $ownerRecord->currency_code;
 
-                                if (! CurrencyConverter::isValidAmount($state, 'USD')) {
+                                if (! CurrencyConverter::isValidAmount($state, config('money.defaults.currency'))) {
                                     return null;
                                 }
 
                                 $amountDue = $ownerRecord->amount_due;
 
-                                $amount = CurrencyConverter::convertToCents($state, 'USD');
+                                $amount = CurrencyConverter::convertToCents($state, config('money.defaults.currency'));
 
                                 if ($amount <= 0) {
                                     return 'Please enter a valid positive amount';
@@ -116,7 +116,7 @@ class PaymentsRelationManager extends RelationManager
                             })
                             ->rules([
                                 static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
-                                    if (! CurrencyConverter::isValidAmount($value, 'USD')) {
+                                    if (! CurrencyConverter::isValidAmount($value, config('money.defaults.currency'))) {
                                         $fail('Please enter a valid amount');
                                     }
                                 },
@@ -132,7 +132,7 @@ class PaymentsRelationManager extends RelationManager
                         $invoice = $livewire->getOwnerRecord();
                         $invoiceCurrency = $invoice->currency_code;
 
-                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, 'USD')) {
+                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, config('money.defaults.currency'))) {
                             return null;
                         }
 
@@ -149,7 +149,7 @@ class PaymentsRelationManager extends RelationManager
                         }
 
                         // Convert amount from invoice currency to bank currency
-                        $amountInInvoiceCurrencyCents = CurrencyConverter::convertToCents($amount, 'USD');
+                        $amountInInvoiceCurrencyCents = CurrencyConverter::convertToCents($amount, config('money.defaults.currency'));
                         $amountInBankCurrencyCents = CurrencyConverter::convertBalance(
                             $amountInInvoiceCurrencyCents,
                             $invoiceCurrency,

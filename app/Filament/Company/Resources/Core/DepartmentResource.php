@@ -43,7 +43,7 @@ class DepartmentResource extends Resource
                                 name: 'manager',
                                 titleAttribute: 'name',
                                 modifyQueryUsing: static function (Builder $query) {
-                                    $company = auth()->user()->currentCompany;
+                                    $company = Auth::user()->currentCompany;
                                     $companyUsers = $company->allUsers()->pluck('id')->toArray();
 
                                     return $query->whereIn('id', $companyUsers);

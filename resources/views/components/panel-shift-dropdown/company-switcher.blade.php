@@ -5,7 +5,7 @@
 
 @php
     $currentTenantName = filament()->getTenantName($currentTenant);
-    $currentCompany = auth()->user()->currentCompany;
+    $currentCompany = Auth::user()->currentCompany;
     $currentCompanyOwner = $currentCompany->owner;
     $items = filament()->getTenantMenuItems();
 

@@ -7,11 +7,28 @@ use App\Models\Accounting\DocumentLineItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Transaction;
 use Illuminate\Support\Facades\DB;
+use Zrm\Inventory\Enums\MovementType;
+use Zrm\Inventory\Models\Warehouse;
+use Zrm\Inventory\Services\InventoryService;
 
 class InvoiceObserver
 {
     public function saving(Invoice $invoice): void
     {
+        // Handle inventory outbound when invoice is approved/sent (not draft)
+        // In real business: goods ship when invoice is created/approved, not when paid
+        $wasDraft = $invoice->getOriginal('status') === InvoiceStatus::Draft;
+        $isNoLongerDraft = $invoice->status !== InvoiceStatus::Draft && $invoice->status !== InvoiceStatus::Void;
+
+        if ($wasDraft && $isNoLongerDraft) {
+            $this->processInventoryOutbound($invoice);
+
+            // Create approval transaction (revenue recognition and accounts receivable)
+            if ($invoice->lineItems()->exists()) {
+                $invoice->createApprovalTransaction();
+            }
+        }
+
         if (! $invoice->wasApproved()) {
             return;
         }
@@ -38,5 +55,58 @@ class InvoiceObserver
                 $transaction->delete();
             });
         });
+    }
+
+    /**
+     * Process inventory outbound movements when invoice is paid
+     */
+    public function processInventoryOutbound(Invoice $invoice): void
+    {
+        $inventoryService = app(InventoryService::class);
+
+        foreach ($invoice->lineItems as $lineItem) {
+            // Only process if offering has an inventory item (stockable)
+            if (! $lineItem->offering) {
+                continue;
+            }
+
+            $inventoryItem = $lineItem->offering->inventoryItem;
+
+            if (! $inventoryItem) {
+                continue; // Not a stockable item
+            }
+
+            // Use invoice's default warehouse
+            $warehouse = Warehouse::where('company_id', $invoice->company_id)
+                ->where('active', true)
+                ->where('is_default', true)
+                ->first();
+
+            if (! $warehouse) {
+                continue;
+            }
+
+            $quantityToRemove = abs($lineItem->quantity);
+
+            // If there's not enough available stock, still create movement (allow negative)
+            // but flag the invoice so admins can reconcile later.
+            if (! $inventoryService->hasSufficientStock($inventoryItem, $warehouse, $quantityToRemove)) {
+                // Flag invoice for inventory shortage
+                $invoice->flagInventoryShortage();
+            }
+
+            // Create outbound movement (may result in negative stock)
+            $inventoryService->recordMovement(
+                item: $inventoryItem,
+                warehouse: $warehouse,
+                quantity: -$quantityToRemove, // Negative for outbound
+                movementType: MovementType::Sale,
+                unitCost: 0, // COGS will be calculated by InventoryService
+                movementDate: $invoice->date,
+                referenceType: Invoice::class,
+                referenceId: $invoice->id,
+                notes: "Sale from Invoice #{$invoice->invoice_number}"
+            );
+        }
     }
 }

@@ -247,8 +247,8 @@ class InventoryReports extends Page implements HasForms
     public function getBreadcrumbs(): array
     {
         return [
-            'Inventory' => \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
-            'Reports' => static::getUrl(),
+            InventoryDashboard::getUrl() => InventoryDashboard::$title ?? InventoryDashboard::getNavigationLabel(),
+            static::getUrl() => static::$title ?? static::getNavigationLabel(),
         ];
     }
 }

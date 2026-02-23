@@ -34,9 +34,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
+use Zrm\Inventory\Models\InventoryMovement;
 
 #[CollectedBy(DocumentCollection::class)]
 #[ObservedBy(InvoiceObserver::class)]
@@ -87,6 +88,8 @@ class Invoice extends Document
         'discount_method' => DocumentDiscountMethod::class,
         'discount_computation' => AdjustmentComputation::class,
         'discount_rate' => RateCast::class,
+        'inventory_flagged' => 'boolean',
+        'inventory_flagged_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -96,7 +99,7 @@ class Invoice extends Document
     protected function logoUrl(): Attribute
     {
         return Attribute::get(static function (mixed $value, array $attributes): ?string {
-            return $attributes['logo'] ? Storage::disk('public')->url($attributes['logo']) : null;
+            return $attributes['logo'] ? asset('storage/' . $attributes['logo']) : null;
         });
     }
 
@@ -133,6 +136,29 @@ class Invoice extends Document
     public function withdrawals(): MorphMany
     {
         return $this->transactions()->where('type', TransactionType::Withdrawal)->where('is_payment', true);
+    }
+
+
+    /**
+     * Mark invoice as flagged for inventory shortage
+     */
+    public function flagInventoryShortage(?\DateTime $when = null): void
+    {
+        $this->inventory_flagged = true;
+        $this->inventory_flagged_at = $when ?? now();
+        // Don't call update() here as it may cause recursion in observers
+        // The save will happen automatically when the observer finishes
+    }
+
+    /**
+     * Clear inventory shortage flag
+     */
+    public function clearInventoryFlag(): void
+    {
+        // Use direct assignment and save() instead of update() to avoid observer issues
+        $this->inventory_flagged = false;
+        $this->inventory_flagged_at = null;
+        $this->save();
     }
 
     public function approvalTransaction(): MorphOne
@@ -192,7 +218,7 @@ class Invoice extends Document
     #[Scope]
     protected function byNumber(Builder $query, string $number): Builder
     {
-        $invoicePrefix = DocumentDefault::invoice()->first()->number_prefix ?? '';
+        $invoicePrefix = DocumentDefault::invoice(Auth::user()?->current_company_id)->first()?->number_prefix ?? '';
 
         return $query->where(function ($q) use ($number, $invoicePrefix) {
             $q->where('invoice_number', $number)
@@ -287,7 +313,7 @@ class Invoice extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= auth()->user()?->currentCompany;
+        $company ??= Auth::user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -403,12 +429,43 @@ class Invoice extends Document
             $lineItemDescription = "{$baseDescription} › {$lineItem->offering->name}";
             $lineItemSubtotalInInvoiceCurrency = $lineItem->subtotal;
 
+
+            // Revenue entry
             $journalEntryData[] = [
                 'type' => JournalEntryType::Credit,
                 'account_id' => $lineItem->offering->income_account_id,
                 'amount_in_invoice_currency' => $lineItemSubtotalInInvoiceCurrency,
                 'description' => $lineItemDescription,
             ];
+
+            // COGS entry for stockable items: debit COGS, credit Inventory
+            // Get actual COGS from inventory movements (calculated by InventoryService with FIFO/LIFO)
+            if ($lineItem->offering->inventoryItem) {
+                $movements = InventoryMovement::where('reference_type', Invoice::class)
+                    ->where('reference_id', $this->id)
+                    ->where('inventory_item_id', $lineItem->offering->inventoryItem->id)
+                    ->get();
+
+                $cogsAmount = $movements->sum('total_cost'); // Already in cents, calculated by FIFO/LIFO
+
+                if ($cogsAmount > 0) {
+                    // Debit COGS
+                    $journalEntryData[] = [
+                        'type' => JournalEntryType::Debit,
+                        'account_id' => $lineItem->offering->expense_account_id, // COGS account
+                        'amount_in_invoice_currency' => $cogsAmount,
+                        'description' => "{$lineItemDescription} (COGS)",
+                    ];
+
+                    // Credit Inventory
+                    $journalEntryData[] = [
+                        'type' => JournalEntryType::Credit,
+                        'account_id' => Account::getInventoryAccount($this->company_id)->id,
+                        'amount_in_invoice_currency' => $cogsAmount,
+                        'description' => "{$lineItemDescription} (COGS)",
+                    ];
+                }
+            }
 
             foreach ($lineItem->adjustments as $adjustment) {
                 $adjustmentAmountInInvoiceCurrency = $lineItem->calculateAdjustmentTotalAmount($adjustment);
@@ -468,7 +525,7 @@ class Invoice extends Document
             $adjustmentAmount = abs($imbalance);
 
             // Find last entry of target type and adjust it
-            $lastKey = array_key_last(array_filter($journalEntryData, fn ($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
+            $lastKey = array_key_last(array_filter($journalEntryData, fn($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
             $journalEntryData[$lastKey]['amount_in_default_currency'] += $adjustmentAmount;
 
             if ($targetType === JournalEntryType::Debit) {
@@ -533,7 +590,7 @@ class Invoice extends Document
         return $action::make('blockedApprove')
             ->label('Approve')
             ->icon('heroicon-m-check-circle')
-            ->visible(fn (self $record) => $record->canBeApproved() && $record->hasInactiveAdjustments())
+            ->visible(fn(self $record) => $record->canBeApproved() && $record->hasInactiveAdjustments())
             ->requiresConfirmation()
             ->modalAlignment(Alignment::Start)
             ->modalIconColor('danger')

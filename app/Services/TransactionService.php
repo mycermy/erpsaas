@@ -54,7 +54,7 @@ class TransactionService
 
         $postedAt = Carbon::parse($startDate)->subDay()->toDateTimeString();
 
-        $currencyCode = $bankAccount->account->currency_code ?? 'USD';
+        $currencyCode = $bankAccount->account->currency_code ?? config('money.defaults.currency');
         $amountInCents = CurrencyConverter::convertToCents(abs($startingBalance), $currencyCode);
 
         Transaction::create([
@@ -79,7 +79,7 @@ class TransactionService
         $postedAt = $transaction->datetime ?? Carbon::parse($transaction->date)->toDateTimeString();
         $description = $transaction->name;
 
-        $currencyCode = $transaction->iso_currency_code ?? $bankAccount->account->currency_code ?? 'USD';
+        $currencyCode = $transaction->iso_currency_code ?? $bankAccount->account->currency_code ?? config('money.defaults.currency');
         $amountInCents = CurrencyConverter::convertToCents(abs($transaction->amount), $currencyCode);
 
         Transaction::create([

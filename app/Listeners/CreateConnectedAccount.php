@@ -60,7 +60,7 @@ class CreateConnectedAccount
     {
         $identifierHash = md5($company->id . $institution->external_institution_id . $plaidAccount->name . $plaidAccount->mask);
 
-        $currencyCode = $plaidAccount->balances->iso_currency_code ?? 'USD';
+        $currencyCode = $plaidAccount->balances->iso_currency_code ?? config('money.defaults.currency');
 
         $currentBalance = $plaidAccount->balances->current ?? 0;
 

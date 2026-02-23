@@ -64,6 +64,7 @@ enum DocumentType: string implements HasIcon, HasLabel
                 date: 'Invoice Date',
                 dueDate: 'Payment Due',
                 amountDue: 'Amount Due',
+                recipientLabel: 'BILL TO',
             ),
             self::RecurringInvoice => new DocumentLabelDTO(
                 title: self::RecurringInvoice->getLabel(),
@@ -72,6 +73,7 @@ enum DocumentType: string implements HasIcon, HasLabel
                 date: 'Invoice Date',
                 dueDate: 'Payment Due',
                 amountDue: 'Amount Due',
+                recipientLabel: 'BILL TO',
             ),
             self::Estimate => new DocumentLabelDTO(
                 title: self::Estimate->getLabel(),
@@ -80,6 +82,7 @@ enum DocumentType: string implements HasIcon, HasLabel
                 date: 'Estimate Date',
                 dueDate: 'Expiration Date',
                 amountDue: null,
+                recipientLabel: 'SEND TO',
             ),
             self::Bill => new DocumentLabelDTO(
                 title: self::Bill->getLabel(),
@@ -88,6 +91,7 @@ enum DocumentType: string implements HasIcon, HasLabel
                 date: 'Bill Date',
                 dueDate: 'Payment Due',
                 amountDue: 'Amount Due',
+                recipientLabel: 'BILL FROM',
             ),
         };
     }

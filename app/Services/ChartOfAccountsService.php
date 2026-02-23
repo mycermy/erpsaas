@@ -15,8 +15,9 @@ class ChartOfAccountsService
 {
     private string $currencyCode;
 
-    public function createChartOfAccounts(Company $company, string $currencyCode = 'USD'): void
+    public function createChartOfAccounts(Company $company, ?string $currencyCode = 'MYR'): void
     {
+        $currencyCode ??= config('money.defaults.currency');
         $this->currencyCode = $currencyCode;
         $chartOfAccounts = config('chart-of-accounts.default');
 

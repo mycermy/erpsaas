@@ -10,6 +10,8 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource;
+use Zrm\Inventory\Filament\Resources\InventoryTransferResource;
 
 class MovementsRelationManager extends RelationManager
 {
@@ -179,11 +181,11 @@ class MovementsRelationManager extends RelationManager
                                 'record' => $record->reference_id,
                                 'tenant' => filament()->getTenant(),
                             ]),
-                            'InventoryAdjustment' => \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::getUrl('edit', [
+                            'InventoryAdjustment' => InventoryAdjustmentResource::getUrl('view', [
                                 'record' => $record->reference_id,
                                 'tenant' => filament()->getTenant(),
                             ]),
-                            'InventoryTransfer' => \Zrm\Inventory\Filament\Resources\InventoryTransferResource::getUrl('edit', [
+                            'InventoryTransfer' => InventoryTransferResource::getUrl('edit', [
                                 'record' => $record->reference_id,
                                 'tenant' => filament()->getTenant(),
                             ]),

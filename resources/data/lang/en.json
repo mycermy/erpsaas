@@ -206,5 +206,10 @@
     "Basic Information": "Basic Information",
     "Inventory Settings": "Inventory Settings",
     "Account Mapping": "Account Mapping",
-    "Report Parameters": "Report Parameters"
+    "Report Parameters": "Report Parameters",
+    "Warehouse Information": "Warehouse Information",
+    "Contact Information": "Contact Information",
+    "Stock Information": "Stock Information",
+    "Adjustment Information": "Adjustment Information",
+    "Adjustment Items": "Adjustment Items"
 }

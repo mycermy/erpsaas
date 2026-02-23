@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 #[CollectedBy(DocumentCollection::class)]
 #[ObservedBy(BillObserver::class)]
@@ -165,7 +166,7 @@ class Bill extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= auth()->user()?->currentCompany;
+        $company ??= Auth::user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -275,9 +276,16 @@ class Bill extends Document
             $lineItemDescription = "{$baseDescription} › {$lineItem->offering->name}";
             $lineItemSubtotalInBillCurrency = $lineItem->getRawOriginal('subtotal');
 
+            // Determine which account to debit:
+            // - For stockable items (with inventory): debit Inventory asset account
+            // - For non-stockable items: debit the offering's expense account
+            $debitAccountId = $lineItem->offering->inventoryItem
+                ? Account::getInventoryAccount($this->company_id)->id
+                : $lineItem->offering->expense_account_id;
+
             $journalEntryData[] = [
                 'type' => JournalEntryType::Debit,
-                'account_id' => $lineItem->offering->expense_account_id,
+                'account_id' => $debitAccountId,
                 'amount_in_bill_currency' => $lineItemSubtotalInBillCurrency,
                 'description' => $lineItemDescription,
             ];
@@ -288,7 +296,7 @@ class Bill extends Document
                 if ($adjustment->isNonRecoverablePurchaseTax()) {
                     $journalEntryData[] = [
                         'type' => JournalEntryType::Debit,
-                        'account_id' => $lineItem->offering->expense_account_id,
+                        'account_id' => $debitAccountId, // Use same account as line item (Inventory or Expense)
                         'amount_in_bill_currency' => $adjustmentAmountInBillCurrency,
                         'description' => "{$lineItemDescription} ({$adjustment->name})",
                     ];
@@ -349,7 +357,7 @@ class Bill extends Document
             $adjustmentAmount = abs($imbalance);
 
             // Find last entry of target type and adjust it
-            $lastKey = array_key_last(array_filter($journalEntryData, fn ($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
+            $lastKey = array_key_last(array_filter($journalEntryData, fn($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
             $journalEntryData[$lastKey]['amount_in_default_currency'] += $adjustmentAmount;
 
             if ($targetType === JournalEntryType::Debit) {

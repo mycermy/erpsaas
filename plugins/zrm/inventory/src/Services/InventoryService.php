@@ -55,21 +55,48 @@ class InventoryService
                 'movement_type' => is_object($movementType) ? $movementType->value : $movementType,
                 'unit_cost' => $unitCost,
                 'reference_type' => $referenceType,
-                'reference_id' => $referenceId
+                'reference_id' => $referenceId,
+                'notes' => $notes,
+                'is_reversal' => $notes && str_contains($notes, 'REVERSAL'),
             ]);
 
             if ($referenceType && $referenceId) {
+                // Allow reversal movements even if original exists
+                $isReversal = $notes && str_contains($notes, 'REVERSAL');
+                
+                \Illuminate\Support\Facades\Log::info('Checking for existing movement', [
+                    'is_reversal' => $isReversal,
+                    'notes' => $notes,
+                ]);
+                
                 $existing = InventoryMovement::withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
                     ->where('company_id', $item->company_id)
                     ->where('inventory_item_id', $item->id)
                     ->where('reference_type', $referenceType)
                     ->where('reference_id', $referenceId)
                     ->where('movement_type', is_object($movementType) && property_exists($movementType, 'value') ? $movementType->value : (string) $movementType)
+                    ->where(function ($query) use ($isReversal) {
+                        if ($isReversal) {
+                            // If this is a reversal, only look for other reversals (skip original)
+                            $query->where('notes', 'LIKE', '%REVERSAL%');
+                        } else {
+                            // If this is not a reversal, only look for non-reversals (skip reversals)
+                            $query->where(function ($q) {
+                                $q->where('notes', 'NOT LIKE', '%REVERSAL%')
+                                  ->orWhereNull('notes');
+                            });
+                        }
+                    })
                     ->first();
 
                 if ($existing) {
+                    \Illuminate\Support\Facades\Log::info('Found existing movement, returning it', [
+                        'movement_id' => $existing->id,
+                    ]);
                     return $existing;
                 }
+                
+                \Illuminate\Support\Facades\Log::info('No existing movement found, creating new one');
             }
 
             $totalCost = abs($quantity) * $unitCost;

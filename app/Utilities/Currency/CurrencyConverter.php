@@ -20,8 +20,11 @@ class CurrencyConverter
         return number_format((float) $temp_amount, $new_attr->getPrecision(), $new_attr->getDecimalMark(), $new_attr->getThousandsSeparator());
     }
 
-    public static function convertBalance(int $amount, string $oldCurrency, string $newCurrency): int
+    public static function convertBalance(int $amount, ?string $oldCurrency, ?string $newCurrency): int
     {
+        $oldCurrency ??= CurrencyAccessor::getDefaultCurrency();
+        $newCurrency ??= CurrencyAccessor::getDefaultCurrency();
+
         return money($amount, $oldCurrency)->swapAmountFor($newCurrency);
     }
 
@@ -83,7 +86,7 @@ class CurrencyConverter
 
     public static function convertCentsToFloat(int $amount, ?string $currency = null): float
     {
-        $currency ??= 'USD';
+        $currency ??= CurrencyAccessor::getDefaultCurrency();
 
         return money($amount, $currency)->getValue();
     }

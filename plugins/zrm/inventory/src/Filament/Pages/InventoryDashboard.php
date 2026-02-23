@@ -19,8 +19,8 @@ class InventoryDashboard extends Page
     public function getWidgets(): array
     {
         return [
-            \Zrm\Inventory\Filament\Widgets\InventoryStatsWidget::class,
-            \Zrm\Inventory\Filament\Widgets\LowStockAlertWidget::class,
+            InventoryStatsWidget::class,
+            LowStockAlertWidget::class,
         ];
     }
 

@@ -152,7 +152,7 @@ it('handles multi-currency transfers correctly', function () {
         ->and($creditAccount->is($foreignBankAccount))->toBeTrue(); // Credit: Foreign Bank Account (CAD) account
 
     // The 1500 CAD is worth approximately 1103 USD (1500 CAD / 1.36)
-    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'CAD', 'USD');
+    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'CAD', config('money.defaults.currency'));
 
     // Verify that the debit and credit are converted to USD cents
     // Transaction amount stays in source bank account currency
@@ -185,7 +185,7 @@ it('handles multi-currency deposits correctly', function () {
     expect($debitAccount->is($foreignBankAccount))->toBeTrue() // Debit: Foreign Bank Account (BHD) account
         ->and($creditAccount->name)->toBe('Uncategorized Income'); // Credit: Uncategorized Income (USD) account
 
-    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'BHD', 'USD');
+    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'BHD', config('money.defaults.currency'));
 
     // Verify that journal entries are converted to USD cents
     expect($transaction)
@@ -216,7 +216,7 @@ it('handles multi-currency withdrawals correctly', function () {
     expect($debitAccount->name)->toBe('Uncategorized Expense')
         ->and($creditAccount->is($foreignBankAccount))->toBeTrue();
 
-    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'GBP', 'USD');
+    $expectedUSDValue = CurrencyConverter::convertBalance(1500, 'GBP', config('money.defaults.currency'));
 
     expect($transaction)
         ->amount->toBe(1500)

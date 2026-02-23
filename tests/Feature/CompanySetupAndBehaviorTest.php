@@ -58,7 +58,7 @@ it('validates that company default settings are non-null', function () {
 
     expect($testCompany->profile->address->country_code)->not->toBeNull()
         ->and($testCompany->profile->email)->not->toBeNull()
-        ->and($testCompany->default->currency_code)->toBe('USD')
+        ->and($testCompany->default->currency_code)->toBe(config('money.defaults.currency'))
         ->and($testCompany->locale->language)->toBe('en')
         ->and($testCompany->default->bankAccount->account->name)->toBe('Cash on Hand');
 });

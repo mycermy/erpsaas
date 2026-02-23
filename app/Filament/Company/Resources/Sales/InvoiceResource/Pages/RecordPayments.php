@@ -223,7 +223,7 @@ class RecordPayments extends ListRecords
                                         'x-ref' => 'allocate',
                                     ])
                                     ->action(function ($state) {
-                                        $this->allocationAmount = CurrencyConverter::convertToCents($state, 'USD');
+                                        $this->allocationAmount = CurrencyConverter::convertToCents($state, config('money.defaults.currency'));
                                         if ($this->allocationAmount && $this->hasSelectedClient()) {
                                             $this->allocateOldestFirst($this->getTableRecords(), $this->allocationAmount);
                                         }
@@ -312,13 +312,13 @@ class RecordPayments extends ListRecords
                     ->navigable()
                     ->mask(RawJs::make('$money($input)'))
                     ->updateStateUsing(function (Invoice $record, $state) {
-                        if (! CurrencyConverter::isValidAmount($state, 'USD')) {
+                        if (! CurrencyConverter::isValidAmount($state, config('money.defaults.currency'))) {
                             $this->paymentAmounts[$record->id] = 0;
 
                             return '0.00';
                         }
 
-                        $paymentCents = CurrencyConverter::convertToCents($state, 'USD');
+                        $paymentCents = CurrencyConverter::convertToCents($state, config('money.defaults.currency'));
 
                         if ($paymentCents > $record->amount_due) {
                             $paymentCents = $record->amount_due;
@@ -331,7 +331,7 @@ class RecordPayments extends ListRecords
                     ->getStateUsing(function (Invoice $record) {
                         $paymentAmount = $this->paymentAmounts[$record->id] ?? 0;
 
-                        return CurrencyConverter::convertCentsToFormatSimple($paymentAmount, 'USD');
+                        return CurrencyConverter::convertCentsToFormatSimple($paymentAmount, config('money.defaults.currency'));
                     })
                     ->summarize([
                         Summarizer::make()

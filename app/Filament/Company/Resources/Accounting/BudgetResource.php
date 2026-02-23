@@ -126,7 +126,7 @@ class BudgetResource extends Resource
                 //                                Forms\Components\TextInput::make('fixed_amount')
                 //                                    ->label('Increase by Fixed Amount')
                 //                                    ->numeric()
-                //                                    ->suffix('USD')
+                //                                    ->suffix(config('money.defaults.currency'))
                 //                                    ->required()
                 //                                    ->hidden(fn (Forms\Get $get) => $get('increase_type') !== 'fixed'),
                 //

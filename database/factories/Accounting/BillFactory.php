@@ -64,7 +64,7 @@ class BillFactory extends Factory
 
                 return $vendor->currency_code ??
                     Company::find($attributes['company_id'])->default->currency_code ??
-                    'USD';
+                    config('money.defaults.currency');
             },
             'notes' => $this->faker->sentence,
             'created_by' => 1,

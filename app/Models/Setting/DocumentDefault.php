@@ -70,7 +70,8 @@ class DocumentDefault extends Model
     protected function logoUrl(): Attribute
     {
         return Attribute::get(static function (mixed $value, array $attributes): ?string {
-            return $attributes['logo'] ? Storage::disk('public')->url($attributes['logo']) : null;
+            // return $attributes['logo'] ? Storage::disk('public')->url($attributes['logo']) : null;
+            return $attributes['logo'] ? asset('storage/' . $attributes['logo']) : null;
         });
     }
 

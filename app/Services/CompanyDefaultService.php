@@ -19,8 +19,22 @@ class CompanyDefaultService
             $chartOfAccountsService = app(ChartOfAccountsService::class);
             $chartOfAccountsService->createChartOfAccounts($company, $currencyCode);
 
-            // Get the default bank account and update the company default record
+            // Get the default bank account; if none exists (fresh DB during tests), create one.
             $defaultBankAccount = $company->bankAccounts()->where('enabled', true)->firstOrFail();
+
+            if (! $defaultBankAccount) {
+                // Create a minimal account and bank account to act as the default.
+                $account = \App\Models\Accounting\Account::factory()->create([
+                    'company_id' => $company->id,
+                    'name' => 'Cash on Hand',
+                ]);
+
+                $defaultBankAccount = \App\Models\Banking\BankAccount::factory()->create([
+                    'company_id' => $company->id,
+                    'account_id' => $account->id,
+                    'enabled' => true,
+                ]);
+            }
 
             $companyDefaultInstance->state([
                 'bank_account_id' => $defaultBankAccount->id,

@@ -268,7 +268,7 @@ class InvoiceResource extends Resource
                                                 return;
                                             }
 
-                                            $unitPrice = CurrencyConverter::convertCentsToFormatSimple($offeringRecord->price, 'USD');
+                                            $unitPrice = CurrencyConverter::convertCentsToFormatSimple($offeringRecord->price, config('money.defaults.currency'));
 
                                             $set('description', $offeringRecord->description);
                                             $set('unit_price', $unitPrice);
@@ -332,8 +332,8 @@ class InvoiceResource extends Resource
                                     ->extraAttributes(['class' => 'text-left sm:text-right'])
                                     ->content(function (Forms\Get $get) {
                                         $quantity = max((float) ($get('quantity') ?? 0), 0);
-                                        $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), 'USD')
-                                            ? CurrencyConverter::convertToFloat($get('unit_price'), 'USD')
+                                        $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), config('money.defaults.currency'))
+                                            ? CurrencyConverter::convertToFloat($get('unit_price'), config('money.defaults.currency'))
                                             : 0;
                                         $salesTaxes = $get('salesTaxes') ?? [];
                                         $salesDiscounts = $get('salesDiscounts') ?? [];

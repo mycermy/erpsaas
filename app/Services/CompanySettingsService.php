@@ -37,7 +37,7 @@ class CompanySettingsService
             $defaultCurrency = Currency::query()
                 ->where('company_id', $companyId)
                 ->where('enabled', true)
-                ->value('code') ?? 'USD';
+                ->value('code') ?? config('money.defaults.currency');
 
             return [
                 'default_language' => $company->locale->language ?? config('transmatic.source_locale'),
@@ -68,7 +68,7 @@ class CompanySettingsService
         return [
             'default_language' => config('transmatic.source_locale'),
             'default_timezone' => config('app.timezone'),
-            'default_currency' => 'USD',
+            'default_currency' => config('money.defaults.currency'),
             'default_date_format' => DateFormat::DEFAULT,
             'default_time_format' => TimeFormat::DEFAULT,
             'default_week_start' => WeekStart::DEFAULT,
@@ -94,7 +94,7 @@ class CompanySettingsService
 
     public static function getDefaultCurrency(?int $companyId = null): string
     {
-        return self::getSpecificSetting($companyId, 'default_currency', 'USD');
+        return self::getSpecificSetting($companyId, 'default_currency', config('money.defaults.currency'));
     }
 
     public static function getDefaultDateFormat(?int $companyId = null): string

@@ -67,19 +67,21 @@ class CreateCompany extends FilamentCreateCompany
                     ->live()
                     ->searchable()
                     ->options(Country::getAvailableCountryOptions())
-                    ->getSearchResultsUsing(fn (string $search): array => Country::getSearchResultsUsing($search))
-                    ->getOptionLabelUsing(fn ($value): ?string => Country::find($value)?->name . ' ' . Country::find($value)?->flag)
+                    ->getSearchResultsUsing(fn(string $search): array => Country::getSearchResultsUsing($search))
+                    ->getOptionLabelUsing(fn($value): ?string => Country::find($value)?->name . ' ' . Country::find($value)?->flag)
                     ->softRequired(),
                 Select::make('locale.language')
                     ->label('Language')
                     ->searchable()
                     ->options(Localization::getAllLanguages())
+                    ->default(config('transmatic.source_locale', 'en'))
                     ->softRequired(),
                 Select::make('currencies.code')
                     ->label('Currency')
                     ->searchable()
                     ->options(CurrencyAccessor::getAllCurrencyOptions())
                     ->optionsLimit(5)
+                    ->default(config('money.defaults.currency'))
                     ->softRequired(),
             ])
             ->columns()

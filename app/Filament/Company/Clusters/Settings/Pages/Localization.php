@@ -29,6 +29,7 @@ use Guava\FilamentClusters\Forms\Cluster;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 
 use function Filament\authorize;
@@ -69,7 +70,7 @@ class Localization extends Page
     public function mount(): void
     {
         $this->record = LocalizationModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
+            'company_id' => Auth::user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);

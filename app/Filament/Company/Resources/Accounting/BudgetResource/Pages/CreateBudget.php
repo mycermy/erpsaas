@@ -166,7 +166,7 @@ class CreateBudget extends CreateRecord
                                 ->label('Fiscal Year')
                                 ->options(function () {
                                     $options = [];
-                                    $company = auth()->user()->currentCompany;
+                                    $company = Auth::user()->currentCompany;
                                     $earliestDate = Carbon::parse(Accounting::getEarliestTransactionDate());
                                     $fiscalYearStartCurrent = Carbon::parse($company->locale->fiscalYearStartDate());
 

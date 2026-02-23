@@ -155,13 +155,13 @@ it('correctly builds a post-closing trial balance report', function () {
         ])
         ->assertSeeTextInOrder([
             'Total Revenue',
-            '$0.00',
-            '$0.00',
+            '0.00',
+            '0.00',
         ])
         ->assertSeeTextInOrder([
             'Total Expenses',
-            '$0.00',
-            '$0.00',
+            '0.00',
+            '0.00',
         ])
         ->assertReportTableData();
 });

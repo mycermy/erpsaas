@@ -6,7 +6,6 @@ use Zrm\Inventory\Enums\AdjustmentStatus;
 use Zrm\Inventory\Enums\AdjustmentType;
 use Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource\Pages;
 use Zrm\Inventory\Models\InventoryAdjustment;
-use Zrm\Inventory\Services\InventoryService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -483,15 +482,21 @@ class InventoryAdjustmentResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
+                    ->modalHeading('Cancel Adjustment')
+                    ->modalDescription(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Approved
+                        ? 'This adjustment has been approved and inventory movements have been created. Cancelling will reverse all inventory movements. Are you sure?'
+                        : 'Are you sure you want to cancel this adjustment?')
+                    ->visible(fn(InventoryAdjustment $record) => in_array($record->status, [AdjustmentStatus::Draft, AdjustmentStatus::Approved]))
                     ->action(function (InventoryAdjustment $record) {
-                        $record->update(['status' => AdjustmentStatus::Cancelled]);
+                        $record->cancel();
                     }),
 
                 Tables\Actions\EditAction::make()
-                    ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft),
+                    ->visible(fn(InventoryAdjustment $record) => $record->status === AdjustmentStatus::Draft)
+                    ->url(fn(InventoryAdjustment $record) => Pages\EditInventoryAdjustment::getUrl(['record' => $record])),
 
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn(InventoryAdjustment $record) => Pages\ViewInventoryAdjustment::getUrl(['record' => $record])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -520,6 +525,7 @@ class InventoryAdjustmentResource extends Resource
         return [
             'index' => Pages\ListInventoryAdjustments::route('/'),
             'create' => Pages\CreateInventoryAdjustment::route('/create'),
+            'view' => Pages\ViewInventoryAdjustment::route('/{record}'),
             'edit' => Pages\EditInventoryAdjustment::route('/{record}/edit'),
         ];
     }
@@ -527,13 +533,5 @@ class InventoryAdjustmentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['warehouse', 'items.inventoryItem', 'items.batchAllocations.inventoryBatch']);
-    }
-
-    public static function getBreadcrumbs(): array
-    {
-        return [
-            'Inventory' => \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
-            'Adjustments' => static::getUrl(),
-        ];
     }
 }

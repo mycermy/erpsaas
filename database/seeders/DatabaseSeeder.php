@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
             // Other seeders can be added here
             UpdateCompany1DefaultsSeeder::class,
             AttachUserToCompanySeeder::class,
+            
+            // Plugin seeders
+            \Zrm\Inventory\Database\Seeders\DatabaseSeeder::class,
         ]);
     }
 }

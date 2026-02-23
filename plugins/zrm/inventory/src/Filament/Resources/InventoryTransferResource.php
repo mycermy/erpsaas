@@ -307,12 +307,4 @@ class InventoryTransferResource extends Resource
     {
         return parent::getEloquentQuery()->with(['fromWarehouse', 'toWarehouse', 'items.inventoryItem']);
     }
-
-    public static function getBreadcrumbs(): array
-    {
-        return [
-            'Inventory' => \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl(),
-            'Transfers' => static::getUrl(),
-        ];
-    }
 }
