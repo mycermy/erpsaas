@@ -316,6 +316,8 @@ class InventoryDatabaseSeeder extends Seeder
                 'company_id' => $this->company->id, // Explicitly set company_id
                 'adjustment_id' => $adjustment->id,
                 'inventory_item_id' => $inventoryItem->id,
+                'quantity_before' => 0, // Initial stock starts from 0
+                'quantity_after' => $quantity, // After = before + adjustment
                 'quantity_adjusted' => $quantity, // Use quantity_adjusted field
                 'unit_cost' => $baseUnitCost, // Set initial cost
                 'reason' => 'Initial stock',
@@ -666,6 +668,8 @@ class InventoryDatabaseSeeder extends Seeder
                 'company_id' => $this->company->id,
                 'adjustment_id' => $adjustment->id,
                 'inventory_item_id' => $inventoryItem->id,
+                'quantity_before' => $availableQty, // Set the before quantity
+                'quantity_after' => $availableQty + $quantity, // Calculate after = before + adjustment
                 'quantity_adjusted' => $quantity, // Use quantity_adjusted field (negative for damage)
                 'unit_cost' => $baseUnitCost, // Set unit cost for proper valuation
                 'reason' => 'Damaged goods',
