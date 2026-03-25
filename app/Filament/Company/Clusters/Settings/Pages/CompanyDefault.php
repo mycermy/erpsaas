@@ -118,15 +118,15 @@ class CompanyDefault extends Page
             ->schema([
                 Select::make('bank_account_id')
                     ->localizeLabel()
-                    ->relationship('bankAccount', 'name')
-                    ->getOptionLabelFromRecordUsing(function (BankAccount $record) {
-                        $name = $record->account->name;
-                        $currency = $this->renderBadgeOptionLabel($record->account->currency_code);
+                    ->options(fn () => BankAccount::with('account')
+                        ->get()
+                        ->mapWithKeys(function (BankAccount $record) {
+                            $name = $record->account->name;
+                            $currency = $this->renderBadgeOptionLabel($record->account->currency_code);
 
-                        return "{$name} ⁓ {$currency}";
-                    })
+                            return [$record->id => "{$name} ⁓ {$currency}"];
+                        }))
                     ->allowHtml()
-                    ->saveRelationshipsUsing(null)
                     ->selectablePlaceholder(false)
                     ->searchable()
                     ->preload(),
