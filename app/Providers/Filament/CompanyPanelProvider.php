@@ -133,68 +133,74 @@ class CompanyPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Indigo,
             ])
-            ->topNavigation(false)
-            ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
-                return $builder
-                    ->items([
-                        ...Reports::getNavigationItems(),
-                        ...Settings::getNavigationItems(),
-                        ...OfferingResource::getNavigationItems(),
-                    ])
-                    ->groups([
-                        NavigationGroup::make('Inventory')
-                            ->label('Inventory')
-                            ->icon('heroicon-o-cube')
-                            ->items([
-                                ...InventoryDashboard::getNavigationItems(),
-                                ...InventoryItemResource::getNavigationItems(),
-                                ...WarehouseResource::getNavigationItems(),
-                                ...InventoryAdjustmentResource::getNavigationItems(),
-                                ...InventoryTransferResource::getNavigationItems(),
-                                ...InventoryReports::getNavigationItems(),
-                            ]),
+            ->topNavigation(true)
+            ->maxContentWidth(MaxWidth::Full)
+            ->navigationGroups([
+                NavigationGroup::make('Inventory')
+                    ->label('Inventory')
+                    ->icon('heroicon-o-cube'),
+            ])
+            // ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
+            //     return $builder
+            //         ->items([
+            //             ...Reports::getNavigationItems(),
+            //             ...Settings::getNavigationItems(),
+            //             ...OfferingResource::getNavigationItems(),
+            //         ])
+            //         ->groups([
+            //             // NavigationGroup::make('Inventory')
+            //             //     ->label('Inventory')
+            //             //     ->icon('heroicon-o-cube')
+            //             //     ->items([
+            //             //         ...InventoryDashboard::getNavigationItems(),
+            //             //         ...InventoryItemResource::getNavigationItems(),
+            //             //         ...WarehouseResource::getNavigationItems(),
+            //             //         ...InventoryAdjustmentResource::getNavigationItems(),
+            //             //         ...InventoryTransferResource::getNavigationItems(),
+            //             //         ...InventoryReports::getNavigationItems(),
+            //             //     ]),
 
-                        NavigationGroup::make('Sales')
-                            ->label('Sales')
-                            ->icon('heroicon-o-currency-dollar')
-                            ->items([
-                                ...ClientResource::getNavigationItems(),
-                                ...EstimateResource::getNavigationItems(),
-                                ...InvoiceResource::getNavigationItems(),
-                                ...RecurringInvoiceResource::getNavigationItems(),
-                            ]),
-                        NavigationGroup::make('Purchases')
-                            ->label('Purchases')
-                            ->icon('heroicon-o-shopping-cart')
-                            ->items([
-                                ...BillResource::getNavigationItems(),
-                                ...VendorResource::getNavigationItems(),
-                            ]),
-                        NavigationGroup::make('Accounting')
-                            ->localizeLabel()
-                            ->icon('heroicon-o-clipboard-document-list')
-                            ->extraSidebarAttributes(['class' => 'es-sidebar-group'])
-                            ->items([
-                                ...BudgetResource::getNavigationItems(),
-                                ...AccountChart::getNavigationItems(),
-                                ...TransactionResource::getNavigationItems(),
-                            ]),
-                        NavigationGroup::make('Banking')
-                            ->localizeLabel()
-                            ->icon('heroicon-o-building-library')
-                            ->items(AccountResource::getNavigationItems()),
-                        NavigationGroup::make('Services')
-                            ->localizeLabel()
-                            ->icon('heroicon-o-wrench-screwdriver')
-                            ->items([
-                                ...ConnectedAccount::getNavigationItems(),
-                                ...LiveCurrency::getNavigationItems(),
-                            ]),
-                    ]);
-            })
+            //             NavigationGroup::make('Sales')
+            //                 ->label('Sales')
+            //                 ->icon('heroicon-o-currency-dollar')
+            //                 ->items([
+            //                     ...ClientResource::getNavigationItems(),
+            //                     ...EstimateResource::getNavigationItems(),
+            //                     ...InvoiceResource::getNavigationItems(),
+            //                     ...RecurringInvoiceResource::getNavigationItems(),
+            //                 ]),
+            //             NavigationGroup::make('Purchases')
+            //                 ->label('Purchases')
+            //                 ->icon('heroicon-o-shopping-cart')
+            //                 ->items([
+            //                     ...BillResource::getNavigationItems(),
+            //                     ...VendorResource::getNavigationItems(),
+            //                 ]),
+            //             NavigationGroup::make('Accounting')
+            //                 ->localizeLabel()
+            //                 ->icon('heroicon-o-clipboard-document-list')
+            //                 ->extraSidebarAttributes(['class' => 'es-sidebar-group'])
+            //                 ->items([
+            //                     ...BudgetResource::getNavigationItems(),
+            //                     ...AccountChart::getNavigationItems(),
+            //                     ...TransactionResource::getNavigationItems(),
+            //                 ]),
+            //             NavigationGroup::make('Banking')
+            //                 ->localizeLabel()
+            //                 ->icon('heroicon-o-building-library')
+            //                 ->items(AccountResource::getNavigationItems()),
+            //             NavigationGroup::make('Services')
+            //                 ->localizeLabel()
+            //                 ->icon('heroicon-o-wrench-screwdriver')
+            //                 ->items([
+            //                     ...ConnectedAccount::getNavigationItems(),
+            //                     ...LiveCurrency::getNavigationItems(),
+            //                 ]),
+            //         ]);
+            // })
 
             ->globalSearch(false)
-            ->sidebarCollapsibleOnDesktop()
+            // ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications(isLazy: false)
             ->viteTheme('resources/css/filament/company/theme.css')
             ->brandLogo(static fn() => view('components.icons.logo'))

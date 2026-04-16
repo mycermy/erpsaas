@@ -21,15 +21,15 @@ class InventoryReports extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    // protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static string $view = 'inventory::filament.pages.reports';
 
-    protected static ?string $navigationGroup = 'Inventory';
+    // protected static ?string $navigationGroup = 'Inventory';
 
-    protected static ?int $navigationSort = 5;
+    // protected static ?string $title = 'Reports';
 
-    protected static ?string $title = 'Inventory Reports';
+    protected static ?int $navigationSort = 6;
 
     protected static ?string $slug = 'inventory/reports';
 
@@ -38,6 +38,22 @@ class InventoryReports extends Page implements HasForms
     public ?string $selectedReport = 'valuation';
 
     public ?array $reportData = null;
+
+
+    protected static function getPagePermission(): ?string
+    {
+        return 'page_inventory_reports';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('inventory::filament/pages/reports.navigation.title');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return __('inventory::filament/pages/reports.navigation.group');
+    }
 
     public function mount(): void
     {

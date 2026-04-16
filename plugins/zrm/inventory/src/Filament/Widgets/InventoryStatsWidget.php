@@ -7,7 +7,7 @@ use Zrm\Inventory\Models\InventoryItem;
 use Zrm\Inventory\Models\InventoryStockLevel;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Zrm\Inventory\Filament\Resources\InventoryItemResource;
+use Zrm\Inventory\Filament\Clusters\Operations\Resources\InventoryItemResource;
 
 class InventoryStatsWidget extends BaseWidget
 {

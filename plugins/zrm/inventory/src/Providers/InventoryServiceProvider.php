@@ -88,290 +88,290 @@ class InventoryServiceProvider extends ServiceProvider
         Panel::configureUsing(function (Panel $panel): void {
             $panel->plugin(InventoryPlugin::make());
 
-            // Ensure the company panel exposes an Inventory group (label + icon)
-            // Resources already declare `protected static ?string $navigationGroup = 'Inventory'` —
-            // this merely ensures the group label/icon exist without eagerly resolving pages.
-            $panel->when(fn (Panel $panel) => $panel->getId() === 'company', function (Panel $panel): void {
-                $panel
-                ->navigation(function (\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder {
-                    return $builder->group(
-                        \Filament\Navigation\NavigationGroup::make('Inventory')
-                            ->label('Inventory')
-                            ->icon('heroicon-o-cube')
-                    );
-                });
+            // // Ensure the company panel exposes an Inventory group (label + icon)
+            // // Resources already declare `protected static ?string $navigationGroup = 'Inventory'` —
+            // // this merely ensures the group label/icon exist without eagerly resolving pages.
+            // $panel->when(fn(Panel $panel) => $panel->getId() === 'company', function (Panel $panel): void {
+            //     $panel
+            //         ->navigation(function (\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder {
+            //             return $builder->group(
+            //                 \Filament\Navigation\NavigationGroup::make('Inventory')
+            //                     ->label('Inventory')
+            //                     ->icon('heroicon-o-cube')
+            //             );
+            //         });
 
-                // Add Inventory navigation items from the plugin (done here so the plugin
-                // can fully control its navigation without modifying the core CompanyPanelProvider).
-                // Use closures for `url` and `shouldShow` so evaluation is deferred until render-time
-                // (after tenant binding). Defensive try/catch prevents a thrown URL generation
-                // error from breaking the whole sidebar.
-                $panel->navigation(function (\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder {
-                    return $builder->group(
-                        \Filament\Navigation\NavigationGroup::make('Inventory')
-                            ->label('Inventory')
-                            ->icon('heroicon-o-cube')
-                            ->items([
-                                \Filament\Navigation\NavigationItem::make('inventory-dashboard')
-                                    ->label('Inventory Dashboard')
-                                    ->icon('heroicon-o-collection')
-                                    ->url(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl();
-                                        } catch (\Throwable $e) {
-                                            logger()->debug('Inventory nav: dashboard url failed', ['err' => $e->getMessage()]);
-                                            return null;
-                                        }
-                                    }),
+            //     // Add Inventory navigation items from the plugin (done here so the plugin
+            //     // can fully control its navigation without modifying the core CompanyPanelProvider).
+            //     // Use closures for `url` and `shouldShow` so evaluation is deferred until render-time
+            //     // (after tenant binding). Defensive try/catch prevents a thrown URL generation
+            //     // error from breaking the whole sidebar.
+            //     $panel->navigation(function (\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder {
+            //         return $builder->group(
+            //             \Filament\Navigation\NavigationGroup::make('Inventory')
+            //                 ->label('Inventory')
+            //                 ->icon('heroicon-o-cube')
+            //                 ->items([
+            //                     \Filament\Navigation\NavigationItem::make('inventory-dashboard')
+            //                         ->label('Inventory Dashboard')
+            //                         ->icon('heroicon-o-collection')
+            //                         ->url(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl();
+            //                             } catch (\Throwable $e) {
+            //                                 logger()->debug('Inventory nav: dashboard url failed', ['err' => $e->getMessage()]);
+            //                                 return null;
+            //                             }
+            //                         }),
 
-                                \Filament\Navigation\NavigationItem::make('inventory-reports')
-                                    ->label('Inventory Reports')
-                                    ->icon('heroicon-o-chart-bar')
-                                    ->url(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Pages\InventoryReports::getUrl();
-                                        } catch (\Throwable $e) {
-                                            logger()->debug('Inventory nav: reports url failed', ['err' => $e->getMessage()]);
-                                            return null;
-                                        }
-                                    }),
+            //                     \Filament\Navigation\NavigationItem::make('inventory-reports')
+            //                         ->label('Inventory Reports')
+            //                         ->icon('heroicon-o-chart-bar')
+            //                         ->url(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Pages\InventoryReports::getUrl();
+            //                             } catch (\Throwable $e) {
+            //                                 logger()->debug('Inventory nav: reports url failed', ['err' => $e->getMessage()]);
+            //                                 return null;
+            //                             }
+            //                         }),
 
-                                \Filament\Navigation\NavigationItem::make('inventory-items')
-                                    ->label('Inventory Items')
-                                    ->icon('heroicon-o-cube')
-                                    ->url(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryItemResource::getUrl('index');
-                                        } catch (\Throwable $e) {
-                                            logger()->debug('Inventory nav: items url failed', ['err' => $e->getMessage()]);
-                                            return null;
-                                        }
-                                    })
-                                    ->shouldShow(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Filament::auth()->user());
-                                        } catch (\Throwable $e) {
-                                            return false;
-                                        }
-                                    }),
+            //                     \Filament\Navigation\NavigationItem::make('inventory-items')
+            //                         ->label('Inventory Items')
+            //                         ->icon('heroicon-o-cube')
+            //                         ->url(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\InventoryItemResource::getUrl('index');
+            //                             } catch (\Throwable $e) {
+            //                                 logger()->debug('Inventory nav: items url failed', ['err' => $e->getMessage()]);
+            //                                 return null;
+            //                             }
+            //                         })
+            //                         ->shouldShow(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Filament::auth()->user());
+            //                             } catch (\Throwable $e) {
+            //                                 return false;
+            //                             }
+            //                         }),
 
-                                \Filament\Navigation\NavigationItem::make('inventory-warehouses')
-                                    ->label('Warehouses')
-                                    ->icon('heroicon-o-building')
-                                    ->url(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\WarehouseResource::getUrl('index');
-                                        } catch (\Throwable $e) {
-                                            logger()->debug('Inventory nav: warehouses url failed', ['err' => $e->getMessage()]);
-                                            return null;
-                                        }
-                                    })
-                                    ->shouldShow(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Filament::auth()->user());
-                                        } catch (\Throwable $e) {
-                                            return false;
-                                        }
-                                    }),
+            //                     \Filament\Navigation\NavigationItem::make('inventory-warehouses')
+            //                         ->label('Warehouses')
+            //                         ->icon('heroicon-o-building')
+            //                         ->url(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\WarehouseResource::getUrl('index');
+            //                             } catch (\Throwable $e) {
+            //                                 logger()->debug('Inventory nav: warehouses url failed', ['err' => $e->getMessage()]);
+            //                                 return null;
+            //                             }
+            //                         })
+            //                         ->shouldShow(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Filament::auth()->user());
+            //                             } catch (\Throwable $e) {
+            //                                 return false;
+            //                             }
+            //                         }),
 
-                                \Filament\Navigation\NavigationItem::make('inventory-adjustments')
-                                    ->label('Adjustments')
-                                    ->icon('heroicon-o-adjustments-horizontal')
-                                    ->url(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::getUrl('index');
-                                        } catch (\Throwable $e) {
-                                            logger()->debug('Inventory nav: adjustments url failed', ['err' => $e->getMessage()]);
-                                            return null;
-                                        }
-                                    })
-                                    ->shouldShow(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Filament::auth()->user());
-                                        } catch (\Throwable $e) {
-                                            return false;
-                                        }
-                                    }),
+            //                     \Filament\Navigation\NavigationItem::make('inventory-adjustments')
+            //                         ->label('Adjustments')
+            //                         ->icon('heroicon-o-adjustments-horizontal')
+            //                         ->url(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::getUrl('index');
+            //                             } catch (\Throwable $e) {
+            //                                 logger()->debug('Inventory nav: adjustments url failed', ['err' => $e->getMessage()]);
+            //                                 return null;
+            //                             }
+            //                         })
+            //                         ->shouldShow(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Filament::auth()->user());
+            //                             } catch (\Throwable $e) {
+            //                                 return false;
+            //                             }
+            //                         }),
 
-                                \Filament\Navigation\NavigationItem::make('inventory-transfers')
-                                    ->label('Transfers')
-                                    ->icon('heroicon-o-arrow-right-left')
-                                    ->url(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::getUrl('index');
-                                        } catch (\Throwable $e) {
-                                            logger()->debug('Inventory nav: transfers url failed', ['err' => $e->getMessage()]);
-                                            return null;
-                                        }
-                                    })
-                                    ->shouldShow(function () {
-                                        try {
-                                            return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Filament::auth()->user());
-                                        } catch (\Throwable $e) {
-                                            return false;
-                                        }
-                                    }),
-                            ])
-                    );
-                });
+            //                     \Filament\Navigation\NavigationItem::make('inventory-transfers')
+            //                         ->label('Transfers')
+            //                         ->icon('heroicon-o-arrow-right-left')
+            //                         ->url(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::getUrl('index');
+            //                             } catch (\Throwable $e) {
+            //                                 logger()->debug('Inventory nav: transfers url failed', ['err' => $e->getMessage()]);
+            //                                 return null;
+            //                             }
+            //                         })
+            //                         ->shouldShow(function () {
+            //                             try {
+            //                                 return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Filament::auth()->user());
+            //                             } catch (\Throwable $e) {
+            //                                 return false;
+            //                             }
+            //                         }),
+            //                 ])
+            //         );
+            //     });
 
-                // Runtime safeguard: Filament's application providers (app/Providers/Filament/*)
-                // may register the `company` panel *after* package registration — which can
-                // overwrite earlier navigation callbacks. To guarantee the Inventory group
-                // and its items are present in the final rendered sidebar, merge our
-                // navigation during the Filament "serving" event (request-time).
-                // This is intentionally idempotent and defensive — safe for repeated calls.
-                \Filament\Facades\Filament::serving(function ($event): void {
-                    try {
-                        $panel = $event->panel ?? null;
+            //     // Runtime safeguard: Filament's application providers (app/Providers/Filament/*)
+            //     // may register the `company` panel *after* package registration — which can
+            //     // overwrite earlier navigation callbacks. To guarantee the Inventory group
+            //     // and its items are present in the final rendered sidebar, merge our
+            //     // navigation during the Filament "serving" event (request-time).
+            //     // This is intentionally idempotent and defensive — safe for repeated calls.
+            //     \Filament\Facades\Filament::serving(function ($event): void {
+            //         try {
+            //             $panel = $event->panel ?? null;
 
-                        if (! $panel || $panel->getId() !== 'company') {
-                            return;
-                        }
+            //             if (! $panel || $panel->getId() !== 'company') {
+            //                 return;
+            //             }
 
-                        // If the Inventory group already exists, ensure our items are present
-                        // (we register the same deferred closures as above). Otherwise add
-                        // the whole group. Using ->navigation() here appends a render-time
-                        // builder so it cannot be overwritten by earlier provider configuration.
-                        $panel->navigation(function (\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder {
-                            return $builder->group(
-                                \Filament\Navigation\NavigationGroup::make('Inventory')
-                                    ->label('Inventory')
-                                    ->icon('heroicon-o-cube')
-                                    ->items([
-                                        \Filament\Navigation\NavigationItem::make('inventory-dashboard')
-                                            ->label('Inventory Dashboard')
-                                            ->icon('heroicon-o-collection')
-                                            ->url(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl();
-                                                } catch (\Throwable $e) {
-                                                    logger()->debug('Inventory nav: dashboard url failed (serving)', ['err' => $e->getMessage()]);
-                                                    return null;
-                                                }
-                                            }),
+            //             // If the Inventory group already exists, ensure our items are present
+            //             // (we register the same deferred closures as above). Otherwise add
+            //             // the whole group. Using ->navigation() here appends a render-time
+            //             // builder so it cannot be overwritten by earlier provider configuration.
+            //             $panel->navigation(function (\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder {
+            //                 return $builder->group(
+            //                     \Filament\Navigation\NavigationGroup::make('Inventory')
+            //                         ->label('Inventory')
+            //                         ->icon('heroicon-o-cube')
+            //                         ->items([
+            //                             \Filament\Navigation\NavigationItem::make('inventory-dashboard')
+            //                                 ->label('Inventory Dashboard')
+            //                                 ->icon('heroicon-o-collection')
+            //                                 ->url(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Pages\InventoryDashboard::getUrl();
+            //                                     } catch (\Throwable $e) {
+            //                                         logger()->debug('Inventory nav: dashboard url failed (serving)', ['err' => $e->getMessage()]);
+            //                                         return null;
+            //                                     }
+            //                                 }),
 
-                                        \Filament\Navigation\NavigationItem::make('inventory-reports')
-                                            ->label('Inventory Reports')
-                                            ->icon('heroicon-o-chart-bar')
-                                            ->url(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Pages\InventoryReports::getUrl();
-                                                } catch (\Throwable $e) {
-                                                    logger()->debug('Inventory nav: reports url failed (serving)', ['err' => $e->getMessage()]);
-                                                    return null;
-                                                }
-                                            }),
+            //                             \Filament\Navigation\NavigationItem::make('inventory-reports')
+            //                                 ->label('Inventory Reports')
+            //                                 ->icon('heroicon-o-chart-bar')
+            //                                 ->url(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Pages\InventoryReports::getUrl();
+            //                                     } catch (\Throwable $e) {
+            //                                         logger()->debug('Inventory nav: reports url failed (serving)', ['err' => $e->getMessage()]);
+            //                                         return null;
+            //                                     }
+            //                                 }),
 
-                                        \Filament\Navigation\NavigationItem::make('inventory-items')
-                                            ->label('Inventory Items')
-                                            ->icon('heroicon-o-cube')
-                                            ->url(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryItemResource::getUrl('index');
-                                                } catch (\Throwable $e) {
-                                                    logger()->debug('Inventory nav: items url failed (serving)', ['err' => $e->getMessage()]);
-                                                    return null;
-                                                }
-                                            })
-                                            ->shouldShow(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Filament::auth()->user());
-                                                } catch (\Throwable $e) {
-                                                    return false;
-                                                }
-                                            }),
+            //                             \Filament\Navigation\NavigationItem::make('inventory-items')
+            //                                 ->label('Inventory Items')
+            //                                 ->icon('heroicon-o-cube')
+            //                                 ->url(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\InventoryItemResource::getUrl('index');
+            //                                     } catch (\Throwable $e) {
+            //                                         logger()->debug('Inventory nav: items url failed (serving)', ['err' => $e->getMessage()]);
+            //                                         return null;
+            //                                     }
+            //                                 })
+            //                                 ->shouldShow(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\InventoryItemResource::canViewAny(Filament::auth()->user());
+            //                                     } catch (\Throwable $e) {
+            //                                         return false;
+            //                                     }
+            //                                 }),
 
-                                        \Filament\Navigation\NavigationItem::make('inventory-warehouses')
-                                            ->label('Warehouses')
-                                            ->icon('heroicon-o-building')
-                                            ->url(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\WarehouseResource::getUrl('index');
-                                                } catch (\Throwable $e) {
-                                                    logger()->debug('Inventory nav: warehouses url failed (serving)', ['err' => $e->getMessage()]);
-                                                    return null;
-                                                }
-                                            })
-                                            ->shouldShow(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Filament::auth()->user());
-                                                } catch (\Throwable $e) {
-                                                    return false;
-                                                }
-                                            }),
+            //                             \Filament\Navigation\NavigationItem::make('inventory-warehouses')
+            //                                 ->label('Warehouses')
+            //                                 ->icon('heroicon-o-building')
+            //                                 ->url(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\WarehouseResource::getUrl('index');
+            //                                     } catch (\Throwable $e) {
+            //                                         logger()->debug('Inventory nav: warehouses url failed (serving)', ['err' => $e->getMessage()]);
+            //                                         return null;
+            //                                     }
+            //                                 })
+            //                                 ->shouldShow(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\WarehouseResource::canViewAny(Filament::auth()->user());
+            //                                     } catch (\Throwable $e) {
+            //                                         return false;
+            //                                     }
+            //                                 }),
 
-                                        \Filament\Navigation\NavigationItem::make('inventory-adjustments')
-                                            ->label('Adjustments')
-                                            ->icon('heroicon-o-adjustments-horizontal')
-                                            ->url(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::getUrl('index');
-                                                } catch (\Throwable $e) {
-                                                    logger()->debug('Inventory nav: adjustments url failed (serving)', ['err' => $e->getMessage()]);
-                                                    return null;
-                                                }
-                                            })
-                                            ->shouldShow(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Filament::auth()->user());
-                                                } catch (\Throwable $e) {
-                                                    return false;
-                                                }
-                                            }),
+            //                             \Filament\Navigation\NavigationItem::make('inventory-adjustments')
+            //                                 ->label('Adjustments')
+            //                                 ->icon('heroicon-o-adjustments-horizontal')
+            //                                 ->url(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::getUrl('index');
+            //                                     } catch (\Throwable $e) {
+            //                                         logger()->debug('Inventory nav: adjustments url failed (serving)', ['err' => $e->getMessage()]);
+            //                                         return null;
+            //                                     }
+            //                                 })
+            //                                 ->shouldShow(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\InventoryAdjustmentResource::canViewAny(Filament::auth()->user());
+            //                                     } catch (\Throwable $e) {
+            //                                         return false;
+            //                                     }
+            //                                 }),
 
-                                        \Filament\Navigation\NavigationItem::make('inventory-transfers')
-                                            ->label('Transfers')
-                                            ->icon('heroicon-o-arrow-right-left')
-                                            ->url(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::getUrl('index');
-                                                } catch (\Throwable $e) {
-                                                    logger()->debug('Inventory nav: transfers url failed (serving)', ['err' => $e->getMessage()]);
-                                                    return null;
-                                                }
-                                            })
-                                            ->shouldShow(function () {
-                                                try {
-                                                    return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Filament::auth()->user());
-                                                } catch (\Throwable $e) {
-                                                    return false;
-                                                }
-                                            }),
-                                    ])
-                            );
-                        });
-                    } catch (\Throwable $e) {
-                        logger()->warning('Inventory plugin: failed to merge navigation during Filament serving', ['err' => $e->getMessage()]);
-                    }
-                });
+            //                             \Filament\Navigation\NavigationItem::make('inventory-transfers')
+            //                                 ->label('Transfers')
+            //                                 ->icon('heroicon-o-arrow-right-left')
+            //                                 ->url(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::getUrl('index');
+            //                                     } catch (\Throwable $e) {
+            //                                         logger()->debug('Inventory nav: transfers url failed (serving)', ['err' => $e->getMessage()]);
+            //                                         return null;
+            //                                     }
+            //                                 })
+            //                                 ->shouldShow(function () {
+            //                                     try {
+            //                                         return \Zrm\Inventory\Filament\Resources\InventoryTransferResource::canViewAny(Filament::auth()->user());
+            //                                     } catch (\Throwable $e) {
+            //                                         return false;
+            //                                     }
+            //                                 }),
+            //                         ])
+            //                 );
+            //             });
+            //         } catch (\Throwable $e) {
+            //             logger()->warning('Inventory plugin: failed to merge navigation during Filament serving', ['err' => $e->getMessage()]);
+            //         }
+            //     });
 
-                // DEBUG HOOK — temporary. Set INVENTORY_DUMP_PANEL=1 to `dd($panel)` when the
-                // company panel is configured. Safe by default (only runs when env var is set).
-                if ((bool) env('INVENTORY_DUMP_PANEL', false)) {
-                    // Dump the entire Panel object so you can inspect navigation, pages, etc.
-                    dd($panel);
-                }
+            //     // DEBUG HOOK — temporary. Set INVENTORY_DUMP_PANEL=1 to `dd($panel)` when the
+            //     // company panel is configured. Safe by default (only runs when env var is set).
+            //     if ((bool) env('INVENTORY_DUMP_PANEL', false)) {
+            //         // Dump the entire Panel object so you can inspect navigation, pages, etc.
+            //         dd($panel);
+            //     }
 
-                // Safer alternative that writes a compact summary to the log when enabled.
-                if ((bool) env('INVENTORY_LOG_PANEL', false)) {
-                    try {
-                        $ro = new \ReflectionObject($panel);
-                        $props = [];
+            //     // Safer alternative that writes a compact summary to the log when enabled.
+            //     if ((bool) env('INVENTORY_LOG_PANEL', false)) {
+            //         try {
+            //             $ro = new \ReflectionObject($panel);
+            //             $props = [];
 
-                        foreach ($ro->getProperties() as $p) {
-                            $p->setAccessible(true);
-                            $val = $p->getValue($panel);
+            //             foreach ($ro->getProperties() as $p) {
+            //                 $p->setAccessible(true);
+            //                 $val = $p->getValue($panel);
 
-                            $props[$p->getName()] = is_object($val) ? get_class($val) : $val;
-                        }
+            //                 $props[$p->getName()] = is_object($val) ? get_class($val) : $val;
+            //             }
 
-                        logger()->debug('Inventory plugin — company Panel snapshot', ['panel_props' => $props]);
-                    } catch (\Throwable $e) {
-                        logger()->warning('Failed to log Inventory panel snapshot', ['err' => $e->getMessage()]);
-                    }
-                }
-            });
+            //             logger()->debug('Inventory plugin — company Panel snapshot', ['panel_props' => $props]);
+            //         } catch (\Throwable $e) {
+            //             logger()->warning('Failed to log Inventory panel snapshot', ['err' => $e->getMessage()]);
+            //         }
+            //     }
+            // });
         });
     }
 }
