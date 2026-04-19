@@ -1,10 +1,10 @@
 <?php
 
-use App\Enums\Accounting\JournalEntryType;
-use App\Enums\Setting\EntityType;
-use App\Filament\Company\Pages\CreateCompany;
-use App\Models\Accounting\Account;
-use App\Models\Accounting\Transaction;
+use Erpsaas\Core\Enums\Accounting\JournalEntryType;
+use Erpsaas\Core\Enums\Setting\EntityType;
+use Erpsaas\Core\Filament\Company\Pages\CreateCompany;
+use Erpsaas\Accounts\Models\Accounting\Account;
+use Erpsaas\Accounts\Models\Accounting\Transaction;
 use App\Models\Company;
 
 use function Pest\Livewire\livewire;

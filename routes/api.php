@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\PlaidWebhookController;
+use Erpsaas\Core\Http\Controllers\PlaidWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 

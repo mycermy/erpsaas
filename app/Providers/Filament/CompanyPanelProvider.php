@@ -2,47 +2,32 @@
 
 namespace App\Providers\Filament;
 
-use App\Actions\FilamentCompanies\AddCompanyEmployee;
-use App\Actions\FilamentCompanies\CreateConnectedAccount;
-use App\Actions\FilamentCompanies\CreateNewUser;
-use App\Actions\FilamentCompanies\CreateUserFromProvider;
-use App\Actions\FilamentCompanies\DeleteCompany;
-use App\Actions\FilamentCompanies\DeleteUser;
-use App\Actions\FilamentCompanies\HandleInvalidState;
-use App\Actions\FilamentCompanies\InviteCompanyEmployee;
-use App\Actions\FilamentCompanies\RemoveCompanyEmployee;
-use App\Actions\FilamentCompanies\ResolveSocialiteUser;
-use App\Actions\FilamentCompanies\SetUserPassword;
-use App\Actions\FilamentCompanies\UpdateCompanyName;
-use App\Actions\FilamentCompanies\UpdateConnectedAccount;
-use App\Actions\FilamentCompanies\UpdateUserPassword;
-use App\Actions\FilamentCompanies\UpdateUserProfileInformation;
-use App\Filament\Company\Clusters\Settings;
-use App\Filament\Company\Pages\Accounting\AccountChart;
-use App\Filament\Company\Pages\CreateCompany;
-use App\Filament\Company\Pages\ManageCompany;
-use App\Filament\Company\Pages\Reports;
-use App\Filament\Company\Pages\Service\ConnectedAccount;
-use App\Filament\Company\Pages\Service\LiveCurrency;
-use App\Filament\Company\Resources\Accounting\BudgetResource;
-use App\Filament\Company\Resources\Accounting\TransactionResource;
-use App\Filament\Company\Resources\Banking\AccountResource;
-use App\Filament\Company\Resources\Common\OfferingResource;
-use App\Filament\Company\Resources\Purchases\BillResource;
-use App\Filament\Company\Resources\Purchases\VendorResource;
-use App\Filament\Company\Resources\Sales\ClientResource;
-use App\Filament\Company\Resources\Sales\EstimateResource;
-use App\Filament\Company\Resources\Sales\InvoiceResource;
-use App\Filament\Company\Resources\Sales\RecurringInvoiceResource;
-use App\Filament\Components\PanelShiftDropdown;
-use App\Filament\Pages\Auth\Login;
-use App\Filament\User\Clusters\Account;
-use App\Http\Middleware\ConfigureCurrentCompany;
-use App\Livewire\UpdatePassword;
-use App\Livewire\UpdateProfileInformation;
-use App\Models\Company;
-use App\Services\CompanySettingsService;
-use App\Support\FilamentComponentConfigurator;
+use Erpsaas\Core\Actions\FilamentCompanies\AddCompanyEmployee;
+use Erpsaas\Core\Actions\FilamentCompanies\CreateConnectedAccount;
+use Erpsaas\Core\Actions\FilamentCompanies\CreateNewUser;
+use Erpsaas\Core\Actions\FilamentCompanies\CreateUserFromProvider;
+use Erpsaas\Core\Actions\FilamentCompanies\DeleteCompany;
+use Erpsaas\Core\Actions\FilamentCompanies\DeleteUser;
+use Erpsaas\Core\Actions\FilamentCompanies\HandleInvalidState;
+use Erpsaas\Core\Actions\FilamentCompanies\InviteCompanyEmployee;
+use Erpsaas\Core\Actions\FilamentCompanies\RemoveCompanyEmployee;
+use Erpsaas\Core\Actions\FilamentCompanies\ResolveSocialiteUser;
+use Erpsaas\Core\Actions\FilamentCompanies\SetUserPassword;
+use Erpsaas\Core\Actions\FilamentCompanies\UpdateCompanyName;
+use Erpsaas\Core\Actions\FilamentCompanies\UpdateConnectedAccount;
+use Erpsaas\Core\Actions\FilamentCompanies\UpdateUserPassword;
+use Erpsaas\Core\Actions\FilamentCompanies\UpdateUserProfileInformation;
+use Erpsaas\Core\Filament\Company\Pages\CreateCompany;
+use Erpsaas\Core\Filament\Company\Pages\ManageCompany;
+use Erpsaas\Core\Filament\Components\PanelShiftDropdown;
+use Erpsaas\Core\Filament\Pages\Auth\Login;
+use Erpsaas\Core\Filament\User\Clusters\Account;
+use Erpsaas\Core\Http\Middleware\ConfigureCurrentCompany;
+use Erpsaas\Core\Livewire\UpdatePassword;
+use Erpsaas\Core\Livewire\UpdateProfileInformation;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Services\CompanySettingsService;
+use Erpsaas\Core\Support\FilamentComponentConfigurator;
 use Exception;
 use Filament\Actions;
 use Filament\Forms;
@@ -126,68 +111,38 @@ class CompanyPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Indigo,
             ])
-            ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
-                return $builder
-                    ->items([
-                        ...Reports::getNavigationItems(),
-                        ...Settings::getNavigationItems(),
-                        ...OfferingResource::getNavigationItems(),
-                    ])
-                    ->groups([
-                        NavigationGroup::make('Sales')
-                            ->label('Sales')
-                            ->icon('heroicon-o-currency-dollar')
-                            ->items([
-                                ...ClientResource::getNavigationItems(),
-                                ...EstimateResource::getNavigationItems(),
-                                ...InvoiceResource::getNavigationItems(),
-                                ...RecurringInvoiceResource::getNavigationItems(),
-                            ]),
-                        NavigationGroup::make('Purchases')
-                            ->label('Purchases')
-                            ->icon('heroicon-o-shopping-cart')
-                            ->items([
-                                ...BillResource::getNavigationItems(),
-                                ...VendorResource::getNavigationItems(),
-                            ]),
-                        NavigationGroup::make('Accounting')
-                            ->localizeLabel()
-                            ->icon('heroicon-o-clipboard-document-list')
-                            ->extraSidebarAttributes(['class' => 'es-sidebar-group'])
-                            ->items([
-                                // ...BudgetResource::getNavigationItems(),
-                                ...AccountChart::getNavigationItems(),
-                                ...TransactionResource::getNavigationItems(),
-                            ]),
-                        NavigationGroup::make('Banking')
-                            ->localizeLabel()
-                            ->icon('heroicon-o-building-library')
-                            ->items(AccountResource::getNavigationItems()),
-                        NavigationGroup::make('Services')
-                            ->localizeLabel()
-                            ->icon('heroicon-o-wrench-screwdriver')
-                            ->items([
-                                ...ConnectedAccount::getNavigationItems(),
-                                ...LiveCurrency::getNavigationItems(),
-                            ]),
-                    ]);
-            })
+            ->topNavigation()
+            ->maxContentWidth(MaxWidth::Full)
+            // Define navigation groups - clusters will auto-populate them via getNavigationGroup()
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Sales')
+                    ->icon('heroicon-o-shopping-cart'),
+                NavigationGroup::make()
+                    ->label('Purchases')
+                    ->icon('heroicon-o-shopping-bag'),
+                NavigationGroup::make()
+                    ->label('Accounting')
+                    ->icon('heroicon-o-calculator'),
+                NavigationGroup::make()
+                    ->label('Banking')
+                    ->icon('heroicon-o-building-library'),
+                NavigationGroup::make()
+                    ->label('Settings')
+                    ->icon('heroicon-o-squares-2x2'),
+            ])
             ->globalSearch(false)
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications(isLazy: false)
             ->viteTheme('resources/css/filament/company/theme.css')
-            ->brandLogo(static fn () => view('components.icons.logo'))
+            ->brandLogo(static fn() => view('components.icons.logo'))
             ->tenant(Company::class)
             ->tenantProfile(ManageCompany::class)
             ->tenantRegistration(CreateCompany::class)
-            ->discoverResources(in: app_path('Filament/Company/Resources'), for: 'App\\Filament\\Company\\Resources')
-            ->discoverPages(in: app_path('Filament/Company/Pages'), for: 'App\\Filament\\Company\\Pages')
-            ->discoverClusters(in: app_path('Filament/Company/Clusters'), for: 'App\\Filament\\Company\\Clusters')
             ->pages([
                 // Pages\Dashboard::class,
             ])
             ->authGuard('web')
-            ->discoverWidgets(in: app_path('Filament/Company/Widgets'), for: 'App\\Filament\\Company\\Widgets')
             ->widgets([
                 // Widgets\AccountWidget::class,
                 // Widgets\FilamentInfoWidget::class,
@@ -216,6 +171,13 @@ class CompanyPanelProvider extends PanelProvider
      */
     public function boot(): void
     {
+        // Configure FilamentCompanies to use custom models
+        FilamentCompanies::useUserModel(\Erpsaas\Core\Models\User::class);
+        FilamentCompanies::useCompanyModel(\Erpsaas\Core\Models\Company::class);
+        FilamentCompanies::useEmployeeshipModel(\Erpsaas\Core\Models\Employeeship::class);
+        FilamentCompanies::useCompanyInvitationModel(\Erpsaas\Core\Models\CompanyInvitation::class);
+        FilamentCompanies::useConnectedAccountModel(\Erpsaas\Core\Models\ConnectedAccount::class);
+
         $this->configurePermissions();
         $this->configureDefaults();
 
@@ -273,13 +235,13 @@ class CompanyPanelProvider extends PanelProvider
                 ->hidden(is_demo_environment());
         });
 
-        Actions\CreateAction::configureUsing(static fn (Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Actions\EditAction::configureUsing(static fn (Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Actions\DeleteAction::configureUsing(static fn (Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
-        Tables\Actions\EditAction::configureUsing(static fn (Tables\Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Tables\Actions\CreateAction::configureUsing(static fn (Tables\Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Tables\Actions\DeleteAction::configureUsing(static fn (Tables\Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
-        Tables\Actions\DeleteBulkAction::configureUsing(static fn (Tables\Actions\DeleteBulkAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
+        Actions\CreateAction::configureUsing(static fn(Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Actions\EditAction::configureUsing(static fn(Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Actions\DeleteAction::configureUsing(static fn(Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
+        Tables\Actions\EditAction::configureUsing(static fn(Tables\Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Tables\Actions\CreateAction::configureUsing(static fn(Tables\Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
+        Tables\Actions\DeleteAction::configureUsing(static fn(Tables\Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
+        Tables\Actions\DeleteBulkAction::configureUsing(static fn(Tables\Actions\DeleteBulkAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
 
         Tables\Table::configureUsing(static function (Tables\Table $table): void {
             $table::$defaultDateDisplayFormat = CompanySettingsService::getDefaultDateFormat();
@@ -290,7 +252,7 @@ class CompanyPanelProvider extends PanelProvider
                 ->paginationPageOptions([5, 10, 25, 50, 100])
                 ->filtersFormWidth(MaxWidth::Small)
                 ->filtersTriggerAction(
-                    fn (Tables\Actions\Action $action) => $action
+                    fn(Tables\Actions\Action $action) => $action
                         ->button()
                         ->label('Filters')
                         ->slideOver()
@@ -320,7 +282,7 @@ class CompanyPanelProvider extends PanelProvider
         Select::configureUsing(function (Select $select): void {
             $select
                 ->native(false)
-                ->selectablePlaceholder(fn (Select $component) => ! $component->isRequired());
+                ->selectablePlaceholder(fn(Select $component) => ! $component->isRequired());
         });
     }
 }

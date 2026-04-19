@@ -2,11 +2,11 @@
 
 namespace Database\Factories\Setting;
 
-use App\Enums\Setting\DateFormat;
-use App\Enums\Setting\NumberFormat;
-use App\Enums\Setting\TimeFormat;
-use App\Enums\Setting\WeekStart;
-use App\Models\Setting\Localization;
+use Erpsaas\Core\Enums\Setting\DateFormat;
+use Erpsaas\Core\Enums\Setting\NumberFormat;
+use Erpsaas\Core\Enums\Setting\TimeFormat;
+use Erpsaas\Core\Enums\Setting\WeekStart;
+use Erpsaas\Core\Models\Setting\Localization;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

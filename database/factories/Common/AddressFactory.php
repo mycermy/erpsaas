@@ -2,8 +2,8 @@
 
 namespace Database\Factories\Common;
 
-use App\Enums\Common\AddressType;
-use App\Models\Common\Address;
+use Erpsaas\Core\Enums\Common\AddressType;
+use Erpsaas\Core\Models\Common\Address;
 use Database\Factories\Concerns\HasParentRelationship;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

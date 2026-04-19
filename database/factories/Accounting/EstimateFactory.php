@@ -2,15 +2,15 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Enums\Accounting\AdjustmentComputation;
-use App\Enums\Accounting\DocumentDiscountMethod;
-use App\Enums\Accounting\EstimateStatus;
-use App\Models\Accounting\DocumentLineItem;
-use App\Models\Accounting\Estimate;
-use App\Models\Common\Client;
-use App\Models\Company;
-use App\Models\Setting\DocumentDefault;
-use App\Utilities\RateCalculator;
+use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
+use Erpsaas\Core\Enums\Accounting\DocumentDiscountMethod;
+use Erpsaas\Core\Enums\Accounting\EstimateStatus;
+use Erpsaas\Accounts\Models\Accounting\DocumentLineItem;
+use Erpsaas\Accounts\Models\Accounting\Estimate;
+use Erpsaas\Core\Models\Common\Client;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\Setting\DocumentDefault;
+use Erpsaas\Core\Utilities\RateCalculator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 

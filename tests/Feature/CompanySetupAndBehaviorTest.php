@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Accounting\Transaction;
+use Erpsaas\Accounts\Models\Accounting\Transaction;
 
 it('initially assigns a personal company to the test user', function () {
     $testUser = $this->testUser;

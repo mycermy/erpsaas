@@ -8,5 +8,10 @@ return [
     App\Providers\MacroServiceProvider::class,
     App\Providers\SquireServiceProvider::class,
     App\Providers\TranslationServiceProvider::class,
-    App\Providers\CurrencyServiceProvider::class,
+    // CurrencyServiceProvider merged into Erpsaas\Core\CoreServiceProvider
+    // Plugin ServiceProviders are auto-discovered via composer merge-plugin
+    Erpsaas\Core\CoreServiceProvider::class,
+    Erpsaas\Accounts\AccountsServiceProvider::class,
+    Erpsaas\Purchases\PurchasesServiceProvider::class,
+    Erpsaas\Sales\SalesServiceProvider::class,
 ];

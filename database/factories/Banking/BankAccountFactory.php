@@ -2,8 +2,8 @@
 
 namespace Database\Factories\Banking;
 
-use App\Enums\Banking\BankAccountType;
-use App\Models\Banking\BankAccount;
+use Erpsaas\Core\Enums\Banking\BankAccountType;
+use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

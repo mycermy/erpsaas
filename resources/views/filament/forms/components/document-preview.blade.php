@@ -1,6 +1,6 @@
 @php
     $data = $this->form->getRawState();
-    $document = \App\DTO\DocumentPreviewDTO::fromSettings($this->record, $data);
+    $document = \Erpsaas\Core\DTO\DocumentPreviewDTO::fromSettings($this->record, $data);
     $template = $getTemplate();
     $preview = $isPreview();
 @endphp

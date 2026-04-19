@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Locale\Country;
-use App\Models\Locale\State;
+use Erpsaas\Core\Models\Locale\Country;
+use Erpsaas\Core\Models\Locale\State;
 use Illuminate\Support\ServiceProvider;
 use Squire\Repository;
 

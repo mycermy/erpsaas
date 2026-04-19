@@ -2,9 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Components\PanelShiftDropdown;
-use App\Filament\User\Clusters\Account;
-use App\Http\Middleware\Authenticate;
+use Erpsaas\Core\Filament\Components\PanelShiftDropdown;
+use Erpsaas\Core\Filament\User\Clusters\Account;
+use Filament\Http\Middleware\Authenticate;
 use Exception;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -65,11 +65,7 @@ class UserPanelProvider extends PanelProvider
             ])
             ->navigation(false)
             ->viteTheme('resources/css/filament/user/theme.css')
-            ->brandLogo(static fn () => view('components.icons.logo'))
-            ->discoverResources(in: app_path('Filament/User/Resources'), for: 'App\\Filament\\User\\Resources')
-            ->discoverPages(in: app_path('Filament/User/Pages'), for: 'App\\Filament\\User\\Pages')
-            ->discoverClusters(in: app_path('Filament/User/Clusters'), for: 'App\\Filament\\User\\Clusters')
-            ->discoverWidgets(in: app_path('Filament/User/Widgets'), for: 'App\\Filament\\User\\Widgets')
+            ->brandLogo(static fn() => view('components.icons.logo'))
             ->pages([
                 Profile::class,
                 PersonalAccessTokens::class,

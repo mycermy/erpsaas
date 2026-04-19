@@ -2,14 +2,14 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Enums\Accounting\AccountType;
-use App\Enums\Accounting\TransactionType;
-use App\Models\Accounting\Account;
-use App\Models\Accounting\AccountSubtype;
-use App\Models\Accounting\Transaction;
-use App\Models\Banking\BankAccount;
-use App\Models\Company;
-use App\Models\Setting\CompanyDefault;
+use Erpsaas\Core\Enums\Accounting\AccountType;
+use Erpsaas\Core\Enums\Accounting\TransactionType;
+use Erpsaas\Accounts\Models\Accounting\Account;
+use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
+use Erpsaas\Accounts\Models\Accounting\Transaction;
+use Erpsaas\Accounts\Models\Banking\BankAccount;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\Setting\CompanyDefault;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

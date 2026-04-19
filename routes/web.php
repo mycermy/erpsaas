@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\DocumentPrintController;
-use App\Http\Middleware\AllowSameOriginFrame;
+use Erpsaas\Core\Http\Controllers\DocumentPrintController;
+use Erpsaas\Core\Http\Middleware\AllowSameOriginFrame;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Route;
 

@@ -1,7 +1,7 @@
 @php
-    use App\Enums\Accounting\DocumentDiscountMethod;
-    use App\Utilities\Currency\CurrencyAccessor;
-    use App\View\Models\DocumentTotalViewModel;
+    use Erpsaas\Core\Enums\Accounting\DocumentDiscountMethod;
+    use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
+    use Erpsaas\Core\View\Models\DocumentTotalViewModel;
 
     $data = $this->form->getRawState();
     $type = $getType();

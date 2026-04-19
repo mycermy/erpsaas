@@ -2,12 +2,12 @@
 
 namespace Database\Factories\Setting;
 
-use App\Faker\CurrencyCode;
-use App\Models\Company;
-use App\Models\Setting\CompanyDefault;
-use App\Models\Setting\Currency;
-use App\Models\Setting\DocumentDefault;
-use App\Models\Setting\Localization;
+use Erpsaas\Core\Faker\CurrencyCode;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\Setting\CompanyDefault;
+use Erpsaas\Core\Models\Setting\Currency;
+use Erpsaas\Core\Models\Setting\DocumentDefault;
+use Erpsaas\Core\Models\Setting\Localization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -1,0 +1,30 @@
+{
+    "name": "erpsaas/sales",
+    "description": "Sales plugin for ERPSAAS — clients, invoices, estimates, recurring invoices.",
+    "authors": [
+        {
+            "name": "ERPSAAS",
+            "email": "support@erpsaas.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Erpsaas\\Sales\\SalesServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Erpsaas\\Sales\\": "src/",
+            "Erpsaas\\Sales\\Database\\Factories\\": "database/factories/",
+            "Erpsaas\\Sales\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Erpsaas\\Sales\\Tests\\": "tests/"
+        }
+    }
+}

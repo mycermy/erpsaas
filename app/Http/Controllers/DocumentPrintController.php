@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\DTO\DocumentDTO;
-use App\Enums\Accounting\DocumentType;
-use App\Enums\Setting\Template;
-use App\Models\Accounting\Estimate;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\RecurringInvoice;
-use App\Models\Setting\DocumentDefault;
+use Erpsaas\Core\DTO\DocumentDTO;
+use Erpsaas\Core\Enums\Accounting\DocumentType;
+use Erpsaas\Core\Enums\Setting\Template;
+use Erpsaas\Accounts\Models\Accounting\Estimate;
+use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
+use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Illuminate\Http\Request;
 
 class DocumentPrintController extends Controller

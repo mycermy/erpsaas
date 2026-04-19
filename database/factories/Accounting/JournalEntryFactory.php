@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Models\Accounting\JournalEntry;
+use Erpsaas\Accounts\Models\Accounting\JournalEntry;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Models\Accounting\AccountSubtype;
+use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -2,9 +2,9 @@
 
 namespace App\Providers\Faker;
 
-use App\Faker\CurrencyCode;
-use App\Faker\PhoneNumber;
-use App\Faker\State;
+use Erpsaas\Core\Faker\CurrencyCode;
+use Erpsaas\Core\Faker\PhoneNumber;
+use Erpsaas\Core\Faker\State;
 use Faker\Factory;
 use Faker\Generator;
 use Illuminate\Support\ServiceProvider;

@@ -2,12 +2,12 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\DocumentLineItem;
-use App\Models\Accounting\Estimate;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\RecurringInvoice;
-use App\Models\Common\Offering;
+use Erpsaas\Accounts\Models\Accounting\Bill;
+use Erpsaas\Accounts\Models\Accounting\DocumentLineItem;
+use Erpsaas\Accounts\Models\Accounting\Estimate;
+use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
+use Erpsaas\Core\Models\Common\Offering;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

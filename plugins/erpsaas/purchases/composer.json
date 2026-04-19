@@ -1,0 +1,30 @@
+{
+    "name": "erpsaas/purchases",
+    "description": "Purchases plugin for ERPSAAS — bills, vendors, purchasing workflows.",
+    "authors": [
+        {
+            "name": "ERPSAAS",
+            "email": "support@erpsaas.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Erpsaas\\Purchases\\PurchasesServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Erpsaas\\Purchases\\": "src/",
+            "Erpsaas\\Purchases\\Database\\Factories\\": "database/factories/",
+            "Erpsaas\\Purchases\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Erpsaas\\Purchases\\Tests\\": "tests/"
+        }
+    }
+}

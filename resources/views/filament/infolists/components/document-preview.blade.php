@@ -1,5 +1,5 @@
 @php
-    $document = \App\DTO\DocumentDTO::fromModel($getRecord());
+    $document = \Erpsaas\Core\DTO\DocumentDTO::fromModel($getRecord());
     $template = $getTemplate();
     $preview = $isPreview();
 @endphp

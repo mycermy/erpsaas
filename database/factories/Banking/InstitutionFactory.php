@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Banking;
 
-use App\Models\Banking\Institution;
+use Erpsaas\Accounts\Models\Banking\Institution;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

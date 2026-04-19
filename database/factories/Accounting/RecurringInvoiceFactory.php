@@ -2,21 +2,21 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Enums\Accounting\AdjustmentComputation;
-use App\Enums\Accounting\DayOfMonth;
-use App\Enums\Accounting\DayOfWeek;
-use App\Enums\Accounting\DocumentDiscountMethod;
-use App\Enums\Accounting\EndType;
-use App\Enums\Accounting\Frequency;
-use App\Enums\Accounting\IntervalType;
-use App\Enums\Accounting\Month;
-use App\Enums\Accounting\RecurringInvoiceStatus;
-use App\Enums\Setting\PaymentTerms;
-use App\Models\Accounting\DocumentLineItem;
-use App\Models\Accounting\RecurringInvoice;
-use App\Models\Common\Client;
-use App\Models\Company;
-use App\Utilities\RateCalculator;
+use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
+use Erpsaas\Core\Enums\Accounting\DayOfMonth;
+use Erpsaas\Core\Enums\Accounting\DayOfWeek;
+use Erpsaas\Core\Enums\Accounting\DocumentDiscountMethod;
+use Erpsaas\Core\Enums\Accounting\EndType;
+use Erpsaas\Core\Enums\Accounting\Frequency;
+use Erpsaas\Core\Enums\Accounting\IntervalType;
+use Erpsaas\Core\Enums\Accounting\Month;
+use Erpsaas\Core\Enums\Accounting\RecurringInvoiceStatus;
+use Erpsaas\Core\Enums\Setting\PaymentTerms;
+use Erpsaas\Accounts\Models\Accounting\DocumentLineItem;
+use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
+use Erpsaas\Core\Models\Common\Client;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Utilities\RateCalculator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 

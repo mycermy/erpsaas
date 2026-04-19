@@ -1,0 +1,33 @@
+{
+    "name": "erpsaas/core",
+    "description": "Core plugin for ERPSAAS — company, user, settings, localization, shared infrastructure.",
+    "authors": [
+        {
+            "name": "ERPSAAS",
+            "email": "support@erpsaas.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Erpsaas\\Core\\CoreServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Erpsaas\\Core\\": "src/",
+            "Erpsaas\\Core\\Database\\Factories\\": "database/factories/",
+            "Erpsaas\\Core\\Database\\Seeders\\": "database/seeders/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Erpsaas\\Core\\Tests\\": "tests/"
+        }
+    }
+}

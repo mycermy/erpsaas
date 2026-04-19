@@ -2,10 +2,10 @@
 
 namespace Tests;
 
-use App\Models\Common\Offering;
+use Erpsaas\Core\Models\Common\Offering;
 use App\Models\Company;
 use App\Models\User;
-use App\Testing\TestsReport;
+use Erpsaas\Core\Testing\TestsReport;
 use Database\Seeders\TestDatabaseSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Setting\Localization;
-use App\Utilities\RateCalculator;
+use Erpsaas\Core\Models\Setting\Localization;
+use Erpsaas\Core\Utilities\RateCalculator;
 
 // RateCalculator Basic Operations
 it('calculates percentage correctly', function () {

@@ -2,18 +2,18 @@
 
 namespace Database\Factories;
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Estimate;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\RecurringInvoice;
-use App\Models\Accounting\Transaction;
-use App\Models\Common\Client;
-use App\Models\Common\Offering;
-use App\Models\Common\Vendor;
-use App\Models\Company;
-use App\Models\Setting\CompanyProfile;
+use Erpsaas\Accounts\Models\Accounting\Bill;
+use Erpsaas\Accounts\Models\Accounting\Estimate;
+use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
+use Erpsaas\Accounts\Models\Accounting\Transaction;
+use Erpsaas\Core\Models\Common\Client;
+use Erpsaas\Core\Models\Common\Offering;
+use Erpsaas\Core\Models\Common\Vendor;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\Setting\CompanyProfile;
 use App\Models\User;
-use App\Services\CompanyDefaultService;
+use Erpsaas\Core\Services\CompanyDefaultService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CompanyFactory extends Factory

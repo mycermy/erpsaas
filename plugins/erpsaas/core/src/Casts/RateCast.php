@@ -1,0 +1,54 @@
+<?php
+
+namespace Erpsaas\Core\Casts;
+
+use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
+use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
+use Erpsaas\Core\Utilities\RateCalculator;
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Model;
+
+class RateCast implements CastsAttributes
+{
+    public function get($model, string $key, $value, array $attributes): string
+    {
+        if (! $value) {
+            return '0';
+        }
+
+        $currencyCode = $attributes['currency_code'] ?? $this->getDefaultCurrencyCode();
+        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+
+        if ($computation?->isFixed()) {
+            return money($value, $currencyCode)->formatSimple();
+        }
+
+        return RateCalculator::formatScaledRate($value);
+    }
+
+    public function set(Model $model, string $key, mixed $value, array $attributes): int
+    {
+        if (! $value) {
+            return 0;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        $computation = AdjustmentComputation::parse($attributes['computation'] ?? $attributes['discount_computation'] ?? null);
+
+        $currencyCode = $attributes['currency_code'] ?? $this->getDefaultCurrencyCode();
+
+        if ($computation?->isFixed()) {
+            return money($value, $currencyCode, true)->getAmount();
+        }
+
+        return RateCalculator::parseLocalizedRate($value);
+    }
+
+    private function getDefaultCurrencyCode(): string
+    {
+        return CurrencyAccessor::getDefaultCurrency();
+    }
+}

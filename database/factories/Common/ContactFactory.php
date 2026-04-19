@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Common;
 
-use App\Models\Common\Contact;
+use Erpsaas\Core\Models\Common\Contact;
 use Database\Factories\Concerns\HasParentRelationship;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

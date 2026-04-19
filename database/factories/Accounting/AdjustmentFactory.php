@@ -2,12 +2,12 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Enums\Accounting\AdjustmentCategory;
-use App\Enums\Accounting\AdjustmentComputation;
-use App\Enums\Accounting\AdjustmentScope;
-use App\Enums\Accounting\AdjustmentType;
-use App\Models\Accounting\Account;
-use App\Models\Accounting\Adjustment;
+use Erpsaas\Core\Enums\Accounting\AdjustmentCategory;
+use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
+use Erpsaas\Core\Enums\Accounting\AdjustmentScope;
+use Erpsaas\Core\Enums\Accounting\AdjustmentType;
+use Erpsaas\Accounts\Models\Accounting\Account;
+use Erpsaas\Accounts\Models\Accounting\Adjustment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 

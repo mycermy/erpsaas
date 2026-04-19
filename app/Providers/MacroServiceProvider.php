@@ -4,12 +4,12 @@ namespace App\Providers;
 
 use Akaunting\Money\Currency;
 use Akaunting\Money\Money;
-use App\Enums\Accounting\AdjustmentComputation;
-use App\Models\Accounting\AccountSubtype;
-use App\Services\CompanySettingsService;
-use App\Utilities\Accounting\AccountCode;
-use App\Utilities\Currency\CurrencyAccessor;
-use App\Utilities\Currency\CurrencyConverter;
+use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
+use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
+use Erpsaas\Core\Services\CompanySettingsService;
+use Erpsaas\Core\Utilities\Accounting\AccountCode;
+use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
+use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Closure;

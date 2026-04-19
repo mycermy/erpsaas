@@ -1,8 +1,8 @@
 <?php
 
-use App\Enums\Accounting\InvoiceStatus;
-use App\Models\Accounting\Invoice;
-use App\Utilities\Currency\CurrencyAccessor;
+use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
+use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 
 beforeEach(function () {
     $this->defaultCurrency = CurrencyAccessor::getDefaultCurrency();

@@ -2,10 +2,10 @@
 
 namespace Database\Factories\Common;
 
-use App\Models\Common\Address;
-use App\Models\Common\Client;
-use App\Models\Common\Contact;
-use App\Models\Company;
+use Erpsaas\Core\Models\Common\Address;
+use Erpsaas\Core\Models\Common\Client;
+use Erpsaas\Core\Models\Common\Contact;
+use Erpsaas\Core\Models\Company;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

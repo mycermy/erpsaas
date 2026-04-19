@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Core;
 
-use App\Models\Core\Department;
+use Erpsaas\Core\Models\Core\Department;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

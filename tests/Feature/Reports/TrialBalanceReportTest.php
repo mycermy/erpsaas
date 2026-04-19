@@ -1,10 +1,10 @@
 <?php
 
-use App\Facades\Accounting;
-use App\Facades\Reporting;
-use App\Factories\ReportDateFactory;
-use App\Filament\Company\Pages\Reports\TrialBalance;
-use App\Models\Accounting\Transaction;
+use Erpsaas\Core\Facades\Accounting;
+use Erpsaas\Core\Facades\Reporting;
+use Erpsaas\Core\Factories\ReportDateFactory;
+use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports\TrialBalance;
+use Erpsaas\Accounts\Models\Accounting\Transaction;
 
 use function Pest\Livewire\livewire;
 

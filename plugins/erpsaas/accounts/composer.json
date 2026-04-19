@@ -1,0 +1,30 @@
+{
+    "name": "erpsaas/accounts",
+    "description": "Accounts plugin for ERPSAAS — accounting, banking, transactions, budgets, financial reports.",
+    "authors": [
+        {
+            "name": "ERPSAAS",
+            "email": "support@erpsaas.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Erpsaas\\Accounts\\AccountsServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Erpsaas\\Accounts\\": "src/",
+            "Erpsaas\\Accounts\\Database\\Factories\\": "database/factories/",
+            "Erpsaas\\Accounts\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Erpsaas\\Accounts\\Tests\\": "tests/"
+        }
+    }
+}

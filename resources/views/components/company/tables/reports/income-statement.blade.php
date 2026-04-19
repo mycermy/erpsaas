@@ -26,7 +26,7 @@
                                     icon="heroicon-o-arrow-top-right-on-square"
                                     :icon-position="\Filament\Support\Enums\IconPosition::After"
                                     :icon-size="\Filament\Support\Enums\IconSize::Small"
-                                    href="{{ \App\Filament\Company\Pages\Reports\IncomeStatement::getUrl([
+                                    href="{{ \Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports\IncomeStatement::getUrl([
                                             'startDate' => $categoryAccountCell['start_date'],
                                             'endDate' => $categoryAccountCell['end_date']
                                         ]) }}"
@@ -40,7 +40,7 @@
                                     icon="heroicon-o-arrow-top-right-on-square"
                                     :icon-position="\Filament\Support\Enums\IconPosition::After"
                                     :icon-size="\Filament\Support\Enums\IconSize::Small"
-                                    href="{{ \App\Filament\Company\Pages\Reports\AccountTransactions::getUrl([
+                                    href="{{ \Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports\AccountTransactions::getUrl([
                                             'startDate' => $categoryAccountCell['start_date'],
                                             'endDate' => $categoryAccountCell['end_date'],
                                             'selectedAccount' => $categoryAccountCell['id']

@@ -1,9 +1,9 @@
 <?php
 
-use App\Enums\Accounting\EndType;
-use App\Enums\Accounting\Frequency;
-use App\Enums\Accounting\IntervalType;
-use App\Models\Accounting\RecurringInvoice;
+use Erpsaas\Core\Enums\Accounting\EndType;
+use Erpsaas\Core\Enums\Accounting\Frequency;
+use Erpsaas\Core\Enums\Accounting\IntervalType;
+use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {

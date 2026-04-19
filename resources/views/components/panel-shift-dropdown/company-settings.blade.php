@@ -32,7 +32,7 @@
 </li>
 
 <x-panel-shift-dropdown.item
-    :url="\App\Filament\Company\Clusters\Settings::getUrl()"
+    :url="\Erpsaas\Core\Filament\Company\Clusters\Settings::getUrl()"
     label="All Settings"
     icon="heroicon-m-cog-6-tooth"
 />

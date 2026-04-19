@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Service;
 
-use App\Models\Service\CurrencyList;
+use Erpsaas\Core\Models\Service\CurrencyList;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

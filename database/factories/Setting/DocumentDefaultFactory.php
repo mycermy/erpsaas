@@ -2,10 +2,10 @@
 
 namespace Database\Factories\Setting;
 
-use App\Enums\Accounting\DocumentType;
-use App\Enums\Setting\Font;
-use App\Enums\Setting\Template;
-use App\Models\Setting\DocumentDefault;
+use Erpsaas\Core\Enums\Accounting\DocumentType;
+use Erpsaas\Core\Enums\Setting\Font;
+use Erpsaas\Core\Enums\Setting\Template;
+use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

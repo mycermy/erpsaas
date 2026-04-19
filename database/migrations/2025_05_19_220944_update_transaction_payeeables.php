@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\Transaction;
-use App\Models\Common\Client;
-use App\Models\Common\Vendor;
+use Erpsaas\Accounts\Models\Accounting\Bill;
+use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Accounts\Models\Accounting\Transaction;
+use Erpsaas\Core\Models\Common\Client;
+use Erpsaas\Core\Models\Common\Vendor;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration

@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Events\CompanyConfigured;
-use App\Models\Company;
+use Erpsaas\Core\Events\CompanyConfigured;
+use Erpsaas\Core\Models\Company;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;

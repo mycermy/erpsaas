@@ -5,7 +5,7 @@
 ])
 
 @php
-    use App\Utilities\Currency\CurrencyAccessor;
+    use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 @endphp
 
 <div>

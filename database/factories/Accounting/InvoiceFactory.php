@@ -2,17 +2,17 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Enums\Accounting\AdjustmentComputation;
-use App\Enums\Accounting\DocumentDiscountMethod;
-use App\Enums\Accounting\InvoiceStatus;
-use App\Enums\Accounting\PaymentMethod;
-use App\Models\Accounting\DocumentLineItem;
-use App\Models\Accounting\Invoice;
-use App\Models\Banking\BankAccount;
-use App\Models\Common\Client;
-use App\Models\Company;
-use App\Models\Setting\DocumentDefault;
-use App\Utilities\RateCalculator;
+use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
+use Erpsaas\Core\Enums\Accounting\DocumentDiscountMethod;
+use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
+use Erpsaas\Core\Enums\Accounting\PaymentMethod;
+use Erpsaas\Accounts\Models\Accounting\DocumentLineItem;
+use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Accounts\Models\Banking\BankAccount;
+use Erpsaas\Core\Models\Common\Client;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\Setting\DocumentDefault;
+use Erpsaas\Core\Utilities\RateCalculator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 use Random\RandomException;

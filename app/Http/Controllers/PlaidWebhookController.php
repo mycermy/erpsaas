@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessTransactionUpdate;
-use App\Models\Company;
+use Erpsaas\Core\Jobs\ProcessTransactionUpdate;
+use Erpsaas\Core\Models\Company;
 use Illuminate\Http\Request;
 
 class PlaidWebhookController extends Controller

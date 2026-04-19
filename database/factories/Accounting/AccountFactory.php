@@ -2,12 +2,12 @@
 
 namespace Database\Factories\Accounting;
 
-use App\Models\Accounting\Account;
-use App\Models\Accounting\AccountSubtype;
-use App\Models\Banking\BankAccount;
-use App\Models\Setting\Currency;
-use App\Utilities\Accounting\AccountCode;
-use App\Utilities\Currency\CurrencyAccessor;
+use Erpsaas\Accounts\Models\Accounting\Account;
+use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
+use Erpsaas\Accounts\Models\Banking\BankAccount;
+use Erpsaas\Core\Models\Setting\Currency;
+use Erpsaas\Core\Utilities\Accounting\AccountCode;
+use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

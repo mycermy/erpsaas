@@ -2,7 +2,7 @@
 
 namespace Database\Factories\Setting;
 
-use App\Models\Setting\Currency;
+use Erpsaas\Core\Models\Setting\Currency;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

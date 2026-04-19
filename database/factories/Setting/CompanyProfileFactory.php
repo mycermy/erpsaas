@@ -2,11 +2,11 @@
 
 namespace Database\Factories\Setting;
 
-use App\Enums\Setting\EntityType;
-use App\Faker\State;
-use App\Models\Common\Address;
-use App\Models\Company;
-use App\Models\Setting\CompanyProfile;
+use Erpsaas\Core\Enums\Setting\EntityType;
+use Erpsaas\Core\Faker\State;
+use Erpsaas\Core\Models\Common\Address;
+use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\Setting\CompanyProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

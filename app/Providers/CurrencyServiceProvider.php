@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Contracts\CurrencyHandler;
-use App\Services\CurrencyService;
+use Erpsaas\Core\Contracts\CurrencyHandler;
+use Erpsaas\Core\Services\CurrencyService;
 use GuzzleHttp\Client;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
