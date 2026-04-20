@@ -7,9 +7,9 @@ use Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource;
 use Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource\Widgets;
 use Filament\Actions;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListEstimates extends ListRecords
@@ -32,7 +32,7 @@ class ListEstimates extends ListRecords
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

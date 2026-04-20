@@ -13,7 +13,7 @@ use Erpsaas\Core\Filament\Forms\Components\CreateAccountSelect;
 use Erpsaas\Core\Filament\Forms\Components\CreateAdjustmentSelect;
 use Erpsaas\Core\Models\Common\Offering;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,7 +26,7 @@ class OfferingResource extends Resource
 {
     protected static ?string $model = Offering::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-square-3-stack-3d';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-square-3-stack-3d';
 
     protected static ?int $navigationSort = 20;
 
@@ -35,7 +35,7 @@ class OfferingResource extends Resource
         return __('Sales');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -70,9 +70,9 @@ class OfferingResource extends Resource
             ])->columns();
     }
 
-    public static function getGeneralSection(bool $hasAttributeChoices = true): Forms\Components\Section
+    public static function getGeneralSection(bool $hasAttributeChoices = true): \Filament\Schemas\Components\Section
     {
-        return Forms\Components\Section::make('General')
+        return \Filament\Schemas\Components\Section::make('General')
             ->schema([
                 RadioDeck::make('type')
                     ->options(OfferingType::class)
@@ -109,9 +109,9 @@ class OfferingResource extends Resource
             ])->columns();
     }
 
-    public static function getSellableSection(): Forms\Components\Section
+    public static function getSellableSection(): \Filament\Schemas\Components\Section
     {
-        return Forms\Components\Section::make('Sale Information')
+        return \Filament\Schemas\Components\Section::make('Sale Information')
             ->schema([
                 CreateAccountSelect::make('income_account_id')
                     ->label('Income account')
@@ -133,12 +133,12 @@ class OfferingResource extends Resource
                     ->multiple(),
             ])
             ->columns()
-            ->visible(static fn(Forms\Get $get) => in_array('Sellable', $get('attributes') ?? []));
+            ->visible(static fn(\Filament\Schemas\Components\Utilities\Get $get) => in_array('Sellable', $get('attributes') ?? []));
     }
 
-    public static function getPurchasableSection(): Forms\Components\Section
+    public static function getPurchasableSection(): \Filament\Schemas\Components\Section
     {
-        return Forms\Components\Section::make('Purchase Information')
+        return \Filament\Schemas\Components\Section::make('Purchase Information')
             ->schema([
                 CreateAccountSelect::make('expense_account_id')
                     ->label('Expense account')
@@ -160,7 +160,7 @@ class OfferingResource extends Resource
                     ->multiple(),
             ])
             ->columns()
-            ->visible(static fn(Forms\Get $get) => in_array('Purchasable', $get('attributes') ?? []));
+            ->visible(static fn(\Filament\Schemas\Components\Utilities\Get $get) => in_array('Purchasable', $get('attributes') ?? []));
     }
 
     public static function table(Table $table): Table
@@ -204,11 +204,11 @@ class OfferingResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                \Filament\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

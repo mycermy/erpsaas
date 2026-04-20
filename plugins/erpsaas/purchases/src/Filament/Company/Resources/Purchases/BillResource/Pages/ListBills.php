@@ -6,9 +6,9 @@ use Erpsaas\Core\Enums\Accounting\BillStatus;
 use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
 use Filament\Actions;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListBills extends ListRecords
@@ -34,7 +34,7 @@ class ListBills extends ListRecords
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

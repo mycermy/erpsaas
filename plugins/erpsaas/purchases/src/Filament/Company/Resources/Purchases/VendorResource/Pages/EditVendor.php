@@ -7,7 +7,7 @@ use Erpsaas\Purchases\Filament\Company\Resources\Purchases\VendorResource;
 use Erpsaas\Core\Models\Common\Vendor;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 
 class EditVendor extends EditRecord
@@ -31,8 +31,8 @@ class EditVendor extends EditRecord
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
-        return MaxWidth::FiveExtraLarge;
+        return Width::FiveExtraLarge;
     }
 }

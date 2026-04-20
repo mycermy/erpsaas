@@ -10,13 +10,13 @@ use Erpsaas\Core\Services\ReportService;
 use Erpsaas\Core\Support\Column;
 use Erpsaas\Core\Transformers\TrialBalanceReportTransformer;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TrialBalance extends BaseReportPage
 {
-    protected static string $view = 'filament.company.pages.reports.trial-balance';
+    protected string $view = 'filament.company.pages.reports.trial-balance';
 
     protected ReportService $reportService;
 
@@ -54,7 +54,7 @@ class TrialBalance extends BaseReportPage
         ];
     }
 
-    public function filtersForm(Form $form): Form
+    public function filtersForm(Schema $form): Schema
     {
         return $form
             ->columns(4)

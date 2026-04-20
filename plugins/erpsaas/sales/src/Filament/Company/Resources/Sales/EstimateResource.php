@@ -35,13 +35,13 @@ use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Erpsaas\Core\Utilities\RateCalculator;
 use Awcodes\TableRepeater\Header;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Guava\FilamentClusters\Forms\Cluster;
+use Filament\Schemas\Components\FusedGroup;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -52,7 +52,7 @@ class EstimateResource extends Resource
 
     protected static ?string $cluster = Sales::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $company = Auth::user()->currentCompany;
 
@@ -63,15 +63,15 @@ class EstimateResource extends Resource
                 DocumentHeaderSection::make('Estimate Header')
                     ->defaultHeader($settings->header)
                     ->defaultSubheader($settings->subheader),
-                Forms\Components\Section::make('Estimate Details')
+                \Filament\Schemas\Components\Section::make('Estimate Details')
                     ->schema([
-                        Forms\Components\Split::make([
-                            Forms\Components\Group::make([
+                        \Filament\Schemas\Components\Grid::make(['md' => 2])->schema([
+                            \Filament\Schemas\Components\Group::make([
                                 CreateClientSelect::make('client_id')
                                     ->label('Client')
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                    ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                         if (! $state) {
                                             return;
                                         }
@@ -84,19 +84,19 @@ class EstimateResource extends Resource
                                     }),
                                 CreateCurrencySelect::make('currency_code'),
                             ]),
-                            Forms\Components\Group::make([
+                            \Filament\Schemas\Components\Group::make([
                                 Forms\Components\TextInput::make('estimate_number')
                                     ->label('Estimate number')
                                     ->default(static fn() => Estimate::getNextDocumentNumber()),
                                 Forms\Components\TextInput::make('reference_number')
                                     ->label('Reference number'),
-                                Cluster::make([
+                                FusedGroup::make([
                                     Forms\Components\DatePicker::make('date')
                                         ->label('Estimate date')
                                         ->live()
                                         ->default(company_today()->toDateString())
                                         ->columnSpan(2)
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                             $date = Carbon::parse($state)->toDateString();
                                             $expirationDate = Carbon::parse($get('expiration_date'))->toDateString();
 
@@ -123,7 +123,7 @@ class EstimateResource extends Resource
                                         ->selectablePlaceholder(false)
                                         ->default($settings->payment_terms->value)
                                         ->live()
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                             if (! $state || $state === 'custom') {
                                                 return;
                                             }
@@ -142,11 +142,11 @@ class EstimateResource extends Resource
                                     ->default(function () use ($settings) {
                                         return company_today()->addDays($settings->payment_terms->getDays())->toDateString();
                                     })
-                                    ->minDate(static function (Forms\Get $get) {
+                                    ->minDate(static function (\Filament\Schemas\Components\Utilities\Get $get) {
                                         return Carbon::parse($get('date'))->toDateString() ?? company_today()->toDateString();
                                     })
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                    ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                         if (! $state) {
                                             return;
                                         }
@@ -170,7 +170,7 @@ class EstimateResource extends Resource
                                     ->options(DocumentDiscountMethod::class)
                                     ->softRequired()
                                     ->default($settings->discount_method)
-                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set) {
                                         $discountMethod = DocumentDiscountMethod::parse($state);
 
                                         if ($discountMethod->isPerDocument()) {
@@ -179,7 +179,7 @@ class EstimateResource extends Resource
                                     })
                                     ->live(),
                             ])->grow(true),
-                        ])->from('md'),
+                        ]),
                         CustomTableRepeater::make('lineItems')
                             ->hiddenLabel()
                             ->relationship()
@@ -190,7 +190,7 @@ class EstimateResource extends Resource
                             ->reorderAtStart()
                             ->cloneable()
                             ->addActionLabel('Add an item')
-                            ->headers(function (Forms\Get $get) use ($settings) {
+                            ->headers(function (\Filament\Schemas\Components\Utilities\Get $get) use ($settings) {
                                 $hasDiscounts = DocumentDiscountMethod::parse($get('discount_method'))->isPerLineItem();
 
                                 $headers = [
@@ -210,12 +210,12 @@ class EstimateResource extends Resource
 
                                 $headers[] = Header::make($settings->resolveColumnLabel('amount_name', 'Amount'))
                                     ->width('10%')
-                                    ->align('right');
+                                    ->alignment('right');
 
                                 return $headers;
                             })
                             ->schema([
-                                Forms\Components\Group::make([
+                                \Filament\Schemas\Components\Group::make([
                                     CreateOfferingSelect::make('offering_id')
                                         ->label('Item')
                                         ->hiddenLabel()
@@ -224,7 +224,7 @@ class EstimateResource extends Resource
                                         ->live()
                                         ->inlineSuffix()
                                         ->sellable()
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state, ?DocumentLineItem $record) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state, ?DocumentLineItem $record) {
                                             $offeringId = $state;
                                             $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
                                             $isPerLineItem = $discountMethod->isPerLineItem();
@@ -288,7 +288,7 @@ class EstimateResource extends Resource
                                     ->money(useAffix: false)
                                     ->live()
                                     ->default(0),
-                                Forms\Components\Group::make([
+                                \Filament\Schemas\Components\Group::make([
                                     CreateAdjustmentSelect::make('salesTaxes')
                                         ->label('Taxes')
                                         ->hiddenLabel()
@@ -315,7 +315,7 @@ class EstimateResource extends Resource
                                         ->inlineSuffix()
                                         ->multiple()
                                         ->live()
-                                        ->hidden(function (Forms\Get $get) {
+                                        ->hidden(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                             $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
 
                                             return $discountMethod->isPerDocument();
@@ -325,7 +325,7 @@ class EstimateResource extends Resource
                                 Forms\Components\Placeholder::make('total')
                                     ->hiddenLabel()
                                     ->extraAttributes(['class' => 'text-left sm:text-right'])
-                                    ->content(function (Forms\Get $get) {
+                                    ->content(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                         $quantity = max((float) ($get('quantity') ?? 0), 0);
                                         $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), 'USD')
                                             ? CurrencyConverter::convertToFloat($get('unit_price'), 'USD')
@@ -423,32 +423,32 @@ class EstimateResource extends Resource
                     ->indicatorLabel('Due'),
             ])
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                \Filament\Actions\ExportAction::make()
                     ->exporter(EstimateExporter::class),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ActionGroup::make([
-                        Tables\Actions\EditAction::make()
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ActionGroup::make([
+                        \Filament\Actions\EditAction::make()
                             ->url(static fn(Estimate $record) => Pages\EditEstimate::getUrl(['record' => $record])),
-                        Tables\Actions\ViewAction::make()
+                        \Filament\Actions\ViewAction::make()
                             ->url(static fn(Estimate $record) => Pages\ViewEstimate::getUrl(['record' => $record])),
-                        Estimate::getReplicateAction(Tables\Actions\ReplicateAction::class),
-                        Estimate::getApproveDraftAction(Tables\Actions\Action::class),
-                        Estimate::getMarkAsSentAction(Tables\Actions\Action::class),
-                        Estimate::getMarkAsAcceptedAction(Tables\Actions\Action::class),
-                        Estimate::getMarkAsDeclinedAction(Tables\Actions\Action::class),
-                        Estimate::getConvertToInvoiceAction(Tables\Actions\Action::class),
+                        Estimate::getReplicateAction(\Filament\Actions\ReplicateAction::class),
+                        Estimate::getApproveDraftAction(\Filament\Actions\Action::class),
+                        Estimate::getMarkAsSentAction(\Filament\Actions\Action::class),
+                        Estimate::getMarkAsAcceptedAction(\Filament\Actions\Action::class),
+                        Estimate::getMarkAsDeclinedAction(\Filament\Actions\Action::class),
+                        Estimate::getConvertToInvoiceAction(\Filament\Actions\Action::class),
                     ])->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                     ReplicateBulkAction::make()
                         ->label('Replicate')
-                        ->modalWidth(MaxWidth::Large)
+                        ->modalWidth(Width::Large)
                         ->modalDescription('Replicating estimates will also replicate their line items. Are you sure you want to proceed?')
                         ->successNotificationTitle('Estimates replicated successfully')
                         ->failureNotificationTitle('Failed to replicate estimates')
@@ -485,13 +485,13 @@ class EstimateResource extends Resource
                             'created_at',
                             'updated_at',
                         ]),
-                    Tables\Actions\BulkAction::make('approveDrafts')
+                    \Filament\Actions\BulkAction::make('approveDrafts')
                         ->label('Approve')
                         ->icon('heroicon-o-check-circle')
                         ->databaseTransaction()
                         ->successNotificationTitle('Estimates approved')
                         ->failureNotificationTitle('Failed to approve estimates')
-                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->before(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $isInvalid = $records->contains(fn(Estimate $record) => ! $record->canBeApproved());
 
                             if ($isInvalid) {
@@ -505,20 +505,20 @@ class EstimateResource extends Resource
                                 $action->cancel(true);
                             }
                         })
-                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $records->each(function (Estimate $record) {
                                 $record->approveDraft();
                             });
 
                             $action->success();
                         }),
-                    Tables\Actions\BulkAction::make('markAsSent')
+                    \Filament\Actions\BulkAction::make('markAsSent')
                         ->label('Mark as sent')
                         ->icon('heroicon-o-paper-airplane')
                         ->databaseTransaction()
                         ->successNotificationTitle('Estimates sent')
                         ->failureNotificationTitle('Failed to mark estimates as sent')
-                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->before(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $isInvalid = $records->contains(fn(Estimate $record) => ! $record->canBeMarkedAsSent());
 
                             if ($isInvalid) {
@@ -532,20 +532,20 @@ class EstimateResource extends Resource
                                 $action->cancel(true);
                             }
                         })
-                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $records->each(function (Estimate $record) {
                                 $record->markAsSent();
                             });
 
                             $action->success();
                         }),
-                    Tables\Actions\BulkAction::make('markAsAccepted')
+                    \Filament\Actions\BulkAction::make('markAsAccepted')
                         ->label('Mark as accepted')
                         ->icon('heroicon-o-check-badge')
                         ->databaseTransaction()
                         ->successNotificationTitle('Estimates accepted')
                         ->failureNotificationTitle('Failed to mark estimates as accepted')
-                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->before(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $isInvalid = $records->contains(fn(Estimate $record) => ! $record->canBeMarkedAsAccepted());
 
                             if ($isInvalid) {
@@ -559,14 +559,14 @@ class EstimateResource extends Resource
                                 $action->cancel(true);
                             }
                         })
-                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $records->each(function (Estimate $record) {
                                 $record->markAsAccepted();
                             });
 
                             $action->success();
                         }),
-                    Tables\Actions\BulkAction::make('markAsDeclined')
+                    \Filament\Actions\BulkAction::make('markAsDeclined')
                         ->label('Mark as declined')
                         ->icon('heroicon-o-x-circle')
                         ->requiresConfirmation()
@@ -576,7 +576,7 @@ class EstimateResource extends Resource
                         ->modalDescription('Are you sure you want to mark the selected estimates as declined? This action cannot be undone.')
                         ->successNotificationTitle('Estimates declined')
                         ->failureNotificationTitle('Failed to mark estimates as declined')
-                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->before(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $isInvalid = $records->contains(fn(Estimate $record) => ! $record->canBeMarkedAsDeclined());
 
                             if ($isInvalid) {
@@ -590,7 +590,7 @@ class EstimateResource extends Resource
                                 $action->cancel(true);
                             }
                         })
-                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $records->each(function (Estimate $record) {
                                 $record->markAsDeclined();
                             });

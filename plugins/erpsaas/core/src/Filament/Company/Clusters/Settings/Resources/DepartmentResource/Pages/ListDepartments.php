@@ -5,7 +5,7 @@ namespace Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\DepartmentRe
 use Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\DepartmentResource;
 use Erpsaas\Core\Models\Core\Department;
 use Filament\Actions;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
 
 class ListDepartments extends ListRecords

@@ -7,9 +7,9 @@ use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\ConfigureCurrencies;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Resources\Components\Tab as ResourcesTab;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Tabs\Tab as ResourcesTab;
 
 class ConfigureCompanyDefault
 {

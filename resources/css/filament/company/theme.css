@@ -1,14 +1,34 @@
-@import '/vendor/filament/filament/resources/css/theme.css';
-@import '/vendor/awcodes/filament-table-repeater/resources/css/plugin.css';
-@import 'custom-data-table.css';
-@import 'custom-section.css';
-@import 'form-fields.css';
-@import 'modal.css';
-@import 'report-card.css';
-@import 'tooltip.css';
-@import 'top-navigation.css';
+@import "tailwindcss";
 
-@config 'tailwind.config.js';
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import './custom-data-table.css';
+@import './custom-section.css' layer(components);
+@import './form-fields.css';
+@import './modal.css';
+@import './report-card.css';
+@import './tooltip.css';
+@import './top-navigation.css';
+
+@source '../../../../app/Filament/Company';
+@source '../../../../resources/views/filament';
+@source '../../../../resources/views/livewire/company';
+@source '../../../../resources/views/components';
+@source '../../../../resources/views/vendor';
+@source '../../../../vendor/andrewdwallo/filament-companies/resources/views';
+@source '../../../../vendor/andrewdwallo/filament-selectify/resources/views';
+@source '../../../../plugins/erpsaas';
+
+@theme {
+  --color-white: #f3f4f6;
+  --color-platinum: #e8e9eb;
+  --max-width-8xl: 88rem;
+  --timing-ease-smooth: cubic-bezier(0.08, 0.52, 0.52, 1);
+}
+
+/* Ensure CSS grid items can shrink below their content size so overflow-x-auto works */
+.fi-grid-col {
+    min-width: 0;
+}
 
 .es-file-upload.document-logo > div {
     @apply w-48;
@@ -72,11 +92,11 @@
     }
 
     .fi-ta-summary-row-heading {
-        @apply px-3 py-3 !important;
+        @apply px-3 py-3;
     }
 
     .fi-ta-text-summary {
-        @apply px-3 py-3 !important;
+        @apply px-3 py-3;
 
         > span {
             @apply font-medium text-gray-950 dark:text-white;
@@ -84,21 +104,21 @@
     }
 
     .fi-ta-text {
-        @apply px-3 py-0 !important;
+        @apply px-3 py-0;
     }
 
     .fi-ta-text-input {
-        @apply px-0 py-0 !important;
+        @apply px-0 py-0;
     }
 
     .fi-ta-icon {
-        @apply px-3 py-0 !important;
+        @apply px-3 py-0;
     }
 
     .fi-ta-text-input {
         .fi-input-wrp,
         .fi-input {
-            @apply ring-0 bg-transparent shadow-none rounded-none !important;
+            @apply ring-0 bg-transparent shadow-none rounded-none;
         }
     }
 
@@ -109,8 +129,8 @@
     }
 
     .fi-ta-col-wrp button:focus {
-        outline: none !important;
-        box-shadow: none !important;
+        outline: none;
+        box-shadow: none;
     }
 }
 

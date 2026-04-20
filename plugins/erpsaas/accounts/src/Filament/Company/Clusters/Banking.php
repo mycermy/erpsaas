@@ -6,7 +6,7 @@ use Filament\Clusters\Cluster;
 
 class Banking extends Cluster
 {
-    protected static ?string $navigationIcon = 'heroicon-o-building-library';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-library';
 
     protected static ?int $navigationSort = 40;
 

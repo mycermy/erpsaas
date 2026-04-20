@@ -6,7 +6,7 @@ use Filament\Clusters\Cluster;
 
 class Accounting extends Cluster
 {
-    protected static ?string $navigationIcon = 'heroicon-o-calculator';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calculator';
 
     protected static ?int $navigationSort = 30;
 

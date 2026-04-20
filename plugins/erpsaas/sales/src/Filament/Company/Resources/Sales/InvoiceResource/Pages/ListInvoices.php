@@ -10,12 +10,12 @@ use Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource\Page
 use Erpsaas\Core\Filament\Infolists\Components\BannerEntry;
 use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
 use Filament\Actions;
-use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Infolist;
+use Filament\Actions\Action;
+use Filament\Schemas\Schema;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
@@ -31,9 +31,9 @@ class ListInvoices extends ListRecords
     #[Url(except: '')]
     public string $recurringInvoice = '';
 
-    protected static string $view = 'filament.company.resources.sales.invoice-resource.pages.list-invoices';
+    protected string $view = 'filament.company.resources.sales.invoice-resource.pages.list-invoices';
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $infolist): Schema
     {
         return $infolist
             ->schema([
@@ -99,7 +99,7 @@ class ListInvoices extends ListRecords
         $this->tableFilters = []; // Refresh widgets/table
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

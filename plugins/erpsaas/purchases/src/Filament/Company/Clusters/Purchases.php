@@ -6,7 +6,7 @@ use Filament\Clusters\Cluster;
 
 class Purchases extends Cluster
 {
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shopping-bag';
 
     protected static ?int $navigationSort = 20;
 

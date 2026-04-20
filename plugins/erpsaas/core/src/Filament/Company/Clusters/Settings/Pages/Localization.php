@@ -13,22 +13,22 @@ use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Localization\Timezone;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Forms\Components\Component;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Support\Exceptions\Halt;
-use Guava\FilamentClusters\Forms\Cluster;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 
 use function Filament\authorize;
@@ -42,7 +42,7 @@ class Localization extends Page
 
     protected static ?string $title = 'Localization';
 
-    protected static string $view = 'filament.company.pages.setting.localization';
+    protected string $view = 'filament.company.pages.setting.localization';
 
     protected static ?string $cluster = Settings::class;
 
@@ -61,15 +61,17 @@ class Localization extends Page
         return translate(static::$title);
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
-        return MaxWidth::ScreenTwoExtraLarge;
+        return Width::ScreenTwoExtraLarge;
     }
 
     public function mount(): void
     {
+        $user = Auth::user();
+
         $this->record = LocalizationModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
+            'company_id' => $user?->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -90,7 +92,6 @@ class Localization extends Page
             $data = $this->form->getState();
 
             $this->handleRecordUpdate($this->record, $data);
-
         } catch (Halt $exception) {
             return;
         }
@@ -105,7 +106,7 @@ class Localization extends Page
             ->title(__('filament-panels::resources/pages/edit-record.notifications.saved.title'));
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -123,14 +124,16 @@ class Localization extends Page
         return Section::make('General')
             ->schema([
                 Select::make('language')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Language'))
                     ->options(LocalizationModel::getAllLanguages())
                     ->disabled(is_demo_environment())
                     ->searchable(),
                 Select::make('timezone')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Timezone'))
                     ->options(Timezone::getTimezoneOptions(CompanyProfileModel::first()->address->country_code))
                     ->searchable(),
             ])->columns();
@@ -141,17 +144,20 @@ class Localization extends Page
         return Section::make('Date & Time')
             ->schema([
                 Select::make('date_format')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Date format'))
                     ->options(DateFormat::class)
                     ->live(),
                 Select::make('time_format')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Time format'))
                     ->options(TimeFormat::class),
                 Select::make('week_start')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Week start'))
                     ->options(WeekStart::class),
             ])->columns();
     }
@@ -165,40 +171,44 @@ class Localization extends Page
         return Section::make('Financial & Fiscal')
             ->schema([
                 Select::make('number_format')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Number format'))
                     ->options(NumberFormat::class),
                 Select::make('percent_first')
-                    ->softRequired()
-                    ->localizeLabel('Percent position')
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Percent position'))
                     ->boolean($beforeNumber, $afterNumber, $selectPosition),
                 Group::make()
                     ->schema([
-                        Cluster::make([
-                            Select::make('fiscal_year_end_month')
-                                ->softRequired()
-                                ->options(array_combine(range(1, 12), array_map(static fn ($month) => company_today()->month($month)->monthName, range(1, 12))))
-                                ->afterStateUpdated(static fn (Set $set) => $set('fiscal_year_end_day', null))
-                                ->columnSpan(2)
-                                ->live(),
-                            Select::make('fiscal_year_end_day')
-                                ->placeholder('Day')
-                                ->softRequired()
-                                ->columnSpan(1)
-                                ->options(function (Get $get) {
-                                    $month = (int) $get('fiscal_year_end_month');
+                        Group::make()
+                            ->schema([
+                                Select::make('fiscal_year_end_month')
+                                    ->required()
+                                    ->markAsRequired(false)
+                                    ->label(translate('Fiscal year end month'))
+                                    ->options(array_combine(range(1, 12), array_map(static fn($month) => company_today()->month($month)->monthName, range(1, 12))))
+                                    ->afterStateUpdated(static fn(Set $set) => $set('fiscal_year_end_day', null))
+                                    ->columnSpan(2)
+                                    ->live(),
+                                Select::make('fiscal_year_end_day')
+                                    ->placeholder('Day')
+                                    ->required()
+                                    ->markAsRequired(false)
+                                    ->label(translate('Fiscal year end day'))
+                                    ->columnSpan(1)
+                                    ->options(function (Get $get) {
+                                        $month = (int) $get('fiscal_year_end_month');
 
-                                    $daysInMonth = company_today()->month($month)->daysInMonth;
+                                        $daysInMonth = company_today()->month($month)->daysInMonth;
 
-                                    return array_combine(range(1, $daysInMonth), range(1, $daysInMonth));
-                                })
-                                ->live(),
-                        ])
+                                        return array_combine(range(1, $daysInMonth), range(1, $daysInMonth));
+                                    })
+                                    ->live(),
+                            ])
                             ->columns(3)
-                            ->columnSpan(2)
-                            ->required()
-                            ->markAsRequired(false)
-                            ->label('Fiscal year end'),
+                            ->columnSpan(2),
                     ])->columns(3),
             ])->columns();
     }

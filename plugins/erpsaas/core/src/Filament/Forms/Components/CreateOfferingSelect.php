@@ -4,11 +4,11 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Core\Filament\Company\Resources\Common\OfferingResource;
 use Erpsaas\Core\Models\Common\Offering;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Width;
 
 class CreateOfferingSelect extends Select
 {
@@ -39,15 +39,15 @@ class CreateOfferingSelect extends Select
         $this
             ->searchable()
             ->preload()
-            ->createOptionForm(fn (Form $form) => $this->createOfferingForm($form))
-            ->createOptionAction(fn (Action $action) => $this->createOfferingAction($action));
+            ->createOptionForm(fn(Schema $form) => $this->createOfferingForm($form))
+            ->createOptionAction(fn(Action $action) => $this->createOfferingAction($action));
 
         $this->relationship(
-            name: fn () => $this->isPurchasable() && ! $this->isSellable() ? 'purchasableOffering' : ($this->isSellable() && ! $this->isPurchasable() ? 'sellableOffering' : 'offering'),
+            name: fn() => $this->isPurchasable() && ! $this->isSellable() ? 'purchasableOffering' : ($this->isSellable() && ! $this->isPurchasable() ? 'sellableOffering' : 'offering'),
             titleAttribute: 'name'
         );
 
-        $this->createOptionUsing(function (array $data, Form $form) {
+        $this->createOptionUsing(function (array $data, Schema $schema) {
             if ($this->isSellableAndPurchasable()) {
                 $attributes = array_flip($data['attributes'] ?? []);
 
@@ -62,23 +62,23 @@ class CreateOfferingSelect extends Select
 
             $offering = Offering::create($data);
 
-            $form->model($offering)->saveRelationships();
+            $schema->model($offering)->saveRelationships();
 
             return $offering->getKey();
         });
     }
 
-    protected function createOfferingForm(Form $form): Form
+    protected function createOfferingForm(Schema $form): Schema
     {
         return $form->schema([
             OfferingResource::getGeneralSection($this->isSellableAndPurchasable()),
             OfferingResource::getSellableSection()->visible(
-                fn (Get $get) => $this->isSellableAndPurchasable()
+                fn(Get $get) => $this->isSellableAndPurchasable()
                     ? in_array('Sellable', $get('attributes') ?? [])
                     : $this->isSellable()
             ),
             OfferingResource::getPurchasableSection()->visible(
-                fn (Get $get) => $this->isSellableAndPurchasable()
+                fn(Get $get) => $this->isSellableAndPurchasable()
                     ? in_array('Purchasable', $get('attributes') ?? [])
                     : $this->isPurchasable()
             ),
@@ -90,7 +90,7 @@ class CreateOfferingSelect extends Select
         return $action
             ->label('Create offering')
             ->slideOver()
-            ->modalWidth(MaxWidth::ThreeExtraLarge)
+            ->modalWidth(Width::ThreeExtraLarge)
             ->modalHeading('Create a new offering');
     }
 

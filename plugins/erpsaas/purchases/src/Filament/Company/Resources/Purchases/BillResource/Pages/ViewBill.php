@@ -6,9 +6,9 @@ use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
 use Erpsaas\Purchases\Filament\Company\Resources\Purchases\VendorResource;
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Filament\Actions;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\IconPosition;
 
@@ -41,7 +41,7 @@ class ViewBill extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $infolist): Schema
     {
         return $infolist
             ->schema([
@@ -54,14 +54,14 @@ class ViewBill extends ViewRecord
                             ->badge(),
                         TextEntry::make('vendor.name')
                             ->label('Vendor')
-                            ->url(static fn (Bill $record) => $record->vendor_id ? VendorResource::getUrl('view', ['record' => $record->vendor_id]) : null)
+                            ->url(static fn(Bill $record) => $record->vendor_id ? VendorResource::getUrl('view', ['record' => $record->vendor_id]) : null)
                             ->link(),
                         TextEntry::make('total')
                             ->label('Total')
-                            ->currency(static fn (Bill $record) => $record->currency_code),
+                            ->currency(static fn(Bill $record) => $record->currency_code),
                         TextEntry::make('amount_due')
                             ->label('Amount due')
-                            ->currency(static fn (Bill $record) => $record->currency_code),
+                            ->currency(static fn(Bill $record) => $record->currency_code),
                         TextEntry::make('date')
                             ->label('Date')
                             ->date(),

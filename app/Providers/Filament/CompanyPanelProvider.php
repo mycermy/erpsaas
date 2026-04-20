@@ -42,7 +42,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -112,7 +112,7 @@ class CompanyPanelProvider extends PanelProvider
                 'primary' => Color::Indigo,
             ])
             ->topNavigation()
-            ->maxContentWidth(MaxWidth::Full)
+            ->maxContentWidth(Width::Full)
             // Define navigation groups - clusters will auto-populate them via getNavigationGroup()
             ->navigationGroups([
                 NavigationGroup::make()
@@ -238,21 +238,15 @@ class CompanyPanelProvider extends PanelProvider
         Actions\CreateAction::configureUsing(static fn(Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
         Actions\EditAction::configureUsing(static fn(Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
         Actions\DeleteAction::configureUsing(static fn(Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
-        Tables\Actions\EditAction::configureUsing(static fn(Tables\Actions\EditAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Tables\Actions\CreateAction::configureUsing(static fn(Tables\Actions\CreateAction $action) => FilamentComponentConfigurator::configureActionModals($action));
-        Tables\Actions\DeleteAction::configureUsing(static fn(Tables\Actions\DeleteAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
-        Tables\Actions\DeleteBulkAction::configureUsing(static fn(Tables\Actions\DeleteBulkAction $action) => FilamentComponentConfigurator::configureDeleteAction($action));
-
         Tables\Table::configureUsing(static function (Tables\Table $table): void {
-            $table::$defaultDateDisplayFormat = CompanySettingsService::getDefaultDateFormat();
-            $table::$defaultTimeDisplayFormat = CompanySettingsService::getDefaultTimeFormat();
-            $table::$defaultDateTimeDisplayFormat = CompanySettingsService::getDefaultDateTimeFormat();
-
             $table
+                ->defaultDateDisplayFormat(CompanySettingsService::getDefaultDateFormat())
+                ->defaultTimeDisplayFormat(CompanySettingsService::getDefaultTimeFormat())
+                ->defaultDateTimeDisplayFormat(CompanySettingsService::getDefaultDateTimeFormat())
                 ->paginationPageOptions([5, 10, 25, 50, 100])
-                ->filtersFormWidth(MaxWidth::Small)
+                ->filtersFormWidth(Width::Small)
                 ->filtersTriggerAction(
-                    fn(Tables\Actions\Action $action) => $action
+                    fn(Actions\Action $action) => $action
                         ->button()
                         ->label('Filters')
                         ->slideOver()
@@ -267,7 +261,7 @@ class CompanyPanelProvider extends PanelProvider
             $component->placeholder('–');
         });
 
-        Tables\Actions\ExportAction::configureUsing(function (Tables\Actions\ExportAction $action) {
+        Actions\ExportAction::configureUsing(function (Actions\ExportAction $action) {
             $action
                 ->color('primary')
                 ->slideOver();

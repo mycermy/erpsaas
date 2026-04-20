@@ -10,7 +10,6 @@ use Erpsaas\Core\Enums\Accounting\BudgetStatus;
 use Erpsaas\Accounts\Filament\Company\Resources\Accounting\BudgetResource;
 use Erpsaas\Core\Models\User;
 use Filament\Actions\Action;
-use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -222,7 +221,7 @@ class Budget extends Model
     /**
      * Get Action for approving a draft budget
      */
-    public static function getApproveDraftAction(string $action = Action::class): MountableAction
+    public static function getApproveDraftAction(string $action = Action::class): Action
     {
         return $action::make('approveDraft')
             ->label('Approve')
@@ -232,7 +231,7 @@ class Budget extends Model
             })
             ->databaseTransaction()
             ->successNotificationTitle('Budget approved')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->approveDraft();
                 $action->success();
             });
@@ -241,7 +240,7 @@ class Budget extends Model
     /**
      * Get Action for closing an active budget
      */
-    public static function getCloseAction(string $action = Action::class): MountableAction
+    public static function getCloseAction(string $action = Action::class): Action
     {
         return $action::make('close')
             ->label('Close')
@@ -253,7 +252,7 @@ class Budget extends Model
             ->requiresConfirmation()
             ->databaseTransaction()
             ->successNotificationTitle('Budget closed')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->close();
                 $action->success();
             });
@@ -262,7 +261,7 @@ class Budget extends Model
     /**
      * Get Action for reopening a closed budget
      */
-    public static function getReopenAction(string $action = Action::class): MountableAction
+    public static function getReopenAction(string $action = Action::class): Action
     {
         return $action::make('reopen')
             ->label('Reopen')
@@ -273,7 +272,7 @@ class Budget extends Model
             ->requiresConfirmation()
             ->databaseTransaction()
             ->successNotificationTitle('Budget reopened')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->reopen();
                 $action->success();
             });
@@ -282,7 +281,7 @@ class Budget extends Model
     /**
      * Get Action for duplicating a budget
      */
-    public static function getReplicateAction(string $action = ReplicateAction::class): MountableAction
+    public static function getReplicateAction(string $action = ReplicateAction::class): Action
     {
         return $action::make()
             ->excludeAttributes([

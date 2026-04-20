@@ -1,7 +1,7 @@
 @php
-    use Filament\Forms\Components\Actions\Action;
+    use Filament\Actions\Action;
     use Filament\Support\Enums\Alignment;
-    use Filament\Support\Enums\MaxWidth;
+    use Filament\Support\Enums\Width;
 
     $containers = $getChildComponentContainers();
 
@@ -13,7 +13,7 @@
     $reorderAction = $getAction($getReorderActionName());
     $isReorderableWithButtons = $isReorderableWithButtons();
     $extraItemActions = $getExtraItemActions();
-    $extraActions = $getExtraActions();
+    $extraActions = [];
     $visibleExtraItemActions = [];
     $visibleExtraActions = [];
 
@@ -21,19 +21,11 @@
     $renderHeader = $shouldRenderHeader();
     $stackAt = $getStackAt();
     $hasContainers = count($containers) > 0;
-    $emptyLabel = $getEmptyLabel();
     $streamlined = $isStreamlined();
 
     $reorderAtStart = $isReorderAtStart();
 
     $statePath = $getStatePath();
-
-    foreach ($extraActions as $extraAction) {
-        $visibleExtraActions = array_filter(
-            $extraActions,
-            fn (Action $action): bool => $action->isVisible(),
-        );
-    }
 
     foreach ($extraItemActions as $extraItemAction) {
         $visibleExtraItemActions = array_filter(
@@ -57,15 +49,15 @@
             'table-repeater-component space-y-6 relative',
             'streamlined' => $streamlined,
             match ($stackAt) {
-                'sm', MaxWidth::Small => 'break-point-sm',
-                'lg', MaxWidth::Large => 'break-point-lg',
-                'xl', MaxWidth::ExtraLarge => 'break-point-xl',
-                '2xl', MaxWidth::TwoExtraLarge => 'break-point-2xl',
+                'sm', Width::Small => 'break-point-sm',
+                'lg', Width::Large => 'break-point-lg',
+                'xl', Width::ExtraLarge => 'break-point-xl',
+                '2xl', Width::TwoExtraLarge => 'break-point-2xl',
                 default => 'break-point-md',
             }
         ]) }}
     >
-        @if (count($containers) || $emptyLabel !== false)
+        @if (count($containers))
             <div class="table-repeater-container rounded-sm relative ring-1 ring-gray-950/5 dark:ring-white/20">
                 <table class="w-full">
                     <thead @class([
@@ -150,7 +142,7 @@
                                             @class([
                                                 'table-repeater-column align-top',
                                                 'p-2' => ! $streamlined,
-                                                'has-hidden-label' => $cell->isLabelHidden(),
+                                                'has-hidden-label' => method_exists($cell, 'isLabelHidden') && $cell->isLabelHidden(),
                                                 match($headers[$counter++]->getAlignment()) {
                                                   'center', Alignment::Center => 'text-center',
                                                   'right', 'end', Alignment::Right, Alignment::End => 'text-end',
@@ -213,7 +205,7 @@
                         <tr class="table-repeater-row table-repeater-empty-row">
                             <td colspan="{{ count($headers) + intval($hasActions) }}"
                                 class="table-repeater-column table-repeater-empty-column p-4 w-px text-center italic">
-                                {{ $emptyLabel ?: trans('table-repeater::components.repeater.empty.label') }}
+                                {{ trans('table-repeater::components.repeater.empty.label') }}
                             </td>
                         </tr>
                     @endif

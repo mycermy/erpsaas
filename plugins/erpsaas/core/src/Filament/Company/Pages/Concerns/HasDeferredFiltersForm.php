@@ -4,7 +4,7 @@ namespace Erpsaas\Core\Filament\Company\Pages\Concerns;
 
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 
@@ -48,14 +48,14 @@ trait HasDeferredFiltersForm
         ];
     }
 
-    public function filtersForm(Form $form): Form
+    public function filtersForm(Schema $form): Schema
     {
         return $form;
     }
 
-    public function getFiltersForm(): Form
+    public function getFiltersForm(): Schema
     {
-        return $this->filtersForm($this->makeForm()
+        return $this->filtersForm($this->makeSchema()
             ->statePath('deferredFilters'));
     }
 

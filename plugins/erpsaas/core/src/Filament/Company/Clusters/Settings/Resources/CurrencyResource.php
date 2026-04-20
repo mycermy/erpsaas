@@ -8,7 +8,7 @@ use Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\CurrencyResource\P
 use Erpsaas\Core\Models\Setting\Currency as CurrencyModel;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -29,11 +29,11 @@ class CurrencyResource extends Resource
         return translate($modelLabel);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('General')
+                \Filament\Schemas\Components\Section::make('General')
                     ->schema([
                         Forms\Components\Select::make('code')
                             ->options(CurrencyAccessor::getAvailableCurrencies())
@@ -42,7 +42,7 @@ class CurrencyResource extends Resource
                             ->required()
                             ->localizeLabel()
                             ->disabledOn('edit')
-                            ->afterStateUpdated(static function (Forms\Set $set, $state) {
+                            ->afterStateUpdated(static function (\Filament\Schemas\Components\Utilities\Set $set, $state) {
                                 if (! $state) {
                                     return;
                                 }
@@ -71,7 +71,7 @@ class CurrencyResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->localizeLabel()
                     ->weight(FontWeight::Medium)
-                    ->icon(static fn (CurrencyModel $record) => $record->isEnabled() ? 'heroicon-o-lock-closed' : null)
+                    ->icon(static fn(CurrencyModel $record) => $record->isEnabled() ? 'heroicon-o-lock-closed' : null)
                     ->tooltip(static function (CurrencyModel $record) {
                         $tooltipMessage = translate('Default :record', [
                             'record' => static::getModelLabel(),
@@ -99,7 +99,7 @@ class CurrencyResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                \Filament\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 //

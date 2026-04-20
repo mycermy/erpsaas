@@ -10,7 +10,7 @@ use Erpsaas\Core\Filament\Forms\Components\CreateCurrencySelect;
 use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
 use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
@@ -37,11 +37,11 @@ class AccountResource extends Resource
         return translate($modelLabel);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Account Information')
+                \Filament\Schemas\Components\Section::make('Account Information')
                     ->schema([
                         Forms\Components\Select::make('type')
                             ->options(BankAccountType::class)
@@ -51,7 +51,7 @@ class AccountResource extends Resource
                             ->disabledOn('edit')
                             ->default(BankAccountType::DEFAULT)
                             ->live()
-                            ->afterStateUpdated(static function (Forms\Set $set, $state, ?BankAccount $bankAccount, string $operation) {
+                            ->afterStateUpdated(static function (\Filament\Schemas\Components\Utilities\Set $set, $state, ?BankAccount $bankAccount, string $operation) {
                                 if ($operation === 'create') {
                                     $set('account.subtype_id', null);
                                 } elseif ($operation === 'edit' && $bankAccount !== null) {
@@ -63,7 +63,7 @@ class AccountResource extends Resource
                                 }
                             })
                             ->required(),
-                        Forms\Components\Group::make()
+                        \Filament\Schemas\Components\Group::make()
                             ->columnStart([
                                 'default' => 1,
                                 'lg' => 2,
@@ -71,14 +71,14 @@ class AccountResource extends Resource
                             ->relationship('account')
                             ->schema([
                                 Forms\Components\Select::make('subtype_id')
-                                    ->options(static fn(Forms\Get $get) => static::groupSubtypesBySubtypeType(BankAccountType::parse($get('data.type', true))))
+                                    ->options(static fn(\Filament\Schemas\Components\Utilities\Get $get) => static::groupSubtypesBySubtypeType(BankAccountType::parse($get('data.type', true))))
                                     ->disabledOn('edit')
                                     ->localizeLabel()
                                     ->searchable()
                                     ->live()
                                     ->required(),
                             ]),
-                        Forms\Components\Group::make()
+                        \Filament\Schemas\Components\Group::make()
                             ->relationship('account')
                             ->columns()
                             ->columnSpanFull()
@@ -90,7 +90,7 @@ class AccountResource extends Resource
                                 CreateCurrencySelect::make('currency_code')
                                     ->disabledOn('edit'),
                             ]),
-                        Forms\Components\Group::make()
+                        \Filament\Schemas\Components\Group::make()
                             ->columns()
                             ->columnSpanFull()
                             ->schema([
@@ -142,11 +142,11 @@ class AccountResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                \Filament\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make()
                         ->requiresConfirmation()
                         ->modalDescription('Are you sure you want to delete the selected accounts? All transactions associated with the accounts will be deleted as well.')
                         ->hidden(function (Table $table) {

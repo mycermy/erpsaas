@@ -3,7 +3,7 @@
 namespace Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\TransactionResource\RelationManagers;
 
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -17,7 +17,7 @@ class JournalEntriesRelationManager extends RelationManager
         'refresh' => '$refresh',
     ];
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([]);

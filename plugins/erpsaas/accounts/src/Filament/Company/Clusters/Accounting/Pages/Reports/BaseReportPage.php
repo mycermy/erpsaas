@@ -14,11 +14,13 @@ use Erpsaas\Core\Support\Column;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Panel;
 use Filament\Pages\Page;
 use Filament\Support\Enums\IconPosition;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -57,7 +59,11 @@ abstract class BaseReportPage extends Page
 
     protected function initializeProperties(): void
     {
-        $this->company = auth()->user()->currentCompany;
+        $user = Auth::user();
+
+        abort_unless($user?->currentCompany, 404);
+
+        $this->company = $user->currentCompany;
         $this->fiscalYearStartDate = $this->company->locale->fiscalYearStartDate();
         $this->fiscalYearEndDate = $this->company->locale->fiscalYearEndDate();
     }
@@ -67,7 +73,7 @@ abstract class BaseReportPage extends Page
         return false;
     }
 
-    public static function getSlug(): string
+    public static function getSlug(?Panel $panel = null): string
     {
         $prefix = Reports::getSlug() . '/';
 
@@ -92,7 +98,7 @@ abstract class BaseReportPage extends Page
         $flatFields = $this->getFiltersForm()->getFlatFields();
 
         /** @var DateRangeSelect|null $dateRangeField */
-        $dateRangeField = Arr::first($flatFields, static fn ($field) => $field instanceof DateRangeSelect);
+        $dateRangeField = Arr::first($flatFields, static fn($field) => $field instanceof DateRangeSelect);
 
         if (! $dateRangeField) {
             return;
@@ -224,16 +230,16 @@ abstract class BaseReportPage extends Page
             ActionGroup::make([
                 Action::make('exportCSV')
                     ->label('CSV')
-                    ->action(fn () => $this->exportCSV()),
+                    ->action(fn() => $this->exportCSV()),
                 Action::make('exportPDF')
                     ->label('PDF')
                     ->hidden(is_demo_environment())
-                    ->action(fn () => $this->exportPDF()),
+                    ->action(fn() => $this->exportPDF()),
             ])
                 ->label('Export')
                 ->button()
                 ->outlined()
-                ->dropdownWidth('max-w-[7rem]')
+                ->dropdownWidth('max-w-28')
                 ->dropdownPlacement('bottom-end')
                 ->icon('heroicon-m-chevron-down')
                 ->iconPosition(IconPosition::After),
@@ -243,7 +249,7 @@ abstract class BaseReportPage extends Page
     protected function getDateRangeFormComponent(): DateRangeSelect
     {
         return DateRangeSelect::make('dateRange')
-            ->label('Date range')
+            ->localizeLabel('Date range')
             ->selectablePlaceholder(false)
             ->startDateField('startDate')
             ->endDateField('endDate');
@@ -252,7 +258,7 @@ abstract class BaseReportPage extends Page
     protected function getStartDateFormComponent(): DatePicker
     {
         return DatePicker::make('startDate')
-            ->label('Start date')
+            ->localizeLabel('Start date')
             ->live()
             ->afterStateUpdated(static function ($state, Set $set) {
                 $set('dateRange', 'Custom');
@@ -262,7 +268,7 @@ abstract class BaseReportPage extends Page
     protected function getEndDateFormComponent(): DatePicker
     {
         return DatePicker::make('endDate')
-            ->label('End date')
+            ->localizeLabel('End date')
             ->live()
             ->afterStateUpdated(static function (Set $set) {
                 $set('dateRange', 'Custom');
@@ -272,7 +278,7 @@ abstract class BaseReportPage extends Page
     protected function getAsOfDateFormComponent(): DatePicker
     {
         return DatePicker::make('asOfDate')
-            ->label('As of date')
+            ->localizeLabel('As of date')
             ->live()
             ->afterStateUpdated(static function (Set $set) {
                 $set('dateRange', 'Custom');

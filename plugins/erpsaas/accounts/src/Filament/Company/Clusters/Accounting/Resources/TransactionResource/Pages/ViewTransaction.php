@@ -18,9 +18,9 @@ use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Filament\Actions;
 use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\IconPosition;
 
@@ -93,7 +93,7 @@ class ViewTransaction extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $infolist): Schema
     {
         return $infolist
             ->schema([

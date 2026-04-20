@@ -6,9 +6,9 @@ use Erpsaas\Core\Concerns\HasTransactionAction;
 use Erpsaas\Core\Enums\Accounting\TransactionType;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use Filament\Actions\EditAction;
-use Filament\Actions\StaticAction;
-use Filament\Forms\Form;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Actions\Action;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 
 class EditTransactionAction extends EditAction
 {
@@ -31,10 +31,10 @@ class EditTransactionAction extends EditAction
 
         $this->slideOver();
 
-        $this->modalWidth(function (): MaxWidth {
+        $this->modalWidth(function (): Width {
             return match ($this->getTransactionType()) {
-                TransactionType::Journal => MaxWidth::Screen,
-                default => MaxWidth::ThreeExtraLarge,
+                TransactionType::Journal => Width::Screen,
+                default => Width::ThreeExtraLarge,
             };
         });
 
@@ -46,7 +46,7 @@ class EditTransactionAction extends EditAction
             return [];
         });
 
-        $this->form(function (Form $form) {
+        $this->form(function (Schema $form) {
             return match ($this->getTransactionType()) {
                 TransactionType::Transfer => $this->transferForm($form),
                 TransactionType::Journal => $this->journalTransactionForm($form),
@@ -64,7 +64,7 @@ class EditTransactionAction extends EditAction
             }
         });
 
-        $this->modalSubmitAction(function (StaticAction $action) {
+        $this->modalSubmitAction(function (Action $action) {
             if ($this->getTransactionType() === TransactionType::Journal) {
                 $action->disabled(! $this->isJournalEntryBalanced());
             }

@@ -16,14 +16,14 @@ use Erpsaas\Core\Models\Common\Client;
 use Erpsaas\Core\Models\Common\Vendor;
 use Exception;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Form;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,7 +38,7 @@ class TransactionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'description';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([]);
@@ -158,32 +158,32 @@ class TransactionResource extends Resource
                 $filters['posted_at'],
                 $filters['updated_at'],
             ])
-            ->filtersFormWidth(MaxWidth::ThreeExtraLarge)
+            ->filtersFormWidth(Width::ThreeExtraLarge)
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                \Filament\Actions\ExportAction::make()
                     ->exporter(TransactionExporter::class),
             ])
             ->actions([
-                Tables\Actions\Action::make('markAsReviewed')
+                \Filament\Actions\Action::make('markAsReviewed')
                     ->label('Mark as reviewed')
                     ->view('filament.company.components.tables.actions.mark-as-reviewed')
                     ->icon(static fn(Transaction $transaction) => $transaction->reviewed ? 'heroicon-s-check-circle' : 'heroicon-o-check-circle')
-                    ->color(static fn(Transaction $transaction, Tables\Actions\Action $action) => match (static::determineTransactionState($transaction, $action)) {
+                    ->color(static fn(Transaction $transaction, \Filament\Actions\Action $action) => match (static::determineTransactionState($transaction, $action)) {
                         'reviewed' => 'primary',
                         'unreviewed' => Color::rgb('rgb(' . Color::Gray[600] . ')'),
                         'uncategorized' => 'gray',
                     })
-                    ->tooltip(static fn(Transaction $transaction, Tables\Actions\Action $action) => match (static::determineTransactionState($transaction, $action)) {
+                    ->tooltip(static fn(Transaction $transaction, \Filament\Actions\Action $action) => match (static::determineTransactionState($transaction, $action)) {
                         'reviewed' => 'Reviewed',
                         'unreviewed' => 'Mark as reviewed',
                         'uncategorized' => 'Categorize first to mark as reviewed',
                     })
                     ->disabled(fn(Transaction $transaction): bool => $transaction->isUncategorized())
                     ->action(fn(Transaction $transaction) => $transaction->update(['reviewed' => ! $transaction->reviewed])),
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ActionGroup::make([
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ActionGroup::make([
                         EditTransactionAction::make(),
-                        Tables\Actions\ReplicateAction::make()
+                        \Filament\Actions\ReplicateAction::make()
                             ->excludeAttributes(['created_by', 'updated_by', 'created_at', 'updated_at'])
                             ->modal(false)
                             ->beforeReplicaSaved(static function (Transaction $replica) {
@@ -200,15 +200,15 @@ class TransactionResource extends Resource
                                 });
                             }),
                     ])->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                     ReplicateBulkAction::make()
                         ->label('Replicate')
-                        ->modalWidth(MaxWidth::Large)
+                        ->modalWidth(Width::Large)
                         ->modalDescription('Replicating transactions will also replicate their journal entries. Are you sure you want to proceed?')
                         ->successNotificationTitle('Transactions replicated successfully')
                         ->failureNotificationTitle('Failed to replicate transactions')
@@ -318,7 +318,7 @@ class TransactionResource extends Resource
         }
     }
 
-    protected static function determineTransactionState(Transaction $transaction, Tables\Actions\Action $action): string
+    protected static function determineTransactionState(Transaction $transaction, \Filament\Actions\Action $action): string
     {
         if ($transaction->reviewed) {
             return 'reviewed';

@@ -37,7 +37,7 @@ class ListCompanyCurrencies extends Component implements HasForms, HasTable
                 Tables\Columns\TextColumn::make('code')
                     ->localizeLabel()
                     ->weight(FontWeight::Medium)
-                    ->icon(static fn (Currency $record) => $record->isEnabled() ? 'heroicon-o-lock-closed' : null)
+                    ->icon(static fn(Currency $record) => $record->isEnabled() ? 'heroicon-o-lock-closed' : null)
                     ->tooltip(function (Currency $record) {
                         $tooltipMessage = translate('Default :record', [
                             'record' => $this->getTableModelLabel(),
@@ -69,10 +69,10 @@ class ListCompanyCurrencies extends Component implements HasForms, HasTable
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('update_rate')
+                \Filament\Actions\Action::make('update_rate')
                     ->label('Update rate')
                     ->icon('heroicon-o-arrow-path')
-                    ->hidden(static fn (Currency $record): bool => $record->isEnabled() || ($record->rate === $record->live_rate))
+                    ->hidden(static fn(Currency $record): bool => $record->isEnabled() || ($record->rate === $record->live_rate))
                     ->requiresConfirmation()
                     ->action(static function (Currency $record): void {
                         if (($record->rate !== $record->live_rate) && $record->isDisabled()) {
@@ -91,7 +91,7 @@ class ListCompanyCurrencies extends Component implements HasForms, HasTable
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('update_rate')
+                \Filament\Actions\BulkAction::make('update_rate')
                     ->label('Update rate')
                     ->icon('heroicon-o-arrow-path')
                     ->requiresConfirmation()

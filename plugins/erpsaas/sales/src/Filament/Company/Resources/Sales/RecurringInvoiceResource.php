@@ -32,7 +32,7 @@ use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Erpsaas\Core\Utilities\RateCalculator;
 use Awcodes\TableRepeater\Header;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -44,7 +44,7 @@ class RecurringInvoiceResource extends Resource
 
     protected static ?string $cluster = Sales::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $company = Auth::user()->currentCompany;
 
@@ -55,15 +55,15 @@ class RecurringInvoiceResource extends Resource
                 DocumentHeaderSection::make('Invoice Header')
                     ->defaultHeader($settings->header)
                     ->defaultSubheader($settings->subheader),
-                Forms\Components\Section::make('Invoice Details')
+                \Filament\Schemas\Components\Section::make('Invoice Details')
                     ->schema([
-                        Forms\Components\Split::make([
-                            Forms\Components\Group::make([
+                        \Filament\Schemas\Components\Grid::make(['md' => 2])->schema([
+                            \Filament\Schemas\Components\Group::make([
                                 CreateClientSelect::make('client_id')
                                     ->label('Client')
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                    ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                         if (! $state) {
                                             return;
                                         }
@@ -76,7 +76,7 @@ class RecurringInvoiceResource extends Resource
                                     }),
                                 CreateCurrencySelect::make('currency_code'),
                             ]),
-                            Forms\Components\Group::make([
+                            \Filament\Schemas\Components\Group::make([
                                 Forms\Components\Placeholder::make('invoice_number')
                                     ->label('Invoice number')
                                     ->content('Auto-generated'),
@@ -96,7 +96,7 @@ class RecurringInvoiceResource extends Resource
                                     ->options(DocumentDiscountMethod::class)
                                     ->softRequired()
                                     ->default($settings->discount_method)
-                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set) {
                                         $discountMethod = DocumentDiscountMethod::parse($state);
 
                                         if ($discountMethod->isPerDocument()) {
@@ -105,7 +105,7 @@ class RecurringInvoiceResource extends Resource
                                     })
                                     ->live(),
                             ])->grow(true),
-                        ])->from('md'),
+                        ]),
                         CustomTableRepeater::make('lineItems')
                             ->hiddenLabel()
                             ->relationship()
@@ -116,7 +116,7 @@ class RecurringInvoiceResource extends Resource
                             ->reorderAtStart()
                             ->cloneable()
                             ->addActionLabel('Add an item')
-                            ->headers(function (Forms\Get $get) use ($settings) {
+                            ->headers(function (\Filament\Schemas\Components\Utilities\Get $get) use ($settings) {
                                 $hasDiscounts = DocumentDiscountMethod::parse($get('discount_method'))->isPerLineItem();
 
                                 $headers = [
@@ -136,12 +136,12 @@ class RecurringInvoiceResource extends Resource
 
                                 $headers[] = Header::make($settings->resolveColumnLabel('amount_name', 'Amount'))
                                     ->width('10%')
-                                    ->align('right');
+                                    ->alignment('right');
 
                                 return $headers;
                             })
                             ->schema([
-                                Forms\Components\Group::make([
+                                \Filament\Schemas\Components\Group::make([
                                     CreateOfferingSelect::make('offering_id')
                                         ->label('Item')
                                         ->hiddenLabel()
@@ -150,7 +150,7 @@ class RecurringInvoiceResource extends Resource
                                         ->live()
                                         ->inlineSuffix()
                                         ->sellable()
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state, ?DocumentLineItem $record) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state, ?DocumentLineItem $record) {
                                             $offeringId = $state;
                                             $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
                                             $isPerLineItem = $discountMethod->isPerLineItem();
@@ -214,7 +214,7 @@ class RecurringInvoiceResource extends Resource
                                     ->money(useAffix: false)
                                     ->live()
                                     ->default(0),
-                                Forms\Components\Group::make([
+                                \Filament\Schemas\Components\Group::make([
                                     CreateAdjustmentSelect::make('salesTaxes')
                                         ->label('Taxes')
                                         ->hiddenLabel()
@@ -241,7 +241,7 @@ class RecurringInvoiceResource extends Resource
                                         ->inlineSuffix()
                                         ->multiple()
                                         ->live()
-                                        ->hidden(function (Forms\Get $get) {
+                                        ->hidden(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                             $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
 
                                             return $discountMethod->isPerDocument();
@@ -251,7 +251,7 @@ class RecurringInvoiceResource extends Resource
                                 Forms\Components\Placeholder::make('total')
                                     ->hiddenLabel()
                                     ->extraAttributes(['class' => 'text-left sm:text-right'])
-                                    ->content(function (Forms\Get $get) {
+                                    ->content(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                         $quantity = max((float) ($get('quantity') ?? 0), 0);
                                         $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), 'USD')
                                             ? CurrencyConverter::convertToFloat($get('unit_price'), 'USD')
@@ -359,24 +359,24 @@ class RecurringInvoiceResource extends Resource
                     ->native(false),
             ])
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                \Filament\Actions\ExportAction::make()
                     ->exporter(RecurringInvoiceExporter::class),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ActionGroup::make([
-                        Tables\Actions\EditAction::make()
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ActionGroup::make([
+                        \Filament\Actions\EditAction::make()
                             ->url(static fn(RecurringInvoice $record): string => Pages\EditRecurringInvoice::getUrl(['record' => $record])),
-                        Tables\Actions\ViewAction::make()
+                        \Filament\Actions\ViewAction::make()
                             ->url(static fn(RecurringInvoice $record): string => Pages\ViewRecurringInvoice::getUrl(['record' => $record])),
-                        RecurringInvoice::getManageScheduleAction(Tables\Actions\Action::class),
+                        RecurringInvoice::getManageScheduleAction(\Filament\Actions\Action::class),
                     ])->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

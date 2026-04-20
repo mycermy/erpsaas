@@ -6,9 +6,9 @@ use Erpsaas\Core\Concerns\HasTabSpecificColumnToggles;
 use Erpsaas\Core\Enums\Accounting\RecurringInvoiceStatus;
 use Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource;
 use Filament\Actions;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListRecurringInvoices extends ListRecords
@@ -24,7 +24,7 @@ class ListRecurringInvoices extends ListRecords
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

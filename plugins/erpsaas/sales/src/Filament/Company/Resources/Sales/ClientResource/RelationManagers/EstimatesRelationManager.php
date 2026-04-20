@@ -22,7 +22,7 @@ class EstimatesRelationManager extends RelationManager
     {
         return EstimateResource::table($table)
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                \Filament\Actions\CreateAction::make()
                     ->url(EstimateResource\Pages\CreateEstimate::getUrl(['client' => $this->getOwnerRecord()->getKey()])),
             ]);
     }

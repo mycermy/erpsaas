@@ -8,7 +8,7 @@ use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 
 class EditBill extends EditRecord
@@ -25,9 +25,9 @@ class EditBill extends EditRecord
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
-        return MaxWidth::Full;
+        return Width::Full;
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model

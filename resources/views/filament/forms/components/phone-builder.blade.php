@@ -1,20 +1,16 @@
 @php
-    use Filament\Forms\Components\Actions\Action;
+    use Filament\Actions\Action;
     use Filament\Support\Enums\Alignment;
 
-    $containers = $getChildComponentContainers();
+    $fieldWrapperView = $getFieldWrapperView();
+    $items = $getItems();
     $blockPickerBlocks = $getBlockPickerBlocks();
     $blockPickerColumns = $getBlockPickerColumns();
     $blockPickerWidth = $getBlockPickerWidth();
-    $hasBlockPreviews = $hasBlockPreviews();
-    $hasInteractiveBlockPreviews = $hasInteractiveBlockPreviews();
 
     $addAction = $getAction($getAddActionName());
+    $addActionAlignment = $getAddActionAlignment();
     $addBetweenAction = $getAction($getAddBetweenActionName());
-    $cloneAction = $getAction($getCloneActionName());
-    $collapseAllAction = $getAction($getCollapseAllActionName());
-    $editAction = $getAction($getEditActionName());
-    $expandAllAction = $getAction($getExpandAllActionName());
     $deleteAction = $getAction($getDeleteActionName());
     $moveDownAction = $getAction($getMoveDownActionName());
     $moveUpAction = $getAction($getMoveUpActionName());
@@ -22,88 +18,53 @@
     $extraItemActions = $getExtraItemActions();
 
     $isAddable = $isAddable();
-    $isCloneable = $isCloneable();
-    $isCollapsible = $isCollapsible();
     $isDeletable = $isDeletable();
     $isReorderableWithButtons = $isReorderableWithButtons();
     $isReorderableWithDragAndDrop = $isReorderableWithDragAndDrop();
 
-    $collapseAllActionIsVisible = $isCollapsible && $collapseAllAction->isVisible();
-    $expandAllActionIsVisible = $isCollapsible && $expandAllAction->isVisible();
-
+    $persistCollapsed = $shouldPersistCollapsed();
+    $key = $getKey();
     $statePath = $getStatePath();
 @endphp
 
-<x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
+<x-dynamic-component :component="$fieldWrapperView" :field="$field">
     <div
-        x-data="{}"
         {{
             $attributes
                 ->merge($getExtraAttributes(), escape: false)
                 ->class(['fi-fo-builder grid gap-y-4'])
         }}
     >
-        @if ($collapseAllActionIsVisible || $expandAllActionIsVisible)
-            <div
-                @class([
-                    'flex gap-x-3',
-                    'hidden' => count($containers) < 2,
-                ])
-            >
-                @if ($collapseAllActionIsVisible)
-                    <span
-                        x-on:click="$dispatch('builder-collapse', '{{ $statePath }}')"
-                    >
-                        {{ $collapseAllAction }}
-                    </span>
-                @endif
-
-                @if ($expandAllActionIsVisible)
-                    <span
-                        x-on:click="$dispatch('builder-expand', '{{ $statePath }}')"
-                    >
-                        {{ $expandAllAction }}
-                    </span>
-                @endif
-            </div>
-        @endif
-
-        @if (count($containers))
+        @if (count($items))
             <ul
                 x-sortable
                 data-sortable-animation-duration="{{ $getReorderAnimationDuration() }}"
-                wire:end.stop="{{ 'mountFormComponentAction(\'' . $statePath . '\', \'reorder\', { items: $event.target.sortable.toArray() })' }}"
-                class="space-y-6"
+                x-on:end.stop="
+                    $wire.mountAction(
+                        'reorder',
+                        { items: $event.target.sortable.toArray() },
+                        { schemaComponent: '{{ $key }}' },
+                    )
+                "
+                class="grid grid-cols-1 gap-4 sm:grid-cols-2"
             >
-                @php
-                    $hasBlockLabels = $hasBlockLabels();
-                    $hasBlockIcons = $hasBlockIcons();
-                    $hasBlockNumbers = $hasBlockNumbers();
-                @endphp
-
-                @foreach ($containers as $uuid => $item)
+                @foreach ($items as $itemKey => $item)
                     @php
-                        $visibleExtraItemActions = array_filter(
-                            $extraItemActions,
-                            fn (Action $action): bool => $action(['item' => $uuid])->isVisible(),
-                        );
-                        $cloneAction = $cloneAction(['item' => $uuid]);
-                        $cloneActionIsVisible = $isCloneable && $cloneAction->isVisible();
-                        $deleteAction = $deleteAction(['item' => $uuid]);
+                        $deleteAction = $deleteAction(['item' => $itemKey]);
                         $deleteActionIsVisible = $isDeletable && $deleteAction->isVisible();
-                        $editAction = $editAction(['item' => $uuid]);
-                        $editActionIsVisible = $hasBlockPreviews && $editAction->isVisible();
-                        $moveDownAction = $moveDownAction(['item' => $uuid])->disabled($loop->last);
+                        $moveDownAction = $moveDownAction(['item' => $itemKey])->disabled($loop->last);
                         $moveDownActionIsVisible = $isReorderableWithButtons && $moveDownAction->isVisible();
-                        $moveUpAction = $moveUpAction(['item' => $uuid])->disabled($loop->first);
+                        $moveUpAction = $moveUpAction(['item' => $itemKey])->disabled($loop->first);
                         $moveUpActionIsVisible = $isReorderableWithButtons && $moveUpAction->isVisible();
                         $reorderActionIsVisible = $isReorderableWithDragAndDrop && $reorderAction->isVisible();
                     @endphp
 
                     <li
-                        wire:key="{{ $this->getId() }}.{{ $item->getStatePath() }}.{{ $field::class }}.item"
-                        x-sortable-item="{{ $uuid }}"
-                        class="flex items-center gap-x-4"
+                        wire:ignore.self
+                        wire:key="{{ $item->getLivewireKey() }}.item"
+                        x-data="{ isCollapsed: false }"
+                        x-sortable-item="{{ $itemKey }}"
+                        class="flex items-end gap-x-3"
                     >
                         <!-- Input Field -->
                         <div class="w-full">
@@ -112,16 +73,15 @@
 
                         <!-- Delete Action -->
                         @if ($deleteActionIsVisible)
-                            <div class="mt-6">
+                            <div class="mb-1 shrink-0">
                                 {{ $deleteAction }}
                             </div>
                         @endif
                     </li>
 
-
                     @if (! $loop->last)
-                        @if ($isAddable && $addBetweenAction(['afterItem' => $uuid])->isVisible())
-                            <li class="relative -top-2 !mt-0 h-0">
+                        @if ($isAddable && $addBetweenAction(['afterItem' => $itemKey])->isVisible())
+                            <li class="relative -top-2 mt-0! h-0">
                                 <div
                                     class="flex w-full justify-center opacity-0 transition duration-75 hover:opacity-100"
                                 >
@@ -130,28 +90,18 @@
                                     >
                                         <x-filament-forms::builder.block-picker
                                             :action="$addBetweenAction"
-                                            :after-item="$uuid"
+                                            :after-item="$itemKey"
                                             :columns="$blockPickerColumns"
                                             :blocks="$blockPickerBlocks"
-                                            :state-path="$statePath"
+                                            :key="$key"
                                             :width="$blockPickerWidth"
                                         >
                                             <x-slot name="trigger">
-                                                {{ $addBetweenAction(['afterItem' => $uuid]) }}
+                                                {{ $addBetweenAction(['afterItem' => $itemKey]) }}
                                             </x-slot>
                                         </x-filament-forms::builder.block-picker>
                                     </div>
                                 </div>
-                            </li>
-                        @elseif (filled($labelBetweenItems = $getLabelBetweenItems()))
-                            <li
-                                class="relative border-t border-gray-200 dark:border-white/10"
-                            >
-                                <span
-                                    class="absolute -top-3 left-3 px-1 text-sm font-medium"
-                                >
-                                    {{ $labelBetweenItems }}
-                                </span>
                             </li>
                         @endif
                     @endif
@@ -162,19 +112,11 @@
         @if ($isAddable && $addAction->isVisible())
             <x-filament-forms::builder.block-picker
                 :action="$addAction"
+                :action-alignment="$addActionAlignment"
                 :blocks="$blockPickerBlocks"
                 :columns="$blockPickerColumns"
-                :state-path="$statePath"
+                :key="$key"
                 :width="$blockPickerWidth"
-                @class([
-                    'flex',
-                    match ($getAddActionAlignment()) {
-                        Alignment::Start, Alignment::Left => 'justify-start',
-                        Alignment::Center, null => 'justify-center',
-                        Alignment::End, Alignment::Right => 'justify-end',
-                        default => $alignment,
-                    },
-                ])
             >
                 <x-slot name="trigger">
                     {{ $addAction }}

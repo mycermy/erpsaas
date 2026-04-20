@@ -8,7 +8,7 @@ use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource;
 use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Models\Common\Client;
 use Filament\Resources\Pages\CreateRecord;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Url;
 
@@ -35,9 +35,9 @@ class CreateInvoice extends CreateRecord
         }
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
-        return MaxWidth::Full;
+        return Width::Full;
     }
 
     protected function handleRecordCreation(array $data): Model

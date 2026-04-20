@@ -2,7 +2,7 @@
 
 namespace Erpsaas\Core\Filament\Forms\Components;
 
-use CodeWithDennis\SimpleAlert\Components\Forms\SimpleAlert;
+use CodeWithDennis\SimpleAlert\Components\SimpleAlert;
 
 class Banner extends SimpleAlert
 {

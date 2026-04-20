@@ -22,7 +22,7 @@ class InvoicesRelationManager extends RelationManager
     {
         return InvoiceResource::table($table)
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                \Filament\Actions\CreateAction::make()
                     ->url(InvoiceResource\Pages\CreateInvoice::getUrl(['client' => $this->getOwnerRecord()->getKey()])),
             ]);
     }

@@ -22,7 +22,7 @@ class RecurringInvoicesRelationManager extends RelationManager
     {
         return RecurringInvoiceResource::table($table)
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                \Filament\Actions\CreateAction::make()
                     ->url(RecurringInvoiceResource\Pages\CreateRecurringInvoice::getUrl(['client' => $this->getOwnerRecord()->getKey()])),
             ]);
     }

@@ -4,7 +4,7 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Core\Models\Locale\State;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Utilities\Get;
 
 class StateSelect extends Select
 {

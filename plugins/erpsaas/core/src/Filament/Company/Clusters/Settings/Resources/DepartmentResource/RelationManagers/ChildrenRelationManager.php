@@ -3,11 +3,12 @@
 namespace Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\DepartmentResource\RelationManagers;
 
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ChildrenRelationManager extends RelationManager
 {
@@ -15,7 +16,7 @@ class ChildrenRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->columns(1)
@@ -30,7 +31,12 @@ class ChildrenRelationManager extends RelationManager
                         name: 'manager',
                         titleAttribute: 'name',
                         modifyQueryUsing: static function (Builder $query) {
-                            $company = auth()->user()->currentCompany;
+                            $company = Auth::user()?->currentCompany;
+
+                            if (! $company) {
+                                return $query->whereRaw('1 = 0');
+                            }
+
                             $companyUsers = $company->allUsers()->pluck('id')->toArray();
 
                             return $query->whereIn('id', $companyUsers);
@@ -63,8 +69,8 @@ class ChildrenRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
-                Tables\Actions\AssociateAction::make()
+                \Filament\Actions\CreateAction::make(),
+                \Filament\Actions\AssociateAction::make()
                     ->preloadRecordSelect()
                     ->recordSelectOptionsQuery(function (Builder $query) {
                         $existingChildren = $this->getRelationship()->pluck('id')->toArray();
@@ -74,12 +80,12 @@ class ChildrenRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

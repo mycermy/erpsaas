@@ -48,7 +48,7 @@ class ListCurrencies extends Component implements HasForms, HasTable
                 //
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+                \Filament\Actions\BulkActionGroup::make([
                     //
                 ]),
             ]);

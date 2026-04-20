@@ -14,9 +14,9 @@ use Erpsaas\Core\Models\Common\Address;
 use Erpsaas\Core\Models\Common\Client;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,13 +28,13 @@ class ClientResource extends Resource
 
     protected static ?string $cluster = Sales::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('General Information')
+                \Filament\Schemas\Components\Section::make('General Information')
                     ->schema([
-                        Forms\Components\Group::make()
+                        \Filament\Schemas\Components\Group::make()
                             ->columns()
                             ->schema([
                                 Forms\Components\TextInput::make('name')
@@ -172,7 +172,7 @@ class ClientResource extends Resource
                                     ->blockNumbers(false),
                             ]),
                     ])->columns(1),
-                Forms\Components\Section::make('Billing')
+                \Filament\Schemas\Components\Section::make('Billing')
                     ->schema([
                         CreateCurrencySelect::make('currency_code')
                             ->softRequired(),
@@ -189,7 +189,7 @@ class ClientResource extends Resource
                             ])->columns(),
                     ])
                     ->columns(1),
-                Forms\Components\Section::make('Shipping')
+                \Filament\Schemas\Components\Section::make('Shipping')
                     ->relationship('shippingAddress')
                     ->saveRelationshipsUsing(null)
                     ->saveRelationshipsBeforeChildrenUsing(null)
@@ -304,16 +304,16 @@ class ClientResource extends Resource
                 //
             ])
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                \Filament\Actions\ExportAction::make()
                     ->exporter(ClientExporter::class),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ActionGroup::make([
-                        Tables\Actions\EditAction::make(),
-                        Tables\Actions\ViewAction::make(),
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ActionGroup::make([
+                        \Filament\Actions\EditAction::make(),
+                        \Filament\Actions\ViewAction::make(),
                     ])->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([

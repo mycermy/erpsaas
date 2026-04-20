@@ -3,7 +3,7 @@
 namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Closure;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Textarea;
 
 class DocumentFooterSection extends Section

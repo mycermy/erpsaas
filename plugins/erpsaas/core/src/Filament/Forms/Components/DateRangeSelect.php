@@ -4,7 +4,7 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Core\Services\DateRangeService;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Carbon;
 
 class DateRangeSelect extends Select

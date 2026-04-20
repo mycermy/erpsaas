@@ -8,20 +8,21 @@ use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Erpsaas\Core\Models\Setting\CompanyDefault as CompanyDefaultModel;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 
 use function Filament\authorize;
@@ -35,7 +36,7 @@ class CompanyDefault extends Page
 
     protected static ?string $title = 'Default';
 
-    protected static string $view = 'filament.company.pages.setting.company-default';
+    protected string $view = 'filament.company.pages.setting.company-default';
 
     protected static ?string $cluster = Settings::class;
 
@@ -57,15 +58,17 @@ class CompanyDefault extends Page
         return translate(static::$title);
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
-        return MaxWidth::ScreenTwoExtraLarge;
+        return Width::ScreenTwoExtraLarge;
     }
 
     public function mount(): void
     {
+        $user = Auth::user();
+
         $this->record = CompanyDefaultModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
+            'company_id' => $user?->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -86,7 +89,6 @@ class CompanyDefault extends Page
             $data = $this->form->getState();
 
             $this->handleRecordUpdate($this->record, $data);
-
         } catch (Halt $exception) {
             return;
         }
@@ -101,7 +103,7 @@ class CompanyDefault extends Page
             ->title(__('filament-panels::resources/pages/edit-record.notifications.saved.title'));
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -117,8 +119,8 @@ class CompanyDefault extends Page
         return Section::make('General')
             ->schema([
                 Select::make('bank_account_id')
-                    ->localizeLabel()
-                    ->options(fn () => BankAccount::with('account')
+                    ->label(translate('Bank account'))
+                    ->options(fn() => BankAccount::with('account')
                         ->get()
                         ->mapWithKeys(function (BankAccount $record) {
                             $name = $record->account->name;
@@ -130,10 +132,9 @@ class CompanyDefault extends Page
                     ->selectablePlaceholder(false)
                     ->searchable()
                     ->preload(),
-                Placeholder::make('currency_code')
-                    ->label(translate('Currency'))
+                Placeholder::make('currency')
                     ->hintIcon('heroicon-o-question-mark-circle', 'You cannot change this after your company has been created. You can still use other currencies for transactions.')
-                    ->content(static fn (CompanyDefaultModel $record) => "{$record->currency->code} {$record->currency->symbol} - {$record->currency->name}"),
+                    ->content(static fn(CompanyDefaultModel $record) => "{$record->currency->code} {$record->currency->symbol} - {$record->currency->name}"),
             ])->columns();
     }
 

@@ -15,10 +15,10 @@ use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Actions;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Summarizer;
@@ -39,7 +39,7 @@ class RecordPayments extends ListRecords
 {
     protected static string $resource = InvoiceResource::class;
 
-    protected static string $view = 'filament.company.resources.sales.invoice-resource.pages.record-payments';
+    protected string $view = 'filament.company.resources.sales.invoice-resource.pages.record-payments';
 
     public array $paymentAmounts = [];
 
@@ -60,7 +60,7 @@ class RecordPayments extends ListRecords
         return 'Record Payments';
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }
@@ -183,12 +183,12 @@ class RecordPayments extends ListRecords
         ];
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->live()
             ->schema([
-                Forms\Components\Grid::make(2) // Changed from 3 to 4
+                \Filament\Schemas\Components\Grid::make(2) // Changed from 3 to 4
                     ->schema([
                         Forms\Components\Select::make('bank_account_id')
                             ->label('Account')
@@ -217,7 +217,7 @@ class RecordPayments extends ListRecords
                                 'x-on:keydown.enter.prevent' => '$refs.allocate.click()',
                             ])
                             ->suffixAction(
-                                Forms\Components\Actions\Action::make('allocate')
+                                \Filament\Actions\Action::make('allocate')
                                     ->icon('heroicon-m-calculator')
                                     ->extraAttributes([
                                         'x-ref' => 'allocate',
@@ -301,7 +301,7 @@ class RecordPayments extends ListRecords
                     ->width('3rem')
                     ->tooltip('Apply full amount')
                     ->action(
-                        Tables\Actions\Action::make('applyFullPayment')
+                        \Filament\Actions\Action::make('applyFullPayment')
                             ->action(function (Invoice $record) {
                                 $this->paymentAmounts[$record->id] = $record->amount_due;
                             }),
@@ -357,7 +357,7 @@ class RecordPayments extends ListRecords
                     ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('applyFullAmounts')
+                \Filament\Actions\BulkAction::make('applyFullAmounts')
                     ->label('Apply full amounts')
                     ->icon('heroicon-o-banknotes')
                     ->color('primary')
@@ -367,7 +367,7 @@ class RecordPayments extends ListRecords
                             $this->paymentAmounts[$invoice->id] = $invoice->amount_due;
                         });
                     }),
-                Tables\Actions\BulkAction::make('clearAmounts')
+                \Filament\Actions\BulkAction::make('clearAmounts')
                     ->label('Clear amounts')
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
@@ -424,10 +424,10 @@ class RecordPayments extends ListRecords
                             ->label('Invoice Number')
                             ->placeholder('Enter invoice number')
                             ->suffixAction(
-                                Forms\Components\Actions\Action::make('findInvoice')
+                                \Filament\Actions\Action::make('findInvoice')
                                     ->icon('heroicon-m-magnifying-glass')
                                     ->keyBindings(['enter'])
-                                    ->action(function ($state, Forms\Set $set) {
+                                    ->action(function ($state, \Filament\Schemas\Components\Utilities\Set $set) {
                                         if (blank($state)) {
                                             return;
                                         }

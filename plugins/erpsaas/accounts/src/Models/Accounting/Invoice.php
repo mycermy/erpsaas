@@ -19,14 +19,11 @@ use Erpsaas\Core\Observers\InvoiceObserver;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Actions\Action;
-use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
-use Filament\Actions\StaticAction;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\Alignment;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -182,15 +179,13 @@ class Invoice extends Document
         return $this->amount_due;
     }
 
-    #[Scope]
-    protected function unpaid(Builder $query): Builder
+    public function scopeUnpaid(Builder $query): Builder
     {
         return $query->whereIn('status', InvoiceStatus::unpaidStatuses());
     }
 
     // TODO: Consider storing the numeric part of the invoice number separately
-    #[Scope]
-    protected function byNumber(Builder $query, string $number): Builder
+    public function scopeByNumber(Builder $query, string $number): Builder
     {
         $invoicePrefix = DocumentDefault::invoice()->first()->number_prefix ?? '';
 
@@ -200,8 +195,7 @@ class Invoice extends Document
         });
     }
 
-    #[Scope]
-    protected function overdue(Builder $query): Builder
+    public function scopeOverdue(Builder $query): Builder
     {
         return $query
             ->unpaid()
@@ -468,7 +462,7 @@ class Invoice extends Document
             $adjustmentAmount = abs($imbalance);
 
             // Find last entry of target type and adjust it
-            $lastKey = array_key_last(array_filter($journalEntryData, fn ($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
+            $lastKey = array_key_last(array_filter($journalEntryData, fn($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
             $journalEntryData[$lastKey]['amount_in_default_currency'] += $adjustmentAmount;
 
             if ($targetType === JournalEntryType::Debit) {
@@ -528,12 +522,12 @@ class Invoice extends Document
     }
 
     // TODO: Potentially handle this another way
-    public static function getBlockedApproveAction(string $action = Action::class): MountableAction
+    public static function getBlockedApproveAction(string $action = Action::class): Action
     {
         return $action::make('blockedApprove')
             ->label('Approve')
             ->icon('heroicon-m-check-circle')
-            ->visible(fn (self $record) => $record->canBeApproved() && $record->hasInactiveAdjustments())
+            ->visible(fn(self $record) => $record->canBeApproved() && $record->hasInactiveAdjustments())
             ->requiresConfirmation()
             ->modalAlignment(Alignment::Start)
             ->modalIconColor('danger')
@@ -548,25 +542,25 @@ class Invoice extends Document
                     }
                 }
 
-                $output = "<p class='text-sm mb-4'>This invoice contains inactive adjustments that need to be addressed before approval:</p>";
-                $output .= "<ul role='list' class='list-disc list-inside space-y-1 text-sm'>";
+                $output = "<p class='mb-4 text-sm'>This invoice contains inactive adjustments that need to be addressed before approval:</p>";
+                $output .= "<ul role='list' class='space-y-1 text-sm list-disc list-inside'>";
 
                 foreach ($inactiveAdjustments as $name) {
                     $output .= "<li class='py-1'><span class='font-medium'>{$name}</span></li>";
                 }
 
                 $output .= '</ul>';
-                $output .= "<p class='text-sm mt-4'>Please update these adjustments before approving the invoice.</p>";
+                $output .= "<p class='mt-4 text-sm'>Please update these adjustments before approving the invoice.</p>";
 
                 return new HtmlString($output);
             })
-            ->modalSubmitAction(function (StaticAction $action, self $record) {
+            ->modalSubmitAction(function (Action $action, self $record) {
                 $action->label('Edit Invoice')
                     ->url(InvoiceResource\Pages\EditInvoice::getUrl(['record' => $record->id]));
             });
     }
 
-    public static function getApproveDraftAction(string $action = Action::class): MountableAction
+    public static function getApproveDraftAction(string $action = Action::class): Action
     {
         return $action::make('approveDraft')
             ->label('Approve')
@@ -577,7 +571,7 @@ class Invoice extends Document
             ->requiresConfirmation()
             ->databaseTransaction()
             ->successNotificationTitle('Invoice approved')
-            ->action(function (self $record, MountableAction $action, Component $livewire) {
+            ->action(function (self $record, Action $action, Component $livewire) {
                 if ($record->hasInactiveAdjustments()) {
                     $isViewPage = $livewire instanceof InvoiceResource\Pages\ViewInvoice;
 
@@ -599,7 +593,7 @@ class Invoice extends Document
             });
     }
 
-    public static function getMarkAsSentAction(string $action = Action::class): MountableAction
+    public static function getMarkAsSentAction(string $action = Action::class): Action
     {
         return $action::make('markAsSent')
             ->label('Mark as sent')
@@ -608,7 +602,7 @@ class Invoice extends Document
                 return $record->canBeMarkedAsSent();
             })
             ->successNotificationTitle('Invoice sent')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->markAsSent();
 
                 $action->success();
@@ -635,7 +629,7 @@ class Invoice extends Document
         ]);
     }
 
-    public static function getReplicateAction(string $action = ReplicateAction::class): MountableAction
+    public static function getReplicateAction(string $action = ReplicateAction::class): Action
     {
         return $action::make()
             ->excludeAttributes([

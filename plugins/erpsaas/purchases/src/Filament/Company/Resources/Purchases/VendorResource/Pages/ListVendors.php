@@ -5,7 +5,7 @@ namespace Erpsaas\Purchases\Filament\Company\Resources\Purchases\VendorResource\
 use Erpsaas\Purchases\Filament\Company\Resources\Purchases\VendorResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 
 class ListVendors extends ListRecords
 {
@@ -18,7 +18,7 @@ class ListVendors extends ListRecords
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

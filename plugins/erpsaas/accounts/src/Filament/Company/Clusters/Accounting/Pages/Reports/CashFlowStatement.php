@@ -9,16 +9,16 @@ use Erpsaas\Core\Services\ExportService;
 use Erpsaas\Core\Services\ReportService;
 use Erpsaas\Core\Support\Column;
 use Erpsaas\Core\Transformers\CashFlowStatementReportTransformer;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
-use Guava\FilamentClusters\Forms\Cluster;
+use Filament\Schemas\Components\FusedGroup;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashFlowStatement extends BaseReportPage
 {
     use HasReportTabs;
 
-    protected static string $view = 'filament.company.pages.reports.cash-flow-statement';
+    protected string $view = 'filament.company.pages.reports.cash-flow-statement';
 
     protected ReportService $reportService;
 
@@ -46,14 +46,14 @@ class CashFlowStatement extends BaseReportPage
         ];
     }
 
-    public function filtersForm(Form $form): Form
+    public function filtersForm(Schema $form): Schema
     {
         return $form
             ->inlineLabel()
             ->columns()
             ->schema([
                 $this->getDateRangeFormComponent(),
-                Cluster::make([
+                FusedGroup::make([
                     $this->getStartDateFormComponent(),
                     $this->getEndDateFormComponent(),
                 ])->hiddenLabel(),

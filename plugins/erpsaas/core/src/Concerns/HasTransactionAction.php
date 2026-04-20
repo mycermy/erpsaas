@@ -13,8 +13,8 @@ use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Header;
 use Closure;
 use Filament\Forms;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Form;
+use Filament\Actions\Action as FormAction;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 
@@ -77,7 +77,7 @@ trait HasTransactionAction
         ];
     }
 
-    public function transactionForm(Form $form): Form
+    public function transactionForm(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -88,7 +88,7 @@ trait HasTransactionAction
                     ->label('Description'),
                 Forms\Components\Select::make('bank_account_id')
                     ->label('Account')
-                    ->options(fn (?Transaction $transaction) => Transaction::getBankAccountOptions(currentBankAccountId: $transaction?->bank_account_id))
+                    ->options(fn(?Transaction $transaction) => Transaction::getBankAccountOptions(currentBankAccountId: $transaction?->bank_account_id))
                     ->live()
                     ->searchable()
                     ->required(),
@@ -100,14 +100,14 @@ trait HasTransactionAction
                         TransactionType::Withdrawal->value => TransactionType::Withdrawal->getLabel(),
                     ])
                     ->required()
-                    ->afterStateUpdated(static fn (Forms\Set $set, $state) => $set('account_id', Transaction::getUncategorizedAccountByType(TransactionType::parse($state))?->id)),
+                    ->afterStateUpdated(static fn(\Filament\Schemas\Components\Utilities\Set $set, $state) => $set('account_id', Transaction::getUncategorizedAccountByType(TransactionType::parse($state))?->id)),
                 Forms\Components\TextInput::make('amount')
                     ->label('Amount')
-                    ->money(static fn (Forms\Get $get) => BankAccount::find($get('bank_account_id'))?->account?->currency_code ?? CurrencyAccessor::getDefaultCurrency())
+                    ->money(static fn(\Filament\Schemas\Components\Utilities\Get $get) => BankAccount::find($get('bank_account_id'))?->account?->currency_code ?? CurrencyAccessor::getDefaultCurrency())
                     ->required(),
                 Forms\Components\Select::make('account_id')
                     ->label('Category')
-                    ->options(fn (Forms\Get $get, ?Transaction $transaction) => Transaction::getTransactionAccountOptions(type: TransactionType::parse($get('type')), currentAccountId: $transaction?->account_id))
+                    ->options(fn(\Filament\Schemas\Components\Utilities\Get $get, ?Transaction $transaction) => Transaction::getTransactionAccountOptions(type: TransactionType::parse($get('type')), currentAccountId: $transaction?->account_id))
                     ->searchable()
                     ->required(),
                 Forms\Components\Textarea::make('notes')
@@ -119,7 +119,7 @@ trait HasTransactionAction
             ->columns();
     }
 
-    public function transferForm(Form $form): Form
+    public function transferForm(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -130,7 +130,7 @@ trait HasTransactionAction
                     ->label('Description'),
                 Forms\Components\Select::make('bank_account_id')
                     ->label('From account')
-                    ->options(fn (Forms\Get $get, ?Transaction $transaction) => Transaction::getBankAccountOptions(excludedAccountId: $get('account_id'), currentBankAccountId: $transaction?->bank_account_id))
+                    ->options(fn(\Filament\Schemas\Components\Utilities\Get $get, ?Transaction $transaction) => Transaction::getBankAccountOptions(excludedAccountId: $get('account_id'), currentBankAccountId: $transaction?->bank_account_id))
                     ->live()
                     ->searchable()
                     ->required(),
@@ -144,12 +144,12 @@ trait HasTransactionAction
                     ->required(),
                 Forms\Components\TextInput::make('amount')
                     ->label('Amount')
-                    ->money(static fn (Forms\Get $get) => BankAccount::find($get('bank_account_id'))?->account?->currency_code ?? CurrencyAccessor::getDefaultCurrency())
+                    ->money(static fn(\Filament\Schemas\Components\Utilities\Get $get) => BankAccount::find($get('bank_account_id'))?->account?->currency_code ?? CurrencyAccessor::getDefaultCurrency())
                     ->required(),
                 Forms\Components\Select::make('account_id')
                     ->label('To account')
                     ->live()
-                    ->options(fn (Forms\Get $get, ?Transaction $transaction) => Transaction::getBankAccountAccountOptions(excludedBankAccountId: $get('bank_account_id'), currentAccountId: $transaction?->account_id))
+                    ->options(fn(\Filament\Schemas\Components\Utilities\Get $get, ?Transaction $transaction) => Transaction::getBankAccountAccountOptions(excludedBankAccountId: $get('bank_account_id'), currentAccountId: $transaction?->account_id))
                     ->searchable()
                     ->required(),
                 Forms\Components\Textarea::make('notes')
@@ -161,11 +161,11 @@ trait HasTransactionAction
             ->columns();
     }
 
-    public function journalTransactionForm(Form $form): Form
+    public function journalTransactionForm(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Tabs::make('Tabs')
+                \Filament\Schemas\Components\Tabs::make('Tabs')
                     ->contained(false)
                     ->tabs([
                         $this->getJournalTransactionFormEditTab(),
@@ -175,9 +175,9 @@ trait HasTransactionAction
             ->columns(1);
     }
 
-    protected function getJournalTransactionFormEditTab(): Forms\Components\Tabs\Tab
+    protected function getJournalTransactionFormEditTab(): \Filament\Schemas\Components\Tabs\Tab
     {
-        return Forms\Components\Tabs\Tab::make('Edit')
+        return \Filament\Schemas\Components\Tabs\Tab::make('Edit')
             ->label('Edit')
             ->icon('heroicon-o-pencil-square')
             ->schema([
@@ -186,9 +186,9 @@ trait HasTransactionAction
             ]);
     }
 
-    protected function getJournalTransactionFormNotesTab(): Forms\Components\Tabs\Tab
+    protected function getJournalTransactionFormNotesTab(): \Filament\Schemas\Components\Tabs\Tab
     {
-        return Forms\Components\Tabs\Tab::make('Notes')
+        return \Filament\Schemas\Components\Tabs\Tab::make('Notes')
             ->label('Notes')
             ->icon('heroicon-o-clipboard')
             ->id('notes')
@@ -201,9 +201,9 @@ trait HasTransactionAction
             ]);
     }
 
-    protected function getTransactionDetailsGrid(): Forms\Components\Grid
+    protected function getTransactionDetailsGrid(): \Filament\Schemas\Components\Grid
     {
-        return Forms\Components\Grid::make(6)
+        return \Filament\Schemas\Components\Grid::make(6)
             ->schema([
                 Forms\Components\DatePicker::make('posted_at')
                     ->label('Date')
@@ -222,8 +222,8 @@ trait HasTransactionAction
             ->columns(4)
             ->headers($this->getJournalEntriesTableRepeaterHeaders())
             ->schema($this->getJournalEntriesTableRepeaterSchema())
-            ->deletable(fn (CustomTableRepeater $repeater) => $repeater->getItemsCount() > 2)
-            ->deleteAction(function (Forms\Components\Actions\Action $action) {
+            ->deletable(fn(CustomTableRepeater $repeater) => $repeater->getItemsCount() > 2)
+            ->deleteAction(function (FormAction $action) {
                 return $action
                     ->action(function (array $arguments, CustomTableRepeater $component): void {
                         $items = $component->getState();
@@ -290,7 +290,7 @@ trait HasTransactionAction
             ->minItems(2)
             ->defaultItems(2)
             ->addable(false)
-            ->footerItem(fn (): View => $this->getJournalTransactionModalFooter())
+            ->footerItem(fn(): View => $this->getJournalTransactionModalFooter())
             ->extraActions([
                 $this->buildAddJournalEntryAction(JournalEntryType::Debit),
                 $this->buildAddJournalEntryAction(JournalEntryType::Credit),
@@ -322,7 +322,7 @@ trait HasTransactionAction
                 ->label('Type')
                 ->options(JournalEntryType::class)
                 ->live()
-                ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state, $old) {
+                ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Get $get, \Filament\Schemas\Components\Utilities\Set $set, $state, $old) {
                     $this->adjustJournalEntryAmountsForTypeChange(JournalEntryType::parse($state), JournalEntryType::parse($old), $get('amount'));
                 })
                 ->softRequired(),
@@ -330,14 +330,14 @@ trait HasTransactionAction
                 ->label('Description'),
             Forms\Components\Select::make('account_id')
                 ->label('Account')
-                ->options(fn (?JournalEntry $journalEntry): array => Transaction::getJournalAccountOptions(currentAccountId: $journalEntry?->account_id))
+                ->options(fn(?JournalEntry $journalEntry): array => Transaction::getJournalAccountOptions(currentAccountId: $journalEntry?->account_id))
                 ->softRequired()
                 ->searchable(),
             Forms\Components\TextInput::make('amount')
                 ->label('Amount')
                 ->live(onBlur: true)
                 ->money()
-                ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, ?string $state, ?string $old) {
+                ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Get $get, \Filament\Schemas\Components\Utilities\Set $set, ?string $state, ?string $old) {
                     $this->updateJournalEntryAmount(JournalEntryType::parse($get('type')), $state, $old);
                 })
                 ->softRequired(),

@@ -7,11 +7,12 @@ use Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\DepartmentResource
 use Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\DepartmentResource\RelationManagers\ChildrenRelationManager;
 use Erpsaas\Core\Models\Core\Department;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentResource extends Resource
 {
@@ -30,36 +31,41 @@ class DepartmentResource extends Resource
         return translate($modelLabel);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('General')
+                \Filament\Schemas\Components\Section::make('General')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->autofocus()
                             ->required()
-                            ->localizeLabel()
+                            ->label(translate('Name'))
                             ->maxLength(100),
                         Forms\Components\Select::make('manager_id')
                             ->relationship(
                                 name: 'manager',
                                 titleAttribute: 'name',
                                 modifyQueryUsing: static function (Builder $query) {
-                                    $company = auth()->user()->currentCompany;
+                                    $company = Auth::user()?->currentCompany;
+
+                                    if (! $company) {
+                                        return $query->whereRaw('1 = 0');
+                                    }
+
                                     $companyUsers = $company->allUsers()->pluck('id')->toArray();
 
                                     return $query->whereIn('id', $companyUsers);
                                 }
                             )
-                            ->localizeLabel()
+                            ->label(translate('Manager'))
                             ->searchable()
                             ->preload()
                             ->nullable(),
-                        Forms\Components\Group::make()
+                        \Filament\Schemas\Components\Group::make()
                             ->schema([
                                 Forms\Components\Select::make('parent_id')
-                                    ->localizeLabel('Parent department')
+                                    ->label(translate('Parent department'))
                                     ->relationship('parent', 'name')
                                     ->preload()
                                     ->searchable()
@@ -67,7 +73,7 @@ class DepartmentResource extends Resource
                                 Forms\Components\Textarea::make('description')
                                     ->autosize()
                                     ->nullable()
-                                    ->localizeLabel(),
+                                    ->label(translate('Description')),
                             ])->columns(1),
                     ])->columns(),
             ]);
@@ -97,11 +103,11 @@ class DepartmentResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                \Filament\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

@@ -11,7 +11,7 @@ use Erpsaas\Core\Services\PlaidService;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\IconPosition;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 
 class ListTransactions extends ListRecords
 {
@@ -19,7 +19,7 @@ class ListTransactions extends ListRecords
 
     protected static string $resource = TransactionResource::class;
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

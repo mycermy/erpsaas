@@ -35,12 +35,12 @@ use Erpsaas\Core\Utilities\RateCalculator;
 use Awcodes\TableRepeater\Header;
 use Closure;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Guava\FilamentClusters\Forms\Cluster;
+use Filament\Schemas\Components\FusedGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -51,7 +51,7 @@ class BillResource extends Resource
 
     protected static ?string $cluster = Purchases::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         $company = Auth::user()->currentCompany;
 
@@ -59,15 +59,15 @@ class BillResource extends Resource
 
         return $form
             ->schema([
-                Forms\Components\Section::make('Bill Details')
+                \Filament\Schemas\Components\Section::make('Bill Details')
                     ->schema([
-                        Forms\Components\Split::make([
-                            Forms\Components\Group::make([
+                        \Filament\Schemas\Components\Grid::make(['md' => 2])->schema([
+                            \Filament\Schemas\Components\Group::make([
                                 CreateVendorSelect::make('vendor_id')
                                     ->label('Vendor')
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                    ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                         if (! $state) {
                                             return;
                                         }
@@ -80,14 +80,14 @@ class BillResource extends Resource
                                     }),
                                 CreateCurrencySelect::make('currency_code'),
                             ]),
-                            Forms\Components\Group::make([
+                            \Filament\Schemas\Components\Group::make([
                                 Forms\Components\TextInput::make('bill_number')
                                     ->label('Bill number')
                                     ->default(static fn() => Bill::getNextDocumentNumber())
                                     ->required(),
                                 Forms\Components\TextInput::make('order_number')
                                     ->label('P.O/S.O Number'),
-                                Cluster::make([
+                                FusedGroup::make([
                                     Forms\Components\DatePicker::make('date')
                                         ->label('Bill date')
                                         ->live()
@@ -96,7 +96,7 @@ class BillResource extends Resource
                                             return $record?->hasPayments();
                                         })
                                         ->columnSpan(2)
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                             $date = Carbon::parse($state)->toDateString();
                                             $dueDate = Carbon::parse($get('due_date'))->toDateString();
 
@@ -124,7 +124,7 @@ class BillResource extends Resource
                                         ->selectablePlaceholder(false)
                                         ->default($settings->payment_terms->value)
                                         ->live()
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                             if (! $state || $state === 'custom') {
                                                 return;
                                             }
@@ -145,7 +145,7 @@ class BillResource extends Resource
                                     })
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                    ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) {
                                         if (! $state) {
                                             return;
                                         }
@@ -169,7 +169,7 @@ class BillResource extends Resource
                                     ->options(DocumentDiscountMethod::class)
                                     ->softRequired()
                                     ->default($settings->discount_method)
-                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set) {
                                         $discountMethod = DocumentDiscountMethod::parse($state);
 
                                         if ($discountMethod->isPerDocument()) {
@@ -178,7 +178,7 @@ class BillResource extends Resource
                                     })
                                     ->live(),
                             ])->grow(true),
-                        ])->from('md'),
+                        ]),
                         CustomTableRepeater::make('lineItems')
                             ->hiddenLabel()
                             ->relationship()
@@ -189,7 +189,7 @@ class BillResource extends Resource
                             ->reorderAtStart()
                             ->cloneable()
                             ->addActionLabel('Add an item')
-                            ->headers(function (Forms\Get $get) use ($settings) {
+                            ->headers(function (\Filament\Schemas\Components\Utilities\Get $get) use ($settings) {
                                 $hasDiscounts = DocumentDiscountMethod::parse($get('discount_method'))->isPerLineItem();
 
                                 $headers = [
@@ -209,12 +209,12 @@ class BillResource extends Resource
 
                                 $headers[] = Header::make($settings->resolveColumnLabel('amount_name', 'Amount'))
                                     ->width('10%')
-                                    ->align('right');
+                                    ->alignment('right');
 
                                 return $headers;
                             })
                             ->schema([
-                                Forms\Components\Group::make([
+                                \Filament\Schemas\Components\Group::make([
                                     CreateOfferingSelect::make('offering_id')
                                         ->label('Item')
                                         ->hiddenLabel()
@@ -223,7 +223,7 @@ class BillResource extends Resource
                                         ->live()
                                         ->inlineSuffix()
                                         ->purchasable()
-                                        ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state, ?DocumentLineItem $record) {
+                                        ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state, ?DocumentLineItem $record) {
                                             $offeringId = $state;
                                             $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
                                             $isPerLineItem = $discountMethod->isPerLineItem();
@@ -287,7 +287,7 @@ class BillResource extends Resource
                                     ->money(useAffix: false)
                                     ->live()
                                     ->default(0),
-                                Forms\Components\Group::make([
+                                \Filament\Schemas\Components\Group::make([
                                     CreateAdjustmentSelect::make('purchaseTaxes')
                                         ->label('Taxes')
                                         ->hiddenLabel()
@@ -314,7 +314,7 @@ class BillResource extends Resource
                                         ->inlineSuffix()
                                         ->multiple()
                                         ->live()
-                                        ->hidden(function (Forms\Get $get) {
+                                        ->hidden(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                             $discountMethod = DocumentDiscountMethod::parse($get('../../discount_method'));
 
                                             return $discountMethod->isPerDocument();
@@ -324,7 +324,7 @@ class BillResource extends Resource
                                 Forms\Components\Placeholder::make('total')
                                     ->hiddenLabel()
                                     ->extraAttributes(['class' => 'text-left sm:text-right'])
-                                    ->content(function (Forms\Get $get) {
+                                    ->content(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                         $quantity = max((float) ($get('quantity') ?? 0), 0);
                                         $unitPrice = CurrencyConverter::isValidAmount($get('unit_price'), 'USD')
                                             ? CurrencyConverter::convertToFloat($get('unit_price'), 'USD')
@@ -432,27 +432,27 @@ class BillResource extends Resource
                     ->indicatorLabel('Due'),
             ])
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                \Filament\Actions\ExportAction::make()
                     ->exporter(BillExporter::class),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ActionGroup::make([
-                        Tables\Actions\EditAction::make()
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ActionGroup::make([
+                        \Filament\Actions\EditAction::make()
                             ->url(static fn(Bill $record) => Pages\EditBill::getUrl(['record' => $record])),
-                        Tables\Actions\ViewAction::make()
+                        \Filament\Actions\ViewAction::make()
                             ->url(static fn(Bill $record) => Pages\ViewBill::getUrl(['record' => $record])),
-                        Bill::getReplicateAction(Tables\Actions\ReplicateAction::class),
-                        Tables\Actions\Action::make('recordPayment')
+                        Bill::getReplicateAction(\Filament\Actions\ReplicateAction::class),
+                        \Filament\Actions\Action::make('recordPayment')
                             ->label('Record payment')
                             ->slideOver()
-                            ->modalWidth(MaxWidth::TwoExtraLarge)
+                            ->modalWidth(Width::TwoExtraLarge)
                             ->icon('heroicon-m-credit-card')
                             ->visible(function (Bill $record) {
                                 return $record->canRecordPayment();
                             })
-                            ->mountUsing(function (Bill $record, Form $form) {
-                                $form->fill([
+                            ->mountUsing(function (Bill $record, ?Schema $schema) {
+                                $schema?->fill([
                                     'posted_at' => company_today()->toDateString(),
                                     'amount' => $record->amount_due,
                                 ]);
@@ -462,7 +462,7 @@ class BillResource extends Resource
                             ->form([
                                 Forms\Components\DatePicker::make('posted_at')
                                     ->label('Date'),
-                                Forms\Components\Grid::make()
+                                \Filament\Schemas\Components\Grid::make()
                                     ->schema([
                                         Forms\Components\Select::make('bank_account_id')
                                             ->label('Account')
@@ -522,7 +522,7 @@ class BillResource extends Resource
                                     ])->columns(2),
                                 Forms\Components\Placeholder::make('currency_conversion')
                                     ->label('Currency Conversion')
-                                    ->content(function (Forms\Get $get, Bill $record) {
+                                    ->content(function (\Filament\Schemas\Components\Utilities\Get $get, Bill $record) {
                                         $amount = $get('amount');
                                         $bankAccountId = $get('bank_account_id');
 
@@ -556,7 +556,7 @@ class BillResource extends Resource
 
                                         return "Payment will be recorded as {$formattedBankAmount} in the bank account's currency ({$bankCurrency}).";
                                     })
-                                    ->hidden(function (Forms\Get $get, Bill $record) {
+                                    ->hidden(function (\Filament\Schemas\Components\Utilities\Get $get, Bill $record) {
                                         $bankAccountId = $get('bank_account_id');
                                         if (empty($bankAccountId)) {
                                             return true;
@@ -581,21 +581,21 @@ class BillResource extends Resource
                                 Forms\Components\Textarea::make('notes')
                                     ->label('Notes'),
                             ])
-                            ->action(function (Bill $record, Tables\Actions\Action $action, array $data) {
+                            ->action(function (Bill $record, \Filament\Actions\Action $action, array $data) {
                                 $record->recordPayment($data);
 
                                 $action->success();
                             }),
                     ])->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                     ReplicateBulkAction::make()
                         ->label('Replicate')
-                        ->modalWidth(MaxWidth::Large)
+                        ->modalWidth(Width::Large)
                         ->modalDescription('Replicating bills will also replicate their line items. Are you sure you want to proceed?')
                         ->successNotificationTitle('Bills replicated successfully')
                         ->failureNotificationTitle('Failed to replicate bills')

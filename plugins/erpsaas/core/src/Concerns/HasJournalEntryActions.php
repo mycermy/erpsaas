@@ -5,7 +5,7 @@ namespace Erpsaas\Core\Concerns;
 use Erpsaas\Core\Enums\Accounting\JournalEntryType;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 
 trait HasJournalEntryActions
 {

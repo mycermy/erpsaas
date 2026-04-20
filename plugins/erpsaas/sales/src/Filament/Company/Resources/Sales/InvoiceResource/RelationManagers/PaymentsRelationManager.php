@@ -12,11 +12,11 @@ use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Closure;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -43,14 +43,14 @@ class PaymentsRelationManager extends RelationManager
         return $ownerRecord->status !== InvoiceStatus::Draft;
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->columns(1)
             ->schema([
                 Forms\Components\DatePicker::make('posted_at')
                     ->label('Date'),
-                Forms\Components\Grid::make()
+                \Filament\Schemas\Components\Grid::make()
                     ->schema([
                         Forms\Components\Select::make('bank_account_id')
                             ->label('Account')
@@ -115,7 +115,7 @@ class PaymentsRelationManager extends RelationManager
                                 };
                             })
                             ->rules([
-                                static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
+                                static fn(): Closure => static function (string $attribute, $value, Closure $fail) {
                                     if (! CurrencyConverter::isValidAmount($value, 'USD')) {
                                         $fail('Please enter a valid amount');
                                     }
@@ -124,7 +124,7 @@ class PaymentsRelationManager extends RelationManager
                     ])->columns(2),
                 Forms\Components\Placeholder::make('currency_conversion')
                     ->label('Currency Conversion')
-                    ->content(function (Forms\Get $get, RelationManager $livewire) {
+                    ->content(function (\Filament\Schemas\Components\Utilities\Get $get, RelationManager $livewire) {
                         $amount = $get('amount');
                         $bankAccountId = $get('bank_account_id');
 
@@ -160,7 +160,7 @@ class PaymentsRelationManager extends RelationManager
 
                         return "Payment will be recorded as {$formattedBankAmount} in the bank account's currency ({$bankCurrency}).";
                     })
-                    ->hidden(function (Forms\Get $get, RelationManager $livewire) {
+                    ->hidden(function (\Filament\Schemas\Components\Utilities\Get $get, RelationManager $livewire) {
                         $bankAccountId = $get('bank_account_id');
                         if (empty($bankAccountId)) {
                             return true;
@@ -211,30 +211,30 @@ class PaymentsRelationManager extends RelationManager
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Amount')
-                    ->weight(static fn (Transaction $transaction) => $transaction->reviewed ? null : FontWeight::SemiBold)
+                    ->weight(static fn(Transaction $transaction) => $transaction->reviewed ? null : FontWeight::SemiBold)
                     ->color(
-                        static fn (Transaction $transaction) => match ($transaction->type) {
+                        static fn(Transaction $transaction) => match ($transaction->type) {
                             TransactionType::Deposit => Color::rgb('rgb(' . Color::Green[700] . ')'),
                             TransactionType::Journal => 'primary',
                             default => null,
                         }
                     )
                     ->sortable()
-                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency()),
+                    ->currency(static fn(Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency()),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label(fn () => $this->getOwnerRecord()->status === InvoiceStatus::Overpaid ? 'Refund Overpayment' : 'Record Payment')
-                    ->modalHeading(fn (Tables\Actions\CreateAction $action) => $action->getLabel())
+                \Filament\Actions\CreateAction::make()
+                    ->label(fn() => $this->getOwnerRecord()->status === InvoiceStatus::Overpaid ? 'Refund Overpayment' : 'Record Payment')
+                    ->modalHeading(fn(\Filament\Actions\CreateAction $action) => $action->getLabel())
                     ->slideOver()
-                    ->modalWidth(MaxWidth::TwoExtraLarge)
+                    ->modalWidth(Width::TwoExtraLarge)
                     ->visible(function () {
                         return $this->getOwnerRecord()->canRecordPayment();
                     })
-                    ->mountUsing(function (Form $form) {
+                    ->mountUsing(function (Schema $form) {
                         $record = $this->getOwnerRecord();
                         $form->fill([
                             'posted_at' => company_today()->toDateString(),
@@ -243,7 +243,7 @@ class PaymentsRelationManager extends RelationManager
                     })
                     ->databaseTransaction()
                     ->successNotificationTitle('Payment recorded')
-                    ->action(function (Tables\Actions\CreateAction $action, array $data) {
+                    ->action(function (\Filament\Actions\CreateAction $action, array $data) {
                         /** @var Invoice $record */
                         $record = $this->getOwnerRecord();
 
@@ -255,12 +255,12 @@ class PaymentsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\DeleteAction::make()
-                    ->after(fn () => $this->dispatch('refresh')),
+                \Filament\Actions\DeleteAction::make()
+                    ->after(fn() => $this->dispatch('refresh')),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

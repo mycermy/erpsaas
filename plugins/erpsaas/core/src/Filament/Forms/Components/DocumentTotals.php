@@ -4,10 +4,10 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
-use Filament\Forms\Components\Grid;
+use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Utilities\Get;
 
 class DocumentTotals extends Grid
 {

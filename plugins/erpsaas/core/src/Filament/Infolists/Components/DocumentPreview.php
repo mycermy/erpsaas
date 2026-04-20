@@ -6,7 +6,7 @@ use Erpsaas\Core\Enums\Accounting\DocumentType;
 use Erpsaas\Core\Enums\Setting\Template;
 use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Closure;
-use Filament\Infolists\Components\Grid;
+use Filament\Schemas\Components\Grid;
 
 class DocumentPreview extends Grid
 {

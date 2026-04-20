@@ -7,13 +7,13 @@
     $iconPosition = \Filament\Support\Enums\IconPosition::After;
 @endphp
 
-<table class="w-full table-auto min-w-[50rem] divide-y divide-gray-200 dark:divide-white/5">
+<table class="w-full table-auto min-w-200 divide-y divide-gray-200 dark:divide-white/5">
     <x-company.tables.header :headers="$report->getHeaders()" :alignmentClass="[$report, 'getAlignmentClass']"/>
     @foreach($report->getCategories() as $categoryIndex => $category)
         <tbody class="divide-y divide-gray-200 dark:divide-white/5">
         <!-- Category Header -->
         <tr class="bg-gray-50 dark:bg-white/5">
-            <x-filament-tables::cell tag="th" colspan="{{ count($report->getHeaders()) }}" class="text-left">
+            <th colspan="{{ count($report->getHeaders()) }}" class="text-left">
                 <div class="px-3 py-3.5">
                     @foreach ($category->header as $headerRow)
                         <div
@@ -26,7 +26,7 @@
                         </div>
                     @endforeach
                 </div>
-            </x-filament-tables::cell>
+            </th>
         </tr>
         <!-- Transactions Data -->
         @foreach($category->data as $dataIndex => $transaction)
@@ -36,7 +36,7 @@
                 ])
             >
                 @foreach($transaction as $cellIndex => $cell)
-                    <x-filament-tables::cell
+                    <td
                         @class([
                            $report->getAlignmentClass($cellIndex),
                            'whitespace-normal' => $cellIndex === 1,
@@ -67,7 +67,7 @@
                                 {{ $cell }}
                             @endif
                         </div>
-                    </x-filament-tables::cell>
+                    </td>
                 @endforeach
             </tr>
         @endforeach

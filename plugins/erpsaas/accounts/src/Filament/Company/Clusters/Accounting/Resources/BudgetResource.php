@@ -14,10 +14,10 @@ use Erpsaas\Accounts\Models\Accounting\BudgetItem;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Awcodes\TableRepeater\Header;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Alignment;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -29,17 +29,17 @@ class BudgetResource extends Resource
 
     protected static ?string $cluster = Accounting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $recordTitleAttribute = 'name';
 
     protected static bool $isGloballySearchable = false;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Budget Details')
+                \Filament\Schemas\Components\Section::make('Budget Details')
                     ->columns()
                     ->schema([
                         Forms\Components\TextInput::make('name')
@@ -59,26 +59,26 @@ class BudgetResource extends Resource
                             ->required()
                             ->default(company_today()->endOfYear())
                             ->live()
-                            ->disabled(static fn(Forms\Get $get) => blank($get('start_date')))
-                            ->minDate(fn(Forms\Get $get) => match (BudgetIntervalType::parse($get('interval_type'))) {
+                            ->disabled(static fn(\Filament\Schemas\Components\Utilities\Get $get) => blank($get('start_date')))
+                            ->minDate(fn(\Filament\Schemas\Components\Utilities\Get $get) => match (BudgetIntervalType::parse($get('interval_type'))) {
                                 BudgetIntervalType::Month => Carbon::parse($get('start_date'))->addMonth(),
                                 BudgetIntervalType::Quarter => Carbon::parse($get('start_date'))->addQuarter(),
                                 BudgetIntervalType::Year => Carbon::parse($get('start_date'))->addYear(),
                                 default => Carbon::parse($get('start_date'))->addDay(),
                             })
-                            ->maxDate(fn(Forms\Get $get) => Carbon::parse($get('start_date'))->endOfYear()),
+                            ->maxDate(fn(\Filament\Schemas\Components\Utilities\Get $get) => Carbon::parse($get('start_date'))->endOfYear()),
                         Forms\Components\Textarea::make('notes')
                             ->columnSpanFull(),
                     ]),
 
-                //                Forms\Components\Section::make('Budget Items')
+                //                \Filament\Schemas\Components\Section::make('Budget Items')
                 //                    ->headerActions([
-                //                        Forms\Components\Actions\Action::make('addAccounts')
+                //                        \Filament\Actions\Action::make('addAccounts')
                 //                            ->label('Add Accounts')
                 //                            ->icon('heroicon-m-plus')
                 //                            ->outlined()
                 //                            ->color('primary')
-                //                            ->form(fn (Forms\Get $get) => [
+                //                            ->form(fn (\Filament\Schemas\Components\Utilities\Get $get) => [
                 //                                Forms\Components\Select::make('selected_accounts')
                 //                                    ->label('Choose Accounts to Add')
                 //                                    ->options(function () use ($get) {
@@ -93,22 +93,22 @@ class BudgetResource extends Resource
                 //                                    ->multiple()
                 //                                    ->hint('Select the accounts you want to add to this budget'),
                 //                            ])
-                //                            ->action(static fn (Forms\Set $set, Forms\Get $get, array $data) => self::addSelectedAccounts($set, $get, $data)),
+                //                            ->action(static fn (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, array $data) => self::addSelectedAccounts($set, $get, $data)),
                 //
-                //                        Forms\Components\Actions\Action::make('addAllAccounts')
+                //                        \Filament\Actions\Action::make('addAllAccounts')
                 //                            ->label('Add All Accounts')
                 //                            ->icon('heroicon-m-folder-plus')
                 //                            ->outlined()
                 //                            ->color('primary')
-                //                            ->action(static fn (Forms\Set $set, Forms\Get $get) => self::addAllAccounts($set, $get))
-                //                            ->hidden(static fn (Forms\Get $get) => filled($get('budgetItems'))),
+                //                            ->action(static fn (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) => self::addAllAccounts($set, $get))
+                //                            ->hidden(static fn (\Filament\Schemas\Components\Utilities\Get $get) => filled($get('budgetItems'))),
                 //
-                //                        Forms\Components\Actions\Action::make('increaseAllocations')
+                //                        \Filament\Actions\Action::make('increaseAllocations')
                 //                            ->label('Increase Allocations')
                 //                            ->icon('heroicon-m-arrow-up')
                 //                            ->outlined()
                 //                            ->color('success')
-                //                            ->form(fn (Forms\Get $get) => [
+                //                            ->form(fn (\Filament\Schemas\Components\Utilities\Get $get) => [
                 //                                Forms\Components\Select::make('increase_type')
                 //                                    ->label('Increase Type')
                 //                                    ->options([
@@ -124,14 +124,14 @@ class BudgetResource extends Resource
                 //                                    ->numeric()
                 //                                    ->suffix('%')
                 //                                    ->required()
-                //                                    ->hidden(fn (Forms\Get $get) => $get('increase_type') !== 'percentage'),
+                //                                    ->hidden(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('increase_type') !== 'percentage'),
                 //
                 //                                Forms\Components\TextInput::make('fixed_amount')
                 //                                    ->label('Increase by Fixed Amount')
                 //                                    ->numeric()
                 //                                    ->suffix('USD')
                 //                                    ->required()
-                //                                    ->hidden(fn (Forms\Get $get) => $get('increase_type') !== 'fixed'),
+                //                                    ->hidden(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('increase_type') !== 'fixed'),
                 //
                 //                                Forms\Components\Select::make('apply_to_accounts')
                 //                                    ->label('Apply to Accounts')
@@ -171,8 +171,8 @@ class BudgetResource extends Resource
                 //                                    ->multiple()
                 //                                    ->hint('Leave blank to apply to all periods'),
                 //                            ])
-                //                            ->action(static fn (Forms\Set $set, Forms\Get $get, array $data) => self::increaseAllocations($set, $get, $data))
-                //                            ->visible(static fn (Forms\Get $get) => filled($get('budgetItems'))),
+                //                            ->action(static fn (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, array $data) => self::increaseAllocations($set, $get, $data))
+                //                            ->visible(static fn (\Filament\Schemas\Components\Utilities\Get $get) => filled($get('budgetItems'))),
                 //                    ])
                 //                    ->schema([
                 //                        Forms\Components\Repeater::make('budgetItems')
@@ -194,17 +194,17 @@ class BudgetResource extends Resource
                 //                                    ->numeric()
                 //                                    ->columnSpan(1)
                 //                                    ->suffixAction(
-                //                                        Forms\Components\Actions\Action::make('disperse')
+                //                                        \Filament\Actions\Action::make('disperse')
                 //                                            ->label('Disperse')
                 //                                            ->icon('heroicon-m-bars-arrow-down')
                 //                                            ->color('primary')
-                //                                            ->action(static fn (Forms\Set $set, Forms\Get $get, $state) => self::disperseTotalAmount($set, $get, $state))
+                //                                            ->action(static fn (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, $state) => self::disperseTotalAmount($set, $get, $state))
                 //                                    ),
                 //
                 //                                CustomSection::make('Budget Allocations')
                 //                                    ->contained(false)
                 //                                    ->columns(4)
-                //                                    ->schema(static fn (Forms\Get $get) => self::getAllocationFields($get('../../start_date'), $get('../../end_date'), $get('../../interval_type'))),
+                //                                    ->schema(static fn (\Filament\Schemas\Components\Utilities\Get $get) => self::getAllocationFields($get('../../start_date'), $get('../../end_date'), $get('../../interval_type'))),
                 //                            ])
                 //                            ->defaultItems(0)
                 //                            ->addActionLabel('Add Budget Item'),
@@ -244,14 +244,14 @@ class BudgetResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make('editAllocations')
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ViewAction::make(),
+                    \Filament\Actions\EditAction::make('editAllocations')
                         ->name('editAllocations')
                         ->url(null)
                         ->label('Edit Allocations')
                         ->icon('heroicon-o-table-cells')
-                        ->modalWidth(MaxWidth::Screen)
+                        ->modalWidth(Width::Screen)
                         ->modalHeading('Edit Budget Allocations')
                         ->modalDescription('Update the allocations for this budget')
                         ->slideOver()
@@ -265,18 +265,18 @@ class BudgetResource extends Resource
                                 Header::make('total')
                                     ->label('Total')
                                     ->width('120px')
-                                    ->align(Alignment::Right),
+                                    ->alignment(Alignment::Right),
                                 Header::make('action')
                                     ->label('')
                                     ->width('40px')
-                                    ->align(Alignment::Center),
+                                    ->alignment(Alignment::Center),
                             ];
 
                             foreach ($periods as $period) {
                                 $headers[] = Header::make($period->period)
                                     ->label($period->period)
                                     ->width('120px')
-                                    ->align(Alignment::Right);
+                                    ->alignment(Alignment::Right);
                             }
 
                             return [
@@ -305,13 +305,13 @@ class BudgetResource extends Resource
                                             })
                                             ->dehydrated(false),
 
-                                        Forms\Components\Actions::make([
-                                            Forms\Components\Actions\Action::make('disperse')
+                                        \Filament\Schemas\Components\Actions::make([
+                                            \Filament\Actions\Action::make('disperse')
                                                 ->label('Disperse')
                                                 ->icon('heroicon-m-chevron-double-right')
                                                 ->color('primary')
                                                 ->iconButton()
-                                                ->action(function (Forms\Set $set, Forms\Get $get, BudgetItem $record, $livewire) use ($periods) {
+                                                ->action(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, BudgetItem $record, $livewire) use ($periods) {
                                                     $total = CurrencyConverter::convertToCents($get('total'));
                                                     $numPeriods = count($periods);
 
@@ -355,13 +355,13 @@ class BudgetResource extends Resource
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    private static function addAllAccounts(Forms\Set $set, Forms\Get $get): void
+    private static function addAllAccounts(\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get): void
     {
         $accounts = Account::query()
             ->budgetable()
@@ -376,7 +376,7 @@ class BudgetResource extends Resource
         $set('budgetItems', $budgetItems);
     }
 
-    private static function addSelectedAccounts(Forms\Set $set, Forms\Get $get, array $data): void
+    private static function addSelectedAccounts(\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, array $data): void
     {
         $selectedAccountIds = $data['selected_accounts'] ?? [];
 
@@ -414,7 +414,7 @@ class BudgetResource extends Resource
         return collect($labels)->mapWithKeys(static fn($label) => [$label => 0])->toArray();
     }
 
-    private static function increaseAllocations(Forms\Set $set, Forms\Get $get, array $data): void
+    private static function increaseAllocations(\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, array $data): void
     {
         $increaseType = $data['increase_type']; // 'percentage' or 'fixed'
         $percentage = $data['percentage'] ?? 0;
@@ -455,7 +455,7 @@ class BudgetResource extends Resource
         }
     }
 
-    private static function disperseTotalAmount(Forms\Set $set, Forms\Get $get, float $totalAmount): void
+    private static function disperseTotalAmount(\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, float $totalAmount): void
     {
         $startDate = $get('../../start_date');
         $endDate = $get('../../end_date');

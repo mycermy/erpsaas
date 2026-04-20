@@ -3,8 +3,7 @@
 namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Closure;
-use Filament\Forms\Components\Field;
-use Filament\Forms\Components\Grid;
+use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\TextInput;
 
 class AddressFields extends Grid
@@ -22,19 +21,22 @@ class AddressFields extends Grid
         $this->schema([
             TextInput::make('address_line_1')
                 ->label('Address line 1')
-                ->required(fn () => $this->isRequired())
+                ->required(fn() => $this->isRequired())
+                ->markAsRequired(fn() => $this->isRequired() && ! $this->isSoftRequired)
                 ->maxLength(255),
             TextInput::make('address_line_2')
                 ->label('Address line 2')
                 ->maxLength(255),
             CountrySelect::make('country_code')
-                ->disabled(fn () => $this->isCountryDisabled())
+                ->disabled(fn() => $this->isCountryDisabled())
                 ->clearStateField()
-                ->required(fn () => $this->isRequired()),
+                ->required(fn() => $this->isRequired())
+                ->markAsRequired(fn() => $this->isRequired() && ! $this->isSoftRequired),
             StateSelect::make('state_id'),
             TextInput::make('city')
                 ->label('City')
-                ->required(fn () => $this->isRequired())
+                ->required(fn() => $this->isRequired())
+                ->markAsRequired(fn() => $this->isRequired() && ! $this->isSoftRequired)
                 ->maxLength(255),
             TextInput::make('postal_code')
                 ->label('Postal code')
@@ -44,7 +46,7 @@ class AddressFields extends Grid
 
     public function softRequired(bool $condition = true): static
     {
-        $this->setSoftRequired($condition);
+        $this->isSoftRequired = $condition;
 
         return $this;
     }
@@ -52,14 +54,6 @@ class AddressFields extends Grid
     protected function setSoftRequired(bool $condition): void
     {
         $this->isSoftRequired = $condition;
-
-        $childComponents = $this->getChildComponents();
-
-        foreach ($childComponents as $component) {
-            if ($component instanceof Field && $component->isRequired()) {
-                $component->markAsRequired(! $condition);
-            }
-        }
     }
 
     public function required(bool | Closure $condition = true): static

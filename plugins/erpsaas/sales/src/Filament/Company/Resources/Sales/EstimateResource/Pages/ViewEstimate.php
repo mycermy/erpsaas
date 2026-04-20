@@ -9,10 +9,10 @@ use Erpsaas\Core\Filament\Infolists\Components\BannerEntry;
 use Erpsaas\Core\Filament\Infolists\Components\DocumentPreview;
 use Erpsaas\Accounts\Models\Accounting\Estimate;
 use Filament\Actions;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\IconPosition;
 use Illuminate\Support\HtmlString;
@@ -52,7 +52,7 @@ class ViewEstimate extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $infolist): Schema
     {
         return $infolist
             ->schema([
@@ -60,7 +60,7 @@ class ViewEstimate extends ViewRecord
                     ->label('Inactive adjustments')
                     ->warning()
                     ->icon('heroicon-o-exclamation-triangle')
-                    ->visible(fn (Estimate $record) => $record->hasInactiveAdjustments() && $record->canBeApproved())
+                    ->visible(fn(Estimate $record) => $record->hasInactiveAdjustments() && $record->canBeApproved())
                     ->columnSpanFull()
                     ->description(function (Estimate $record) {
                         $inactiveAdjustments = collect();
@@ -92,7 +92,7 @@ class ViewEstimate extends ViewRecord
                                     ->badge(),
                                 TextEntry::make('client.name')
                                     ->label('Client')
-                                    ->url(static fn (Estimate $record) => $record->client_id ? ClientResource::getUrl('view', ['record' => $record->client_id]) : null)
+                                    ->url(static fn(Estimate $record) => $record->client_id ? ClientResource::getUrl('view', ['record' => $record->client_id]) : null)
                                     ->link(),
                                 TextEntry::make('expiration_date')
                                     ->label('Expiration date')

@@ -4,10 +4,10 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Purchases\Filament\Company\Resources\Purchases\VendorResource;
 use Erpsaas\Core\Models\Common\Vendor;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\DB;
 
 class CreateVendorSelect extends Select
@@ -19,8 +19,8 @@ class CreateVendorSelect extends Select
         $this
             ->searchable()
             ->preload()
-            ->createOptionForm(fn (Form $form) => $this->createVendorForm($form))
-            ->createOptionAction(fn (Action $action) => $this->createVendorAction($action));
+            ->createOptionForm(fn(Schema $form) => $this->createVendorForm($form))
+            ->createOptionAction(fn(Action $action) => $this->createVendorAction($action));
 
         $this->relationship('vendor', 'name');
 
@@ -33,7 +33,7 @@ class CreateVendorSelect extends Select
         });
     }
 
-    protected function createVendorForm(Form $form): Form
+    protected function createVendorForm(Schema $form): Schema
     {
         return VendorResource::form($form);
     }
@@ -43,7 +43,7 @@ class CreateVendorSelect extends Select
         return $action
             ->label('Create vendor')
             ->slideOver()
-            ->modalWidth(MaxWidth::ThreeExtraLarge)
+            ->modalWidth(Width::ThreeExtraLarge)
             ->modalHeading('Create a new vendor');
     }
 }

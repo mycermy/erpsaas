@@ -6,7 +6,7 @@ use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -129,7 +129,7 @@ class UpdatePassword extends Component implements HasForms
         return __('filament-companies::default.notifications.profile_information_updated.body');
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
@@ -150,8 +150,8 @@ class UpdatePassword extends Component implements HasForms
                     ->autocomplete('new-password')
                     ->rule(Password::default())
                     ->required()
-                    ->dehydrated(static fn ($state): bool => filled($state))
-                    ->dehydrateStateUsing(static fn ($state): string => Hash::make($state))
+                    ->dehydrated(static fn($state): bool => filled($state))
+                    ->dehydrateStateUsing(static fn($state): string => Hash::make($state))
                     ->same('password_confirmation'),
                 Forms\Components\TextInput::make('password_confirmation')
                     ->label(__('filament-companies::default.labels.password_confirmation'))

@@ -12,7 +12,7 @@
     }
 </style>
 
-<div {{ $attributes }}>
+<div {{ $attributes->class(['min-w-0']) }}>
     @include("filament.company.components.document-templates.{$template->value}", [
         'document' => $document,
         'preview' => $preview,

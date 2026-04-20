@@ -12,20 +12,20 @@ use Erpsaas\Core\Services\ExportService;
 use Erpsaas\Core\Services\ReportService;
 use Erpsaas\Core\Support\Column;
 use Erpsaas\Core\Transformers\AccountTransactionReportTransformer;
-use Filament\Forms\Components\Actions;
+use Filament\Schemas\Components\Actions;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables\Actions\Action;
-use Guava\FilamentClusters\Forms\Cluster;
+use Filament\Support\Enums\Width;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\FusedGroup;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountTransactions extends BaseReportPage
 {
-    protected static string $view = 'filament.company.pages.reports.account-transactions';
+    protected string $view = 'filament.company.pages.reports.account-transactions';
 
     protected ReportService $reportService;
 
@@ -37,7 +37,7 @@ class AccountTransactions extends BaseReportPage
         $this->exportService = $exportService;
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }
@@ -78,7 +78,7 @@ class AccountTransactions extends BaseReportPage
         ];
     }
 
-    public function filtersForm(Form $form): Form
+    public function filtersForm(Schema $form): Schema
     {
         return $form
             ->columns(5)
@@ -89,7 +89,7 @@ class AccountTransactions extends BaseReportPage
                     ->selectablePlaceholder(false)
                     ->searchable(),
                 $this->getDateRangeFormComponent(),
-                Cluster::make([
+                FusedGroup::make([
                     $this->getStartDateFormComponent(),
                     $this->getEndDateFormComponent(),
                 ])->extraFieldWrapperAttributes([
@@ -101,7 +101,7 @@ class AccountTransactions extends BaseReportPage
                     ->searchable()
                     ->selectablePlaceholder(false),
                 Actions::make([
-                    Actions\Action::make('applyFilters')
+                    Action::make('applyFilters')
                         ->label('Update report')
                         ->action('applyFilters')
                         ->keyBindings(['mod+s'])

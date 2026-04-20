@@ -8,14 +8,14 @@ use Erpsaas\Core\Services\ExportService;
 use Erpsaas\Core\Services\ReportService;
 use Erpsaas\Core\Support\Column;
 use Erpsaas\Core\Transformers\AccountBalanceReportTransformer;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
-use Guava\FilamentClusters\Forms\Cluster;
+use Filament\Schemas\Components\FusedGroup;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountBalances extends BaseReportPage
 {
-    protected static string $view = 'filament.company.pages.reports.detailed-report';
+    protected string $view = 'filament.company.pages.reports.detailed-report';
 
     protected ReportService $reportService;
 
@@ -63,14 +63,14 @@ class AccountBalances extends BaseReportPage
         ];
     }
 
-    public function filtersForm(Form $form): Form
+    public function filtersForm(Schema $form): Schema
     {
         return $form
             ->inlineLabel()
             ->columns()
             ->schema([
                 $this->getDateRangeFormComponent(),
-                Cluster::make([
+                FusedGroup::make([
                     $this->getStartDateFormComponent(),
                     $this->getEndDateFormComponent(),
                 ])->hiddenLabel(),

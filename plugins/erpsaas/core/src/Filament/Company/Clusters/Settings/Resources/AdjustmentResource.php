@@ -11,7 +11,7 @@ use Erpsaas\Core\Filament\Company\Clusters\Settings;
 use Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\AdjustmentResource\Pages;
 use Erpsaas\Accounts\Models\Accounting\Adjustment;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,11 +26,11 @@ class AdjustmentResource extends Resource
 
     protected static ?string $cluster = Settings::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('General')
+                \Filament\Schemas\Components\Section::make('General')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->autofocus()
@@ -39,7 +39,7 @@ class AdjustmentResource extends Resource
                         Forms\Components\Textarea::make('description')
                             ->label('Description'),
                     ]),
-                Forms\Components\Section::make('Configuration')
+                \Filament\Schemas\Components\Section::make('Configuration')
                     ->schema([
                         Forms\Components\Select::make('category')
                             ->localizeLabel()
@@ -57,11 +57,11 @@ class AdjustmentResource extends Resource
                             ->label('Recoverable')
                             ->default(false)
                             ->helperText('When enabled, tax is tracked separately as claimable from the government. Non-recoverable taxes are treated as part of the expense.')
-                            ->visible(fn (Forms\Get $get) => AdjustmentCategory::parse($get('category'))->isTax() && AdjustmentType::parse($get('type'))->isPurchase()),
+                            ->visible(fn(\Filament\Schemas\Components\Utilities\Get $get) => AdjustmentCategory::parse($get('category'))->isTax() && AdjustmentType::parse($get('type'))->isPurchase()),
                     ])
                     ->columns()
                     ->visibleOn('create'),
-                Forms\Components\Section::make('Adjustment Details')
+                \Filament\Schemas\Components\Section::make('Adjustment Details')
                     ->schema([
                         Forms\Components\Select::make('computation')
                             ->localizeLabel()
@@ -71,21 +71,21 @@ class AdjustmentResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make('rate')
                             ->localizeLabel()
-                            ->rate(static fn (Forms\Get $get) => $get('computation'))
+                            ->rate(static fn(\Filament\Schemas\Components\Utilities\Get $get) => $get('computation'))
                             ->required(),
                         Forms\Components\Select::make('scope')
                             ->localizeLabel()
                             ->options(AdjustmentScope::class),
                     ])
                     ->columns(),
-                Forms\Components\Section::make('Dates')
+                \Filament\Schemas\Components\Section::make('Dates')
                     ->schema([
                         Forms\Components\DateTimePicker::make('start_date'),
                         Forms\Components\DateTimePicker::make('end_date')
                             ->after('start_date'),
                     ])
                     ->columns()
-                    ->visible(fn (Forms\Get $get) => AdjustmentCategory::parse($get('category'))->isDiscount()),
+                    ->visible(fn(\Filament\Schemas\Components\Utilities\Get $get) => AdjustmentCategory::parse($get('category'))->isDiscount()),
             ]);
     }
 
@@ -104,7 +104,7 @@ class AdjustmentResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('rate')
                     ->localizeLabel()
-                    ->rate(static fn (Adjustment $record) => $record->computation->value)
+                    ->rate(static fn(Adjustment $record) => $record->computation->value)
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('paused_until')
@@ -128,7 +128,7 @@ class AdjustmentResource extends Resource
                     ->default('unarchived')
                     ->options(
                         collect(AdjustmentStatus::cases())
-                            ->mapWithKeys(fn (AdjustmentStatus $status) => [$status->value => $status->getLabel()])
+                            ->mapWithKeys(fn(AdjustmentStatus $status) => [$status->value => $status->getLabel()])
                             ->merge([
                                 'unarchived' => 'Unarchived',
                             ])
@@ -140,7 +140,7 @@ class AdjustmentResource extends Resource
                         }
 
                         $label = collect($filter->getOptions())
-                            ->mapWithKeys(fn (string | array $label, string $value): array => is_array($label) ? $label : [$value => $label])
+                            ->mapWithKeys(fn(string | array $label, string $value): array => is_array($label) ? $label : [$value => $label])
                             ->get($state['value']);
 
                         if (blank($label)) {
@@ -184,9 +184,9 @@ class AdjustmentResource extends Resource
                     ->options(AdjustmentComputation::class),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\Action::make('pause')
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\EditAction::make(),
+                    \Filament\Actions\Action::make('pause')
                         ->label('Pause')
                         ->icon('heroicon-m-pause')
                         ->form([
@@ -201,28 +201,28 @@ class AdjustmentResource extends Resource
                         ->databaseTransaction()
                         ->successNotificationTitle('Adjustment paused')
                         ->failureNotificationTitle('Failed to pause adjustment')
-                        ->visible(fn (Adjustment $record) => $record->canBePaused())
-                        ->action(function (Adjustment $record, array $data, Tables\Actions\Action $action) {
+                        ->visible(fn(Adjustment $record) => $record->canBePaused())
+                        ->action(function (Adjustment $record, array $data, \Filament\Actions\Action $action) {
                             $pausedUntil = $data['paused_until'] ?? null;
                             $reason = $data['status_reason'] ?? null;
                             $record->pause($reason, $pausedUntil);
 
                             $action->success();
                         }),
-                    Tables\Actions\Action::make('resume')
+                    \Filament\Actions\Action::make('resume')
                         ->label('Resume')
                         ->icon('heroicon-m-play')
                         ->requiresConfirmation()
                         ->databaseTransaction()
                         ->successNotificationTitle('Adjustment resumed')
                         ->failureNotificationTitle('Failed to resume adjustment')
-                        ->visible(fn (Adjustment $record) => $record->canBeResumed())
-                        ->action(function (Adjustment $record, Tables\Actions\Action $action) {
+                        ->visible(fn(Adjustment $record) => $record->canBeResumed())
+                        ->action(function (Adjustment $record, \Filament\Actions\Action $action) {
                             $record->resume();
 
                             $action->success();
                         }),
-                    Tables\Actions\Action::make('archive')
+                    \Filament\Actions\Action::make('archive')
                         ->label('Archive')
                         ->icon('heroicon-m-archive-box')
                         ->color('danger')
@@ -234,8 +234,8 @@ class AdjustmentResource extends Resource
                         ->databaseTransaction()
                         ->successNotificationTitle('Adjustment archived')
                         ->failureNotificationTitle('Failed to archive adjustment')
-                        ->visible(fn (Adjustment $record) => $record->canBeArchived())
-                        ->action(function (Adjustment $record, array $data, Tables\Actions\Action $action) {
+                        ->visible(fn(Adjustment $record) => $record->canBeArchived())
+                        ->action(function (Adjustment $record, array $data, \Filament\Actions\Action $action) {
                             $reason = $data['status_reason'] ?? null;
                             $record->archive($reason);
 
@@ -244,8 +244,8 @@ class AdjustmentResource extends Resource
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('pause')
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\BulkAction::make('pause')
                         ->label('Pause')
                         ->icon('heroicon-m-pause')
                         ->form([
@@ -260,8 +260,8 @@ class AdjustmentResource extends Resource
                         ->databaseTransaction()
                         ->successNotificationTitle('Adjustments paused')
                         ->failureNotificationTitle('Failed to pause adjustments')
-                        ->beforeFormFilled(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $isInvalid = $records->contains(fn (Adjustment $record) => ! $record->canBePaused());
+                        ->beforeFormFilled(function (Collection $records, \Filament\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn(Adjustment $record) => ! $record->canBePaused());
 
                             if ($isInvalid) {
                                 Notification::make()
@@ -275,7 +275,7 @@ class AdjustmentResource extends Resource
                             }
                         })
                         ->deselectRecordsAfterCompletion()
-                        ->action(function (Collection $records, array $data, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, array $data, \Filament\Actions\BulkAction $action) {
                             $pausedUntil = $data['paused_until'] ?? null;
                             $reason = $data['status_reason'] ?? null;
 
@@ -285,15 +285,15 @@ class AdjustmentResource extends Resource
 
                             $action->success();
                         }),
-                    Tables\Actions\BulkAction::make('resume')
+                    \Filament\Actions\BulkAction::make('resume')
                         ->label('Resume')
                         ->icon('heroicon-m-play')
                         ->databaseTransaction()
                         ->requiresConfirmation()
                         ->successNotificationTitle('Adjustments resumed')
                         ->failureNotificationTitle('Failed to resume adjustments')
-                        ->before(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $isInvalid = $records->contains(fn (Adjustment $record) => ! $record->canBeResumed());
+                        ->before(function (Collection $records, \Filament\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn(Adjustment $record) => ! $record->canBeResumed());
 
                             if ($isInvalid) {
                                 Notification::make()
@@ -307,14 +307,14 @@ class AdjustmentResource extends Resource
                             }
                         })
                         ->deselectRecordsAfterCompletion()
-                        ->action(function (Collection $records, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, \Filament\Actions\BulkAction $action) {
                             $records->each(function (Adjustment $record) {
                                 $record->resume();
                             });
 
                             $action->success();
                         }),
-                    Tables\Actions\BulkAction::make('archive')
+                    \Filament\Actions\BulkAction::make('archive')
                         ->label('Archive')
                         ->icon('heroicon-m-archive-box')
                         ->color('danger')
@@ -326,8 +326,8 @@ class AdjustmentResource extends Resource
                         ->databaseTransaction()
                         ->successNotificationTitle('Adjustments archived')
                         ->failureNotificationTitle('Failed to archive adjustments')
-                        ->beforeFormFilled(function (Collection $records, Tables\Actions\BulkAction $action) {
-                            $isInvalid = $records->contains(fn (Adjustment $record) => ! $record->canBeArchived());
+                        ->beforeFormFilled(function (Collection $records, \Filament\Actions\BulkAction $action) {
+                            $isInvalid = $records->contains(fn(Adjustment $record) => ! $record->canBeArchived());
 
                             if ($isInvalid) {
                                 Notification::make()
@@ -341,7 +341,7 @@ class AdjustmentResource extends Resource
                             }
                         })
                         ->deselectRecordsAfterCompletion()
-                        ->action(function (Collection $records, array $data, Tables\Actions\BulkAction $action) {
+                        ->action(function (Collection $records, array $data, \Filament\Actions\BulkAction $action) {
                             $reason = $data['status_reason'] ?? null;
 
                             $records->each(function (Adjustment $record) use ($reason) {

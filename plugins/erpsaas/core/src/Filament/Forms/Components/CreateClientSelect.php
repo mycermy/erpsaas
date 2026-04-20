@@ -4,10 +4,10 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Sales\Filament\Company\Resources\Sales\ClientResource;
 use Erpsaas\Core\Models\Common\Client;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\DB;
 
 class CreateClientSelect extends Select
@@ -19,8 +19,8 @@ class CreateClientSelect extends Select
         $this
             ->searchable()
             ->preload()
-            ->createOptionForm(fn (Form $form) => $this->createClientForm($form))
-            ->createOptionAction(fn (Action $action) => $this->createClientAction($action));
+            ->createOptionForm(fn(Schema $form) => $this->createClientForm($form))
+            ->createOptionAction(fn(Action $action) => $this->createClientAction($action));
 
         $this->relationship('client', 'name');
 
@@ -33,7 +33,7 @@ class CreateClientSelect extends Select
         });
     }
 
-    protected function createClientForm(Form $form): Form
+    protected function createClientForm(Schema $form): Schema
     {
         return ClientResource::form($form);
     }
@@ -43,7 +43,7 @@ class CreateClientSelect extends Select
         return $action
             ->label('Create client')
             ->slideOver()
-            ->modalWidth(MaxWidth::ThreeExtraLarge)
+            ->modalWidth(Width::ThreeExtraLarge)
             ->modalHeading('Create a new client');
     }
 }

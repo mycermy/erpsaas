@@ -12,10 +12,10 @@ use Erpsaas\Core\Filament\Company\Clusters\Settings\Resources\DocumentDefaultRes
 use Erpsaas\Core\Filament\Forms\Components\DocumentPreview;
 use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Filament\Forms;
-use Filament\Forms\Components\Component;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,9 +28,9 @@ class DocumentDefaultResource extends Resource
 
     protected static ?string $modelLabel = 'document template';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->live()
             ->schema([
                 self::getGeneralSection(),
@@ -40,54 +40,57 @@ class DocumentDefaultResource extends Resource
             ]);
     }
 
-    public static function getGeneralSection(): Forms\Components\Component
+    public static function getGeneralSection(): Component
     {
-        return Forms\Components\Section::make('General')
+        return \Filament\Schemas\Components\Section::make('General')
             ->schema([
                 Forms\Components\TextInput::make('number_prefix')
-                    ->localizeLabel()
+                    ->label(translate('Number prefix'))
                     ->nullable(),
                 Forms\Components\Select::make('payment_terms')
-                    ->softRequired()
-                    ->localizeLabel()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Payment terms'))
                     ->options(PaymentTerms::class),
                 Forms\Components\Select::make('discount_method')
-                    ->softRequired()
+                    ->required()
+                    ->markAsRequired(false)
+                    ->label(translate('Discount method'))
                     ->options(DocumentDiscountMethod::class),
             ])->columns();
     }
 
-    public static function getContentSection(): Forms\Components\Component
+    public static function getContentSection(): Component
     {
-        return Forms\Components\Section::make('Content')
-            ->hidden(static fn (DocumentDefault $record) => $record->type === DocumentType::Bill)
+        return \Filament\Schemas\Components\Section::make('Content')
+            ->hidden(static fn(DocumentDefault $record) => $record->type === DocumentType::Bill)
             ->schema([
                 Forms\Components\TextInput::make('header')
-                    ->localizeLabel()
+                    ->label(translate('Header'))
                     ->nullable(),
                 Forms\Components\TextInput::make('subheader')
-                    ->localizeLabel()
+                    ->label(translate('Subheader'))
                     ->nullable(),
                 Forms\Components\Textarea::make('terms')
-                    ->localizeLabel()
+                    ->label(translate('Terms'))
                     ->nullable(),
                 Forms\Components\Textarea::make('footer')
-                    ->localizeLabel('Footer')
+                    ->label(translate('Footer'))
                     ->nullable(),
             ])->columns();
     }
 
     public static function getTemplateSection(): Component
     {
-        return Forms\Components\Section::make('Template')
+        return \Filament\Schemas\Components\Section::make('Template')
             ->description('Choose the template and edit the column names.')
-            ->hidden(static fn (DocumentDefault $record) => $record->type === DocumentType::Bill)
+            ->hidden(static fn(DocumentDefault $record) => $record->type === DocumentType::Bill)
             ->schema([
-                Forms\Components\Grid::make(1)
+                \Filament\Schemas\Components\Grid::make(1)
                     ->schema([
                         Forms\Components\FileUpload::make('logo')
                             ->maxSize(1024)
-                            ->localizeLabel()
+                            ->label(translate('Logo'))
                             ->openable()
                             ->directory('logos/document')
                             ->image()
@@ -100,28 +103,30 @@ class DocumentDefaultResource extends Resource
                             ->loadingIndicatorPosition('left')
                             ->removeUploadedFileButtonPosition('right'),
                         Forms\Components\Checkbox::make('show_logo')
-                            ->localizeLabel()
+                            ->label(translate('Show logo'))
                             ->hidden(is_demo_environment()),
                         Forms\Components\ColorPicker::make('accent_color')
-                            ->localizeLabel(),
+                            ->label(translate('Accent color')),
                         Forms\Components\Select::make('font')
-                            ->softRequired()
-                            ->localizeLabel()
+                            ->required()
+                            ->markAsRequired(false)
+                            ->label(translate('Font'))
                             ->allowHtml()
                             ->options(
                                 collect(Font::cases())
-                                    ->mapWithKeys(static fn ($case) => [
+                                    ->mapWithKeys(static fn($case) => [
                                         $case->value => "<span style='font-family:{$case->getLabel()}'>{$case->getLabel()}</span>",
                                     ]),
                             ),
                         Forms\Components\Select::make('template')
-                            ->softRequired()
-                            ->localizeLabel()
+                            ->required()
+                            ->markAsRequired(false)
+                            ->label(translate('Template'))
                             ->options(Template::class),
                         ...static::getColumnLabelsSchema(),
                     ])->columnSpan(1),
                 DocumentPreview::make()
-                    ->template(static fn (Get $get) => Template::parse($get('template')))
+                    ->template(static fn(Get $get) => Template::parse($get('template')))
                     ->preview()
                     ->columnSpan([
                         'lg' => 2,
@@ -131,8 +136,8 @@ class DocumentDefaultResource extends Resource
 
     public static function getBillColumnLabelsSection(): Component
     {
-        return Forms\Components\Section::make('Column Labels')
-            ->visible(static fn (DocumentDefault $record) => $record->type === DocumentType::Bill)
+        return \Filament\Schemas\Components\Section::make('Column Labels')
+            ->visible(static fn(DocumentDefault $record) => $record->type === DocumentType::Bill)
             ->schema(static::getColumnLabelsSchema())->columns();
     }
 
@@ -140,8 +145,9 @@ class DocumentDefaultResource extends Resource
     {
         return [
             Forms\Components\Select::make('item_name.option')
-                ->softRequired()
-                ->localizeLabel('Item name')
+                ->required()
+                ->markAsRequired(false)
+                ->label(translate('Item name'))
                 ->options(DocumentDefault::getAvailableItemNameOptions())
                 ->afterStateUpdated(static function (Get $get, Set $set, $state, $old) {
                     if ($state !== 'other' && $old === 'other' && filled($get('item_name.custom'))) {
@@ -154,15 +160,16 @@ class DocumentDefaultResource extends Resource
                     }
                 }),
             Forms\Components\TextInput::make('item_name.custom')
-                ->hiddenLabel()
-                ->extraFieldWrapperAttributes(static fn (DocumentDefault $record) => [
+                ->label(' ')
+                ->extraFieldWrapperAttributes(static fn(DocumentDefault $record) => [
                     'class' => $record->type === DocumentType::Bill ? 'report-hidden-label' : '',
                 ])
-                ->disabled(static fn (callable $get) => $get('item_name.option') !== 'other')
+                ->disabled(static fn(callable $get) => $get('item_name.option') !== 'other')
                 ->nullable(),
             Forms\Components\Select::make('unit_name.option')
-                ->softRequired()
-                ->localizeLabel('Unit name')
+                ->required()
+                ->markAsRequired(false)
+                ->label(translate('Unit name'))
                 ->options(DocumentDefault::getAvailableUnitNameOptions())
                 ->afterStateUpdated(static function (Get $get, Set $set, $state, $old) {
                     if ($state !== 'other' && $old === 'other' && filled($get('unit_name.custom'))) {
@@ -175,15 +182,16 @@ class DocumentDefaultResource extends Resource
                     }
                 }),
             Forms\Components\TextInput::make('unit_name.custom')
-                ->hiddenLabel()
-                ->extraFieldWrapperAttributes(static fn (DocumentDefault $record) => [
+                ->label(' ')
+                ->extraFieldWrapperAttributes(static fn(DocumentDefault $record) => [
                     'class' => $record->type === DocumentType::Bill ? 'report-hidden-label' : '',
                 ])
-                ->disabled(static fn (callable $get) => $get('unit_name.option') !== 'other')
+                ->disabled(static fn(callable $get) => $get('unit_name.option') !== 'other')
                 ->nullable(),
             Forms\Components\Select::make('price_name.option')
-                ->softRequired()
-                ->localizeLabel('Price name')
+                ->required()
+                ->markAsRequired(false)
+                ->label(translate('Price name'))
                 ->options(DocumentDefault::getAvailablePriceNameOptions())
                 ->afterStateUpdated(static function (Get $get, Set $set, $state, $old) {
                     if ($state !== 'other' && $old === 'other' && filled($get('price_name.custom'))) {
@@ -196,15 +204,16 @@ class DocumentDefaultResource extends Resource
                     }
                 }),
             Forms\Components\TextInput::make('price_name.custom')
-                ->hiddenLabel()
-                ->extraFieldWrapperAttributes(static fn (DocumentDefault $record) => [
+                ->label(' ')
+                ->extraFieldWrapperAttributes(static fn(DocumentDefault $record) => [
                     'class' => $record->type === DocumentType::Bill ? 'report-hidden-label' : '',
                 ])
-                ->disabled(static fn (callable $get) => $get('price_name.option') !== 'other')
+                ->disabled(static fn(callable $get) => $get('price_name.option') !== 'other')
                 ->nullable(),
             Forms\Components\Select::make('amount_name.option')
-                ->softRequired()
-                ->localizeLabel('Amount name')
+                ->required()
+                ->markAsRequired(false)
+                ->label(translate('Amount name'))
                 ->options(DocumentDefault::getAvailableAmountNameOptions())
                 ->afterStateUpdated(static function (Get $get, Set $set, $state, $old) {
                     if ($state !== 'other' && $old === 'other' && filled($get('amount_name.custom'))) {
@@ -217,11 +226,11 @@ class DocumentDefaultResource extends Resource
                     }
                 }),
             Forms\Components\TextInput::make('amount_name.custom')
-                ->hiddenLabel()
-                ->extraFieldWrapperAttributes(static fn (DocumentDefault $record) => [
+                ->label(' ')
+                ->extraFieldWrapperAttributes(static fn(DocumentDefault $record) => [
                     'class' => $record->type === DocumentType::Bill ? 'report-hidden-label' : '',
                 ])
-                ->disabled(static fn (callable $get) => $get('amount_name.option') !== 'other')
+                ->disabled(static fn(callable $get) => $get('amount_name.option') !== 'other')
                 ->nullable(),
         ];
     }
@@ -242,7 +251,7 @@ class DocumentDefaultResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                \Filament\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 //

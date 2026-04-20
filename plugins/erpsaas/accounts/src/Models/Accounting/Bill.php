@@ -18,11 +18,10 @@ use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Erpsaas\Core\Observers\BillObserver;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
-use Filament\Actions\MountableAction;
+use Filament\Actions\Action;
 use Filament\Actions\ReplicateAction;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -197,8 +196,7 @@ class Bill extends Document
         return $this->initialTransaction()->exists();
     }
 
-    #[Scope]
-    protected function unpaid(Builder $query): Builder
+    public function scopeUnpaid(Builder $query): Builder
     {
         return $query->whereIn('status', [
             BillStatus::Open,
@@ -349,7 +347,7 @@ class Bill extends Document
             $adjustmentAmount = abs($imbalance);
 
             // Find last entry of target type and adjust it
-            $lastKey = array_key_last(array_filter($journalEntryData, fn ($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
+            $lastKey = array_key_last(array_filter($journalEntryData, fn($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
             $journalEntryData[$lastKey]['amount_in_default_currency'] += $adjustmentAmount;
 
             if ($targetType === JournalEntryType::Debit) {
@@ -408,7 +406,7 @@ class Bill extends Document
         return $this->convertAmountToDefaultCurrency($amountCents);
     }
 
-    public static function getReplicateAction(string $action = ReplicateAction::class): MountableAction
+    public static function getReplicateAction(string $action = ReplicateAction::class): Action
     {
         return $action::make()
             ->excludeAttributes([

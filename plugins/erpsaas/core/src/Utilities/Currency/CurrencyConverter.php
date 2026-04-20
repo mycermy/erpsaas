@@ -3,7 +3,7 @@
 namespace Erpsaas\Core\Utilities\Currency;
 
 use Erpsaas\Core\Facades\Forex;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Set;
 
 class CurrencyConverter
 {

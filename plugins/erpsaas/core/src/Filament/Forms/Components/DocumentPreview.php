@@ -4,7 +4,7 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Erpsaas\Core\Enums\Setting\Template;
 use Closure;
-use Filament\Forms\Components\Grid;
+use Filament\Schemas\Components\Grid;
 
 class DocumentPreview extends Grid
 {

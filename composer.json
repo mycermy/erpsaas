@@ -9,28 +9,25 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-bcmath": "*",
         "ext-intl": "*",
-        "akaunting/laravel-money": "^6.0.2",
-        "andrewdwallo/filament-companies": "^4.0",
-        "andrewdwallo/filament-selectify": "^2.0",
+        "akaunting/laravel-money": "^6.0",
+        "andrewdwallo/filament-companies": "^5.0",
+        "andrewdwallo/filament-selectify": "^3.0",
         "andrewdwallo/transmatic": "^1.1",
-        "awcodes/filament-table-repeater": "^3.0",
         "barryvdh/laravel-snappy": "^1.0",
-        "codewithdennis/filament-simple-alert": "^3.0",
+        "codewithdennis/filament-simple-alert": "^4.0",
         "fakerphp/faker": "^1.24",
-        "filament/filament": "^3.2",
-        "guava/filament-clusters": "^1.1",
-        "jaocero/radio-deck": "^1.4",
+        "filament/filament": "*",
+        "guzzlehttp/guzzle": "^7.8",
+        "jaocero/radio-deck": "^3.1",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1",
-        "spatie/laravel-package-tools": "^1.93",
+        "laravel/tinker": "^2.10",
         "squirephp/model": "^3.4",
         "squirephp/repository": "^3.4",
-        "symfony/intl": "^6.3",
-        "wikimedia/composer-merge-plugin": "^2.1"
+        "symfony/intl": "^6.3"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.15",
@@ -47,6 +44,11 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Awcodes\\TableRepeater\\": "app/Support/Awcodes/TableRepeater/",
+            "Erpsaas\\Accounts\\": "plugins/erpsaas/accounts/src/",
+            "Erpsaas\\Core\\": "plugins/erpsaas/core/src/",
+            "Erpsaas\\Purchases\\": "plugins/erpsaas/purchases/src/",
+            "Erpsaas\\Sales\\": "plugins/erpsaas/sales/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },
@@ -105,6 +107,6 @@
             "wikimedia/composer-merge-plugin": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }

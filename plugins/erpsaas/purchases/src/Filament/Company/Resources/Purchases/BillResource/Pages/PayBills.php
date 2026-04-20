@@ -15,7 +15,7 @@ use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Actions;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\RawJs;
@@ -36,7 +36,7 @@ class PayBills extends ListRecords
 {
     protected static string $resource = BillResource::class;
 
-    protected static string $view = 'filament.company.resources.purchases.bill-resource.pages.pay-bills';
+    protected string $view = 'filament.company.resources.purchases.bill-resource.pages.pay-bills';
 
     public array $paymentAmounts = [];
 
@@ -69,7 +69,7 @@ class PayBills extends ListRecords
                 ->requiresConfirmation()
                 ->modalHeading('Confirm payments')
                 ->modalDescription(function () {
-                    $billCount = collect($this->paymentAmounts)->filter(fn ($amount) => $amount > 0)->count();
+                    $billCount = collect($this->paymentAmounts)->filter(fn($amount) => $amount > 0)->count();
                     $totalAmount = array_sum($this->paymentAmounts);
                     $currencyCode = $this->getTableFilterState('currency_code')['value'];
                     $totalFormatted = CurrencyConverter::formatCentsToMoney($totalAmount, $currencyCode, true);
@@ -133,19 +133,19 @@ class PayBills extends ListRecords
         ];
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->live()
             ->schema([
-                Forms\Components\Grid::make(3)
+                \Filament\Schemas\Components\Grid::make(3)
                     ->schema([
                         Forms\Components\Select::make('bank_account_id')
                             ->label('Account')
                             ->options(static function () {
                                 return Transaction::getBankAccountOptionsFlat();
                             })
-                            ->default(fn () => BankAccount::where('enabled', true)->first()?->id)
+                            ->default(fn() => BankAccount::where('enabled', true)->first()?->id)
                             ->selectablePlaceholder(false)
                             ->searchable()
                             ->softRequired(),
@@ -190,7 +190,7 @@ class PayBills extends ListRecords
                     ->sortable(),
                 TextColumn::make('amount_due')
                     ->label('Amount due')
-                    ->currency(static fn (Bill $record) => $record->currency_code)
+                    ->currency(static fn(Bill $record) => $record->currency_code)
                     ->alignEnd()
                     ->sortable()
                     ->summarize([
@@ -229,7 +229,7 @@ class PayBills extends ListRecords
                     ->width('3rem')
                     ->tooltip('Apply full amount')
                     ->action(
-                        Tables\Actions\Action::make('applyFullPayment')
+                        \Filament\Actions\Action::make('applyFullPayment')
                             ->action(function (Bill $record) {
                                 $this->paymentAmounts[$record->id] = $record->amount_due;
                             }),
@@ -275,7 +275,7 @@ class PayBills extends ListRecords
                                 return CurrencyConverter::formatCentsToMoney($total, $defaultCurrency, true);
                             }),
                         Summarizer::make()
-                            ->using(fn () => $this->totalPaymentAmount)
+                            ->using(fn() => $this->totalPaymentAmount)
                             ->visible(function () {
                                 $activeCurrency = $this->getTableFilterState('currency_code')['value'] ?? null;
                                 $defaultCurrency = CurrencyAccessor::getDefaultCurrency();
@@ -285,7 +285,7 @@ class PayBills extends ListRecords
                     ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('applyFullAmounts')
+                \Filament\Actions\BulkAction::make('applyFullAmounts')
                     ->label('Apply full amounts')
                     ->icon('heroicon-o-banknotes')
                     ->color('primary')
@@ -295,7 +295,7 @@ class PayBills extends ListRecords
                             $this->paymentAmounts[$bill->id] = $bill->amount_due;
                         });
                     }),
-                Tables\Actions\BulkAction::make('clearAmounts')
+                \Filament\Actions\BulkAction::make('clearAmounts')
                     ->label('Clear amounts')
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
@@ -322,7 +322,7 @@ class PayBills extends ListRecords
                         }
 
                         $label = collect($filter->getOptions())
-                            ->mapWithKeys(fn (string | array $label, string $value): array => is_array($label) ? $label : [$value => $label])
+                            ->mapWithKeys(fn(string | array $label, string $value): array => is_array($label) ? $label : [$value => $label])
                             ->get($state['value']);
 
                         if (blank($label)) {
@@ -335,7 +335,7 @@ class PayBills extends ListRecords
                     }),
                 Tables\Filters\SelectFilter::make('vendor_id')
                     ->label('Vendor')
-                    ->options(fn () => Vendor::query()->pluck('name', 'id')->toArray())
+                    ->options(fn() => Vendor::query()->pluck('name', 'id')->toArray())
                     ->searchable(),
                 Tables\Filters\SelectFilter::make('status')
                     ->multiple()

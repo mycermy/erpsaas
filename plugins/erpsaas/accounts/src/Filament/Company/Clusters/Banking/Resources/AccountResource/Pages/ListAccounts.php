@@ -5,7 +5,7 @@ namespace Erpsaas\Accounts\Filament\Company\Clusters\Banking\Resources\AccountRe
 use Erpsaas\Accounts\Filament\Company\Clusters\Banking\Resources\AccountResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 
 class ListAccounts extends ListRecords
 {
@@ -18,7 +18,7 @@ class ListAccounts extends ListRecords
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return 'max-w-full';
     }

@@ -16,7 +16,7 @@ use Erpsaas\Core\Filament\Tables\Columns;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,13 +28,13 @@ class VendorResource extends Resource
 
     protected static ?string $cluster = Purchases::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('General Information')
+                \Filament\Schemas\Components\Section::make('General Information')
                     ->schema([
-                        Forms\Components\Group::make()
+                        \Filament\Schemas\Components\Group::make()
                             ->columns(2)
                             ->schema([
                                 Forms\Components\TextInput::make('name')
@@ -50,12 +50,12 @@ class VendorResource extends Resource
                                     ->columnSpanFull(),
                                 CreateCurrencySelect::make('currency_code')
                                     ->softRequired()
-                                    ->visible(static fn(Forms\Get $get) => VendorType::parse($get('type')) === VendorType::Regular),
+                                    ->visible(static fn(\Filament\Schemas\Components\Utilities\Get $get) => VendorType::parse($get('type')) === VendorType::Regular),
                                 Forms\Components\Select::make('contractor_type')
                                     ->label('Contractor type')
                                     ->required()
                                     ->live()
-                                    ->visible(static fn(Forms\Get $get) => VendorType::parse($get('type')) === VendorType::Contractor)
+                                    ->visible(static fn(\Filament\Schemas\Components\Utilities\Get $get) => VendorType::parse($get('type')) === VendorType::Contractor)
                                     ->options(ContractorType::class),
                                 Forms\Components\TextInput::make('ssn')
                                     ->label('Social security number')
@@ -64,7 +64,7 @@ class VendorResource extends Resource
                                     ->mask('999-99-9999')
                                     ->stripCharacters('-')
                                     ->maxLength(11)
-                                    ->visible(static fn(Forms\Get $get) => ContractorType::parse($get('contractor_type')) === ContractorType::Individual)
+                                    ->visible(static fn(\Filament\Schemas\Components\Utilities\Get $get) => ContractorType::parse($get('contractor_type')) === ContractorType::Individual)
                                     ->maxLength(255),
                                 Forms\Components\TextInput::make('ein')
                                     ->label('Employer identification number')
@@ -73,7 +73,7 @@ class VendorResource extends Resource
                                     ->mask('99-9999999')
                                     ->stripCharacters('-')
                                     ->maxLength(10)
-                                    ->visible(static fn(Forms\Get $get) => ContractorType::parse($get('contractor_type')) === ContractorType::Business)
+                                    ->visible(static fn(\Filament\Schemas\Components\Utilities\Get $get) => ContractorType::parse($get('contractor_type')) === ContractorType::Business)
                                     ->maxLength(255),
                                 Forms\Components\TextInput::make('account_number')
                                     ->maxLength(255),
@@ -142,7 +142,7 @@ class VendorResource extends Resource
                                     ->addActionLabel('Add Phone'),
                             ])->columns(),
                     ])->columns(1),
-                Forms\Components\Section::make('Address Information')
+                \Filament\Schemas\Components\Section::make('Address Information')
                     ->relationship('address')
                     ->saveRelationshipsUsing(null)
                     ->saveRelationshipsBeforeChildrenUsing(null)
@@ -215,16 +215,16 @@ class VendorResource extends Resource
                 //
             ])
             ->headerActions([
-                Tables\Actions\ExportAction::make()
+                \Filament\Actions\ExportAction::make()
                     ->exporter(VendorExporter::class),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ActionGroup::make([
-                        Tables\Actions\EditAction::make(),
-                        Tables\Actions\ViewAction::make(),
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ActionGroup::make([
+                        \Filament\Actions\EditAction::make(),
+                        \Filament\Actions\ViewAction::make(),
                     ])->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
                 ]),
             ])
             ->bulkActions([

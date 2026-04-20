@@ -22,7 +22,7 @@ class BillsRelationManager extends RelationManager
     {
         return BillResource::table($table)
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                \Filament\Actions\CreateAction::make()
                     ->url(BillResource\Pages\CreateBill::getUrl(['vendor' => $this->getOwnerRecord()->getKey()])),
             ]);
     }

@@ -8,7 +8,7 @@ use Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource;
 use Erpsaas\Accounts\Models\Accounting\Estimate;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 
 class EditRecurringInvoice extends EditRecord
@@ -25,9 +25,9 @@ class EditRecurringInvoice extends EditRecord
         ];
     }
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
-        return MaxWidth::Full;
+        return Width::Full;
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model

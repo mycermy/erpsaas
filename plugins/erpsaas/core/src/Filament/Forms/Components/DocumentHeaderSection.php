@@ -4,9 +4,9 @@ namespace Erpsaas\Core\Filament\Forms\Components;
 
 use Closure;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Split;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+
 use Filament\Forms\Components\TextInput;
 
 class DocumentHeaderSection extends Section
@@ -37,7 +37,7 @@ class DocumentHeaderSection extends Section
         $this->collapsed();
 
         $this->schema([
-            Split::make([
+            \Filament\Schemas\Components\Grid::make(['md' => 2])->schema([
                 Group::make([
                     FileUpload::make('logo')
                         ->maxSize(1024)
@@ -60,7 +60,7 @@ class DocumentHeaderSection extends Section
                     TextInput::make('subheader')
                         ->default(fn () => $this->getDefaultSubheader()),
                 ])->grow(true),
-            ])->from('md'),
+            ]),
         ]);
     }
 

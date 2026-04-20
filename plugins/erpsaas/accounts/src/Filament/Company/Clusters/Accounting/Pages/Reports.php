@@ -15,17 +15,17 @@ use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports\TrialBal
 use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports\VendorBalanceSummary;
 use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports\VendorPaymentPerformance;
 use Erpsaas\Core\Filament\Infolists\Components\ReportEntry;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Page;
 use Filament\Support\Colors\Color;
 
 class Reports extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-chart-bar';
 
-    protected static string $view = 'filament.company.pages.reports';
+    protected string $view = 'filament.company.pages.reports';
 
     public static function getNavigationLabel(): string
     {
@@ -56,7 +56,7 @@ class Reports extends Page
         ];
     }
 
-    public function reportsInfolist(Infolist $infolist): Infolist
+    public function reportsInfolist(Schema $infolist): Schema
     {
         return $infolist
             ->state([])

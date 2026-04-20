@@ -3,16 +3,15 @@
 namespace Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\BudgetResource\Pages;
 
 use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\BudgetResource;
-use Filament\Forms\Form;
-use Filament\Infolists\Infolist;
+use Filament\Schemas\Schema;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 
 class ViewBudget extends ViewRecord
 {
     protected static string $resource = BudgetResource::class;
 
-    public function getMaxContentWidth(): MaxWidth | string | null
+    public function getMaxContentWidth(): Width | string | null
     {
         return '8xl';
     }
@@ -31,12 +30,12 @@ class ViewBudget extends ViewRecord
         ];
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form->schema([]);
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $infolist): Schema
     {
         return $infolist->schema([]);
     }

@@ -7,7 +7,7 @@ use Filament\Navigation\NavigationItem;
 
 class Account extends Cluster
 {
-    protected static ?string $navigationIcon = 'heroicon-s-user';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-s-user';
 
     protected static ?string $navigationLabel = 'My Account';
 
@@ -35,7 +35,7 @@ class Account extends Cluster
                 ->parentItem(static::getNavigationParentItem())
                 ->icon(static::getNavigationIcon())
                 ->activeIcon(static::getActiveNavigationIcon())
-                ->isActiveWhen(fn (): bool => request()->routeIs(static::getNavigationItemActiveRoutePattern()))
+                ->isActiveWhen(fn(): bool => request()->routeIs(static::getNavigationItemActiveRoutePattern()))
                 ->sort(static::getNavigationSort())
                 ->badge(static::getNavigationBadge(), color: static::getNavigationBadgeColor())
                 ->badgeTooltip(static::getNavigationBadgeTooltip())

@@ -2,7 +2,7 @@
     'reportLoaded' => false,
 ])
 
-<x-filament-tables::container>
+<div class="fi-ta-ctn rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
     <div class="es-table__header-ctn"></div>
     <div
         class="relative divide-y divide-gray-200 overflow-x-auto dark:divide-white/10 dark:border-t-white/10 min-h-40">
@@ -21,4 +21,4 @@
         </div>
     </div>
     <div class="es-table__footer-ctn border-t border-gray-200"></div>
-</x-filament-tables::container>
+</div>

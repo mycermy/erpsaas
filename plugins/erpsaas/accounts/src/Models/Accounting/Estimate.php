@@ -16,7 +16,6 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Erpsaas\Core\Observers\EstimateObserver;
 use Filament\Actions\Action;
-use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
@@ -267,7 +266,7 @@ class Estimate extends Document
         ]);
     }
 
-    public static function getApproveDraftAction(string $action = Action::class): MountableAction
+    public static function getApproveDraftAction(string $action = Action::class): Action
     {
         return $action::make('approveDraft')
             ->label('Approve')
@@ -278,7 +277,7 @@ class Estimate extends Document
             ->requiresConfirmation()
             ->databaseTransaction()
             ->successNotificationTitle('Estimate approved')
-            ->action(function (self $record, MountableAction $action, Component $livewire) {
+            ->action(function (self $record, Action $action, Component $livewire) {
                 if ($record->hasInactiveAdjustments()) {
                     $isViewPage = $livewire instanceof EstimateResource\Pages\ViewEstimate;
 
@@ -300,7 +299,7 @@ class Estimate extends Document
             });
     }
 
-    public static function getMarkAsSentAction(string $action = Action::class): MountableAction
+    public static function getMarkAsSentAction(string $action = Action::class): Action
     {
         return $action::make('markAsSent')
             ->label('Mark as sent')
@@ -309,7 +308,7 @@ class Estimate extends Document
                 return $record->canBeMarkedAsSent();
             })
             ->successNotificationTitle('Estimate sent')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->markAsSent();
 
                 $action->success();
@@ -336,7 +335,7 @@ class Estimate extends Document
         ]);
     }
 
-    public static function getReplicateAction(string $action = ReplicateAction::class): MountableAction
+    public static function getReplicateAction(string $action = ReplicateAction::class): Action
     {
         return $action::make()
             ->excludeAttributes([
@@ -371,7 +370,7 @@ class Estimate extends Document
             });
     }
 
-    public static function getMarkAsAcceptedAction(string $action = Action::class): MountableAction
+    public static function getMarkAsAcceptedAction(string $action = Action::class): Action
     {
         return $action::make('markAsAccepted')
             ->label('Mark as Accepted')
@@ -381,7 +380,7 @@ class Estimate extends Document
             })
             ->databaseTransaction()
             ->successNotificationTitle('Estimate accepted')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->markAsAccepted();
 
                 $action->success();
@@ -398,7 +397,7 @@ class Estimate extends Document
         ]);
     }
 
-    public static function getMarkAsDeclinedAction(string $action = Action::class): MountableAction
+    public static function getMarkAsDeclinedAction(string $action = Action::class): Action
     {
         return $action::make('markAsDeclined')
             ->label('Mark as Declined')
@@ -410,7 +409,7 @@ class Estimate extends Document
             ->requiresConfirmation()
             ->databaseTransaction()
             ->successNotificationTitle('Estimate declined')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->markAsDeclined();
 
                 $action->success();
@@ -427,7 +426,7 @@ class Estimate extends Document
         ]);
     }
 
-    public static function getConvertToInvoiceAction(string $action = Action::class): MountableAction
+    public static function getConvertToInvoiceAction(string $action = Action::class): Action
     {
         return $action::make('convertToInvoice')
             ->label('Convert to Invoice')
@@ -437,7 +436,7 @@ class Estimate extends Document
             })
             ->databaseTransaction()
             ->successNotificationTitle('Estimate converted to invoice')
-            ->action(function (self $record, MountableAction $action) {
+            ->action(function (self $record, Action $action) {
                 $record->convertToInvoice();
 
                 $action->success();

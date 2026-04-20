@@ -10,15 +10,19 @@
 
             <!-- Grouping Button and Column Toggle -->
             @if($this->hasToggleableColumns())
-                <div class="flex-shrink-0 mr-4">
-                    <x-filament-tables::column-toggle.dropdown
-                        :form="$this->getTableColumnToggleForm()"
-                        :trigger-action="$this->getToggleColumnsTriggerAction()"
-                    />
+                <div class="shrink-0 mr-4">
+                    <x-filament::dropdown placement="bottom-end" shift :flip="false">
+                        <x-slot name="trigger">
+                            {{ $this->getToggleColumnsTriggerAction() }}
+                        </x-slot>
+                        <div class="p-4">
+                            {{ $this->getTableColumnToggleForm() }}
+                        </div>
+                    </x-filament::dropdown>
                 </div>
             @endif
 
-            <div class="flex-shrink-0 w-[9.5rem] flex justify-end">
+            <div class="shrink-0 w-38 flex justify-end">
                 {{ $this->applyFiltersAction }}
             </div>
         </div>

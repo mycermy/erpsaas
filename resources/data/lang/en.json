@@ -202,5 +202,10 @@
     "Budget Items": "Budget Items",
     "Budget Allocations": "Budget Allocations",
     "Account Selection": "Account Selection",
-    "Custom": "Custom"
+    "Custom": "Custom",
+    "Fiscal year end month": "Fiscal year end month",
+    "Fiscal year end day": "Fiscal year end day",
+    "Discount method": "Discount method",
+    "Date range": "Date range",
+    "As of date": "As of date"
 }

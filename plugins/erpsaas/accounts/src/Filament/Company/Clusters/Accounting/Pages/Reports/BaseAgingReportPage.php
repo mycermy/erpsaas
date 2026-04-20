@@ -11,14 +11,14 @@ use Erpsaas\Core\Services\ReportService;
 use Erpsaas\Core\Support\Column;
 use Erpsaas\Core\Transformers\AgingReportTransformer;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\RawJs;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 abstract class BaseAgingReportPage extends BaseReportPage
 {
-    protected static string $view = 'filament.company.pages.reports.trial-balance';
+    protected string $view = 'filament.company.pages.reports.trial-balance';
 
     protected ReportService $reportService;
 
@@ -77,7 +77,7 @@ abstract class BaseAgingReportPage extends BaseReportPage
         return $columns;
     }
 
-    public function filtersForm(Form $form): Form
+    public function filtersForm(Schema $form): Schema
     {
         return $form
             ->columns(4)

@@ -3,9 +3,7 @@
 namespace Erpsaas\Core\Filament\Tables\Actions;
 
 use Closure;
-use Filament\Actions\Concerns\CanReplicateRecords;
-use Filament\Actions\Contracts\ReplicatesRecords;
-use Filament\Tables\Actions\BulkAction;
+use Filament\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,15 +11,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class ReplicateBulkAction extends BulkAction implements ReplicatesRecords
+class ReplicateBulkAction extends BulkAction
 {
-    use CanReplicateRecords;
-
     protected ?Closure $afterReplicaSaved = null;
+
+    protected ?Closure $beforeReplicaSavedCallback = null;
 
     protected array $relationshipsToReplicate = [];
 
     protected array | Closure | null $excludedAttributesPerRelationship = null;
+
+    protected array | Closure | null $excludedAttributes = null;
+
+    protected ?Model $replica = null;
 
     public static function getDefaultName(): ?string
     {
@@ -34,7 +36,7 @@ class ReplicateBulkAction extends BulkAction implements ReplicatesRecords
 
         $this->label(__('Replicate Selected'));
 
-        $this->modalHeading(fn (): string => __('Replicate selected :label', ['label' => $this->getPluralModelLabel()]));
+        $this->modalHeading(fn(): string => __('Replicate selected :label', ['label' => $this->getPluralModelLabel()]));
 
         $this->modalSubmitActionLabel(__('Replicate'));
 
@@ -130,11 +132,37 @@ class ReplicateBulkAction extends BulkAction implements ReplicatesRecords
         return $this;
     }
 
+    public function callBeforeReplicaSaved(): void
+    {
+        $this->evaluate($this->beforeReplicaSavedCallback, [
+            'replica' => $this->replica,
+        ]);
+    }
+
+    public function beforeReplicaSaved(?Closure $callback): static
+    {
+        $this->beforeReplicaSavedCallback = $callback;
+
+        return $this;
+    }
+
     public function callAfterReplicaSaved(Model $original, Model $replica): void
     {
         $this->evaluate($this->afterReplicaSaved, [
             'original' => $original,
             'replica' => $replica,
         ]);
+    }
+
+    public function excludeAttributes(array | Closure | null $attributes): static
+    {
+        $this->excludedAttributes = $attributes;
+
+        return $this;
+    }
+
+    public function getExcludedAttributes(): ?array
+    {
+        return $this->evaluate($this->excludedAttributes);
     }
 }

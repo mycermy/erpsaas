@@ -2,7 +2,7 @@
 
 namespace Erpsaas\Core\Filament\Forms\Components;
 
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Concerns\CanBeContained;
 
 class CustomSection extends Section
