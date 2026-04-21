@@ -11,11 +11,14 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
 
 class SalesMetricsWidget extends EnhancedStatsOverviewWidget
 {
+    use InteractsWithPageFilters;
+
     protected int | string | array $columnSpan = 'full';
 
     protected function getStats(): array
@@ -25,15 +28,16 @@ class SalesMetricsWidget extends EnhancedStatsOverviewWidget
             ? CompanySettingsService::getDefaultCurrency($company->getKey())
             : 'USD';
 
-        $thisMonth = $this->monthRange(now());
+        $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
+        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
         $invoicesThisMonth = Invoice::query()
-            ->whereBetween('date', [$thisMonth['start'], $thisMonth['end']])
+            ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $estimatesThisMonth = Estimate::query()
-            ->whereBetween('date', [$thisMonth['start'], $thisMonth['end']])
+            ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
         $unpaidInvoices = Invoice::query()->unpaid()->get();
@@ -68,14 +72,6 @@ class SalesMetricsWidget extends EnhancedStatsOverviewWidget
                 ->description(CurrencyConverter::formatCentsToMoney($estimatesThisMonth->sumMoneyInDefaultCurrency('total'), $defaultCurrency) . ' potential')
                 ->descriptionIcon('heroicon-m-document-plus')
                 ->color('success'),
-        ];
-    }
-
-    protected function monthRange(Carbon $date): array
-    {
-        return [
-            'start' => $date->copy()->startOfMonth(),
-            'end' => $date->copy()->endOfMonth(),
         ];
     }
 }

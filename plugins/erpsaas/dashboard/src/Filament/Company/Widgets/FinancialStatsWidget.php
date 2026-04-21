@@ -11,11 +11,14 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
 
 class FinancialStatsWidget extends EnhancedStatsOverviewWidget
 {
+    use InteractsWithPageFilters;
+
     protected int | string | array $columnSpan = 'full';
 
     protected function getStats(): array
@@ -25,25 +28,30 @@ class FinancialStatsWidget extends EnhancedStatsOverviewWidget
             ? CompanySettingsService::getDefaultCurrency($company->getKey())
             : 'USD';
 
-        $thisMonth = $this->monthRange(now());
-        $lastMonth = $this->monthRange(now()->subMonth());
+        $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
+        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
+
+        // Previous period for comparison
+        $periodLength = $startDate->diffInDays($endDate);
+        $prevStartDate = $startDate->copy()->subDays($periodLength + 1);
+        $prevEndDate = $startDate->copy()->subDay();
 
         $invoicesThisMonth = Invoice::query()
-            ->whereBetween('date', [$thisMonth['start'], $thisMonth['end']])
+            ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $invoicesLastMonth = Invoice::query()
-            ->whereBetween('date', [$lastMonth['start'], $lastMonth['end']])
+            ->whereBetween('date', [$prevStartDate, $prevEndDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $collectionsThisMonth = Invoice::query()
-            ->whereBetween('paid_at', [$thisMonth['start'], $thisMonth['end']])
+            ->whereBetween('paid_at', [$startDate, $endDate])
             ->get();
 
         $paymentsThisMonth = Bill::query()
-            ->whereBetween('paid_at', [$thisMonth['start'], $thisMonth['end']])
+            ->whereBetween('paid_at', [$startDate, $endDate])
             ->get();
 
         $openReceivables = Invoice::query()->unpaid()->get();
@@ -58,17 +66,17 @@ class FinancialStatsWidget extends EnhancedStatsOverviewWidget
         $netCashFlow = $cashIn - $cashOut;
 
         return [
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Revenue this month', CurrencyConverter::formatCentsToMoney($revenue, $defaultCurrency))
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Revenue', CurrencyConverter::formatCentsToMoney($revenue, $defaultCurrency))
                 ->description($this->getChangeDescription($revenue, $revenueLastMonth))
                 ->descriptionIcon($revenue >= $revenueLastMonth ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenue >= $revenueLastMonth ? 'success' : 'warning')
-                ->chart($this->generateMiniChart($invoicesThisMonth, 'total', 7)),
+                ->chart($this->generateMiniChart($invoicesThisMonth, 'total', $startDate, $endDate)),
 
             EnhancedStatsOverviewWidget\EnhancedStat::make('Collected', CurrencyConverter::formatCentsToMoney($cashIn, $defaultCurrency))
                 ->description(Number::format($collectionsThisMonth->count()) . ' invoices paid')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
-                ->chart($this->generateMiniChart($collectionsThisMonth, 'amount_paid', 7)),
+                ->chart($this->generateMiniChart($collectionsThisMonth, 'amount_paid', $startDate, $endDate)),
 
             EnhancedStatsOverviewWidget\EnhancedStat::make('Open receivables', CurrencyConverter::formatCentsToMoney($receivables, $defaultCurrency))
                 ->description(Number::format($openReceivables->count()) . ' unpaid invoices')
@@ -87,14 +95,6 @@ class FinancialStatsWidget extends EnhancedStatsOverviewWidget
         ];
     }
 
-    protected function monthRange(Carbon $date): array
-    {
-        return [
-            'start' => $date->copy()->startOfMonth(),
-            'end' => $date->copy()->endOfMonth(),
-        ];
-    }
-
     protected function getChangeDescription(int $current, int $previous): string
     {
         if ($previous === 0) {
@@ -108,13 +108,13 @@ class FinancialStatsWidget extends EnhancedStatsOverviewWidget
         return Number::format($percentage, maxPrecision: 1) . '% ' . $direction;
     }
 
-    protected function generateMiniChart($collection, string $column, int $days): array
+    protected function generateMiniChart($collection, string $column, Carbon $startDate, Carbon $endDate): array
     {
         $data = [];
-        $startDate = now()->subDays($days - 1)->startOfDay();
+        $days = min($startDate->diffInDays($endDate) + 1, 7); // Max 7 points for mini chart
 
         for ($i = 0; $i < $days; $i++) {
-            $date = $startDate->copy()->addDays($i);
+            $date = $startDate->copy()->addDays(($i / $days) * $startDate->diffInDays($endDate))->startOfDay();
             $dayTotal = $collection->filter(function ($item) use ($date) {
                 $itemDate = $item->paid_at ?? $item->date ?? null;
 

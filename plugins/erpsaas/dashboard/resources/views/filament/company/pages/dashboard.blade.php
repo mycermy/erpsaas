@@ -1,3 +1,5 @@
 <x-filament-panels::page>
-    {{-- Widgets are rendered automatically via getHeaderWidgets() and getFooterWidgets() --}}
+    @if (method_exists($this, 'filtersForm'))
+        {{ $this->filtersForm }}
+    @endif
 </x-filament-panels::page>

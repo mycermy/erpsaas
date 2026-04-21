@@ -9,11 +9,14 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
 
 class PurchaseMetricsWidget extends EnhancedStatsOverviewWidget
 {
+    use InteractsWithPageFilters;
+
     protected int | string | array $columnSpan = 'full';
 
     protected function getStats(): array
@@ -23,10 +26,11 @@ class PurchaseMetricsWidget extends EnhancedStatsOverviewWidget
             ? CompanySettingsService::getDefaultCurrency($company->getKey())
             : 'USD';
 
-        $thisMonth = $this->monthRange(now());
+        $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
+        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
         $billsThisMonth = Bill::query()
-            ->whereBetween('date', [$thisMonth['start'], $thisMonth['end']])
+            ->whereBetween('date', [$startDate, $endDate])
             ->where('status', '!=', BillStatus::Void)
             ->get();
 
@@ -59,14 +63,6 @@ class PurchaseMetricsWidget extends EnhancedStatsOverviewWidget
                 ->description(Number::format($overdueBills->count()) . ' vendor payments late')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger'),
-        ];
-    }
-
-    protected function monthRange(Carbon $date): array
-    {
-        return [
-            'start' => $date->copy()->startOfMonth(),
-            'end' => $date->copy()->endOfMonth(),
         ];
     }
 }

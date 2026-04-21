@@ -1,10 +1,8 @@
 <?php
 
-namespace Erpsaas\Dashboard\Filament\Company\Widgets;
+namespace Erpsaas\Dashboard\Filament\Company\Widgets\Sales;
 
-use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Accounts\Models\Accounting\Invoice;
-use Erpsaas\Core\Enums\Accounting\BillStatus;
 use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
@@ -15,11 +13,11 @@ use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
-class RevenueSpendChartWidget extends ChartWidget
+class SalesForecastChartWidget extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $heading = 'Revenue vs Spend Trend';
+    protected static ?string $heading = 'Sales Forecast';
 
     protected static ?string $maxHeight = '300px';
 
@@ -33,6 +31,8 @@ class RevenueSpendChartWidget extends ChartWidget
             : 'USD';
 
         $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
+
+        // Historical data (last 6 months from filter date)
         $startMonth = $endDate->copy()->startOfMonth()->subMonths(5);
         $endMonth = $endDate->copy()->endOfMonth();
 
@@ -41,15 +41,11 @@ class RevenueSpendChartWidget extends ChartWidget
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
-        $bills = Bill::query()
-            ->whereBetween('date', [$startMonth, $endMonth])
-            ->where('status', '!=', BillStatus::Void)
-            ->get();
-
         $labels = [];
-        $revenueData = [];
-        $spendData = [];
+        $actualData = [];
+        $forecastData = [];
 
+        // Calculate historical data
         for ($i = 0; $i < 6; $i++) {
             $month = $startMonth->copy()->addMonths($i);
             $labels[] = $month->format('M Y');
@@ -58,30 +54,44 @@ class RevenueSpendChartWidget extends ChartWidget
                 return $doc->date !== null && $doc->date->isSameMonth($month);
             });
 
-            $monthlyBills = $bills->filter(function (Model $doc) use ($month): bool {
-                return $doc->date !== null && $doc->date->isSameMonth($month);
-            });
-
-            $revenueData[] = $this->convertToDefaultCurrency($monthlyInvoices, 'total', $defaultCurrency) / 100;
-            $spendData[] = $this->convertToDefaultCurrency($monthlyBills, 'total', $defaultCurrency) / 100;
+            $monthlyRevenue = $this->convertToDefaultCurrency($monthlyInvoices, 'total', $defaultCurrency);
+            $actualData[] = $monthlyRevenue / 100;
         }
+
+        // Calculate simple trend-based forecast for next 3 months
+        $recentAvg = array_sum(array_slice($actualData, -3)) / 3;
+        $growthRate = count($actualData) >= 2
+            ? ($actualData[count($actualData) - 1] - $actualData[count($actualData) - 2]) / max(1, $actualData[count($actualData) - 2])
+            : 0.05;
+
+        // Forecast next 3 months
+        for ($i = 1; $i <= 3; $i++) {
+            $forecastMonth = $endDate->copy()->addMonths($i);
+            $labels[] = $forecastMonth->format('M Y');
+            $actualData[] = null; // No actual data yet
+            $forecastData[] = $recentAvg * (1 + ($growthRate * $i));
+        }
+
+        // Fill forecast line with nulls for historical months
+        $forecastData = array_pad([], count($actualData) - 3, null) + $forecastData;
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Revenue',
-                    'data' => $revenueData,
+                    'label' => 'Actual Revenue',
+                    'data' => $actualData,
                     'backgroundColor' => 'rgba(34, 197, 94, 0.2)',
                     'borderColor' => 'rgb(34, 197, 94)',
                     'fill' => true,
                     'tension' => 0.4,
                 ],
                 [
-                    'label' => 'Spend',
-                    'data' => $spendData,
-                    'backgroundColor' => 'rgba(239, 68, 68, 0.2)',
-                    'borderColor' => 'rgb(239, 68, 68)',
-                    'fill' => true,
+                    'label' => 'Forecast',
+                    'data' => $forecastData,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'borderDash' => [5, 5],
+                    'fill' => false,
                     'tension' => 0.4,
                 ],
             ],

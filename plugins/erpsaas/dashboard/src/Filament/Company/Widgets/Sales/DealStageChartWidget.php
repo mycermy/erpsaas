@@ -1,18 +1,18 @@
 <?php
 
-namespace Erpsaas\Dashboard\Filament\Company\Widgets;
+namespace Erpsaas\Dashboard\Filament\Company\Widgets\Sales;
 
-use Erpsaas\Accounts\Models\Accounting\Bill;
-use Erpsaas\Core\Enums\Accounting\BillStatus;
+use Erpsaas\Accounts\Models\Accounting\Estimate;
+use Erpsaas\Core\Enums\Accounting\EstimateStatus;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
 
-class BillStatusChartWidget extends ChartWidget
+class DealStageChartWidget extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $heading = 'Bill Status Distribution';
+    protected static ?string $heading = 'Deals by Stage';
 
     protected static ?string $maxHeight = '300px';
 
@@ -21,12 +21,11 @@ class BillStatusChartWidget extends ChartWidget
         $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
         $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
-        $bills = Bill::query()
+        $estimates = Estimate::query()
             ->whereBetween('date', [$startDate, $endDate])
-            ->where('status', '!=', BillStatus::Void)
             ->get();
 
-        $breakdown = $bills->groupBy('status')
+        $breakdown = $estimates->groupBy('status')
             ->map(fn($group) => $group->count());
 
         $labels = [];
@@ -34,17 +33,15 @@ class BillStatusChartWidget extends ChartWidget
         $colors = [];
 
         $statusColors = [
-            'open' => 'rgb(59, 130, 246)',
-            'overdue' => 'rgb(239, 68, 68)',
-            'partial' => 'rgb(249, 115, 22)',
-            'paid' => 'rgb(34, 197, 94)',
+            'unsent' => 'rgb(156, 163, 175)',
+            'sent' => 'rgb(59, 130, 246)',
+            'viewed' => 'rgb(147, 51, 234)',
+            'accepted' => 'rgb(34, 197, 94)',
+            'declined' => 'rgb(239, 68, 68)',
+            'expired' => 'rgb(249, 115, 22)',
         ];
 
-        foreach (BillStatus::cases() as $status) {
-            if ($status === BillStatus::Void) {
-                continue;
-            }
-
+        foreach (EstimateStatus::cases() as $status) {
             $count = $breakdown->get($status->value, 0);
 
             if ($count > 0) {

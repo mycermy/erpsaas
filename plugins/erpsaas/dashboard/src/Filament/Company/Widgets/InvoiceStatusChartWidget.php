@@ -5,17 +5,24 @@ namespace Erpsaas\Dashboard\Filament\Company\Widgets;
 use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
 use Filament\Widgets\ChartWidget;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Carbon;
 
 class InvoiceStatusChartWidget extends ChartWidget
 {
+    use InteractsWithPageFilters;
+
     protected static ?string $heading = 'Invoice Status Distribution';
 
     protected static ?string $maxHeight = '300px';
 
     protected function getData(): array
     {
+        $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
+        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
+
         $invoices = Invoice::query()
-            ->whereBetween('date', [now()->startOfYear(), now()->endOfYear()])
+            ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 

@@ -1,11 +1,9 @@
 <?php
 
-namespace Erpsaas\Dashboard\Filament\Company\Widgets;
+namespace Erpsaas\Dashboard\Filament\Company\Widgets\Purchases;
 
 use Erpsaas\Accounts\Models\Accounting\Bill;
-use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Enums\Accounting\BillStatus;
-use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
@@ -15,13 +13,15 @@ use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
-class RevenueSpendChartWidget extends ChartWidget
+class ProcurementTrendsWidget extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $heading = 'Revenue vs Spend Trend';
+    protected static ?string $heading = 'Procurement Trends';
 
     protected static ?string $maxHeight = '300px';
+
+    protected static ?string $pollingInterval = null;
 
     protected int | string | array $columnSpan = 'full';
 
@@ -32,14 +32,9 @@ class RevenueSpendChartWidget extends ChartWidget
             ? CompanySettingsService::getDefaultCurrency($company->getKey())
             : 'USD';
 
-        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
-        $startMonth = $endDate->copy()->startOfMonth()->subMonths(5);
-        $endMonth = $endDate->copy()->endOfMonth();
-
-        $invoices = Invoice::query()
-            ->whereBetween('date', [$startMonth, $endMonth])
-            ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
-            ->get();
+        // Anchor to filter end date, show rolling 6 months
+        $endMonth = Carbon::parse($this->filters['endDate'] ?? now())->endOfMonth();
+        $startMonth = $endMonth->copy()->startOfMonth()->subMonths(5);
 
         $bills = Bill::query()
             ->whereBetween('date', [$startMonth, $endMonth])
@@ -47,71 +42,70 @@ class RevenueSpendChartWidget extends ChartWidget
             ->get();
 
         $labels = [];
-        $revenueData = [];
         $spendData = [];
+        $countData = [];
 
         for ($i = 0; $i < 6; $i++) {
             $month = $startMonth->copy()->addMonths($i);
             $labels[] = $month->format('M Y');
 
-            $monthlyInvoices = $invoices->filter(function (Model $doc) use ($month): bool {
-                return $doc->date !== null && $doc->date->isSameMonth($month);
+            $monthlyBills = $bills->filter(function (Model $bill) use ($month): bool {
+                return $bill->date !== null && $bill->date->isSameMonth($month);
             });
 
-            $monthlyBills = $bills->filter(function (Model $doc) use ($month): bool {
-                return $doc->date !== null && $doc->date->isSameMonth($month);
-            });
-
-            $revenueData[] = $this->convertToDefaultCurrency($monthlyInvoices, 'total', $defaultCurrency) / 100;
             $spendData[] = $this->convertToDefaultCurrency($monthlyBills, 'total', $defaultCurrency) / 100;
+            $countData[] = $monthlyBills->count();
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Revenue',
-                    'data' => $revenueData,
-                    'backgroundColor' => 'rgba(34, 197, 94, 0.2)',
-                    'borderColor' => 'rgb(34, 197, 94)',
+                    'label' => 'Total Spend',
+                    'data' => $spendData,
+                    'borderColor' => '#f87171',
+                    'backgroundColor' => 'rgba(248, 113, 113, 0.15)',
                     'fill' => true,
                     'tension' => 0.4,
+                    'yAxisID' => 'y',
                 ],
                 [
-                    'label' => 'Spend',
-                    'data' => $spendData,
-                    'backgroundColor' => 'rgba(239, 68, 68, 0.2)',
-                    'borderColor' => 'rgb(239, 68, 68)',
-                    'fill' => true,
+                    'label' => 'Invoice Count',
+                    'data' => $countData,
+                    'borderColor' => '#3b82f6',
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.15)',
+                    'fill' => false,
                     'tension' => 0.4,
+                    'yAxisID' => 'y1',
                 ],
             ],
             'labels' => $labels,
         ];
     }
 
-    protected function getType(): string
-    {
-        return 'line';
-    }
-
     protected function getOptions(): array
     {
         return [
             'plugins' => [
-                'legend' => [
-                    'display' => true,
-                    'position' => 'top',
-                ],
+                'legend' => ['display' => true, 'position' => 'top'],
             ],
             'scales' => [
                 'y' => [
                     'beginAtZero' => true,
-                    'ticks' => [
-                        'callback' => 'function(value) { return "$" + value.toLocaleString(); }',
-                    ],
+                    'position' => 'left',
+                    'grid' => ['drawOnChartArea' => true],
+                ],
+                'y1' => [
+                    'beginAtZero' => true,
+                    'position' => 'right',
+                    'grid' => ['drawOnChartArea' => false],
                 ],
             ],
         ];
+    }
+
+    protected function getType(): string
+    {
+        return 'line';
     }
 
     protected function convertToDefaultCurrency(iterable $documents, string $column, string $defaultCurrency): int
