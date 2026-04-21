@@ -287,7 +287,7 @@ class Invoice extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= auth()->user()?->currentCompany;
+        $company ??= \Illuminate\Support\Facades\Auth::user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -468,7 +468,7 @@ class Invoice extends Document
             $adjustmentAmount = abs($imbalance);
 
             // Find last entry of target type and adjust it
-            $lastKey = array_key_last(array_filter($journalEntryData, fn ($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
+            $lastKey = array_key_last(array_filter($journalEntryData, fn($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
             $journalEntryData[$lastKey]['amount_in_default_currency'] += $adjustmentAmount;
 
             if ($targetType === JournalEntryType::Debit) {
@@ -533,7 +533,7 @@ class Invoice extends Document
         return $action::make('blockedApprove')
             ->label('Approve')
             ->icon('heroicon-m-check-circle')
-            ->visible(fn (self $record) => $record->canBeApproved() && $record->hasInactiveAdjustments())
+            ->visible(fn(self $record) => $record->canBeApproved() && $record->hasInactiveAdjustments())
             ->requiresConfirmation()
             ->modalAlignment(Alignment::Start)
             ->modalIconColor('danger')

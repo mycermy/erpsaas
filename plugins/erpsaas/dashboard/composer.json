@@ -1,0 +1,28 @@
+{
+    "name": "erpsaas/dashboard",
+    "description": "Dashboard plugin for ERPSAAS — financial insights, sales, and purchases overview.",
+    "authors": [
+        {
+            "name": "ERPSAAS",
+            "email": "support@erpsaas.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Erpsaas\\Dashboard\\DashboardServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Erpsaas\\Dashboard\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Erpsaas\\Dashboard\\Tests\\": "tests/"
+        }
+    }
+}

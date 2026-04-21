@@ -116,6 +116,9 @@ class CompanyPanelProvider extends PanelProvider
             // Define navigation groups - clusters will auto-populate them via getNavigationGroup()
             ->navigationGroups([
                 NavigationGroup::make()
+                    ->label('Dashboard')
+                    ->icon('heroicon-o-home-modern'),
+                NavigationGroup::make()
                     ->label('Sales')
                     ->icon('heroicon-o-shopping-cart'),
                 NavigationGroup::make()

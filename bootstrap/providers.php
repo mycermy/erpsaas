@@ -12,6 +12,7 @@ return [
     // Plugin ServiceProviders are auto-discovered via composer merge-plugin
     Erpsaas\Core\CoreServiceProvider::class,
     Erpsaas\Accounts\AccountsServiceProvider::class,
+    Erpsaas\Dashboard\DashboardServiceProvider::class,
     Erpsaas\Purchases\PurchasesServiceProvider::class,
     Erpsaas\Sales\SalesServiceProvider::class,
 ];
