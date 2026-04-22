@@ -19,7 +19,9 @@ class RevenueSpendChartWidget extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $heading = 'Revenue vs Spend Trend';
+    protected static ?string $heading = 'Profit and loss';
+
+    protected static ?string $description = 'Accrual (paid & unpaid)';
 
     protected static ?string $maxHeight = '300px';
 
@@ -32,8 +34,8 @@ class RevenueSpendChartWidget extends ChartWidget
             ? CompanySettingsService::getDefaultCurrency($company->getKey())
             : 'USD';
 
-        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
-        $startMonth = $endDate->copy()->startOfMonth()->subMonths(5);
+        $endDate = now()->endOfMonth();
+        $startMonth = $endDate->copy()->subMonths(11)->startOfMonth();
         $endMonth = $endDate->copy()->endOfMonth();
 
         $invoices = Invoice::query()
@@ -50,9 +52,9 @@ class RevenueSpendChartWidget extends ChartWidget
         $revenueData = [];
         $spendData = [];
 
-        for ($i = 0; $i < 6; $i++) {
+        for ($i = 0; $i < 12; $i++) {
             $month = $startMonth->copy()->addMonths($i);
-            $labels[] = $month->format('M Y');
+            $labels[] = $month->format("M'y");
 
             $monthlyInvoices = $invoices->filter(function (Model $doc) use ($month): bool {
                 return $doc->date !== null && $doc->date->isSameMonth($month);
@@ -69,20 +71,18 @@ class RevenueSpendChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Revenue',
-                    'data' => $revenueData,
-                    'backgroundColor' => 'rgba(34, 197, 94, 0.2)',
-                    'borderColor' => 'rgb(34, 197, 94)',
-                    'fill' => true,
-                    'tension' => 0.4,
+                    'label'           => __('Income'),
+                    'data'            => $revenueData,
+                    'backgroundColor' => 'rgba(34, 197, 94, 0.7)',
+                    'borderColor'     => 'rgb(34, 197, 94)',
+                    'borderWidth'     => 0,
                 ],
                 [
-                    'label' => 'Spend',
-                    'data' => $spendData,
-                    'backgroundColor' => 'rgba(239, 68, 68, 0.2)',
-                    'borderColor' => 'rgb(239, 68, 68)',
-                    'fill' => true,
-                    'tension' => 0.4,
+                    'label'           => __('Expenses'),
+                    'data'            => $spendData,
+                    'backgroundColor' => 'rgba(239, 68, 68, 0.7)',
+                    'borderColor'     => 'rgb(239, 68, 68)',
+                    'borderWidth'     => 0,
                 ],
             ],
             'labels' => $labels,
@@ -91,7 +91,7 @@ class RevenueSpendChartWidget extends ChartWidget
 
     protected function getType(): string
     {
-        return 'line';
+        return 'bar';
     }
 
     protected function getOptions(): array

@@ -3,12 +3,14 @@
 namespace Erpsaas\Dashboard\Filament\Company\Pages;
 
 use Erpsaas\Dashboard\Filament\Company\Clusters\DashboardCluster;
-use Erpsaas\Dashboard\Filament\Company\Widgets\BillStatusChartWidget;
+use Erpsaas\Dashboard\Filament\Company\Widgets\AgedReceivablesPayablesWidget;
+use Erpsaas\Dashboard\Filament\Company\Widgets\CashFlowChartWidget;
+use Erpsaas\Dashboard\Filament\Company\Widgets\ExpensesBreakdownChartWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\FinancialStatsWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\InvoiceStatusChartWidget;
-use Erpsaas\Dashboard\Filament\Company\Widgets\PurchaseMetricsWidget;
+use Erpsaas\Dashboard\Filament\Company\Widgets\NetIncomeComparisonWidget;
+use Erpsaas\Dashboard\Filament\Company\Widgets\OverdueInvoicesBillsWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\RevenueSpendChartWidget;
-use Erpsaas\Dashboard\Filament\Company\Widgets\SalesMetricsWidget;
 use Erpsaas\Core\Filament\Forms\Components\DateRangeSelect;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
@@ -40,7 +42,7 @@ class Overview extends Page
 
     public function getSubheading(): ?string
     {
-        return __('Financial insights, sales, and purchases analytics');
+        return __('Financial insights and accounting overview');
     }
 
     public function persistsFiltersInSession(): bool
@@ -85,11 +87,17 @@ class Overview extends Page
     public function getFooterWidgets(): array
     {
         return [
+            // Row 1: Overdue list (1 col) | Cash flow chart (1 col)
+            OverdueInvoicesBillsWidget::class,
+            CashFlowChartWidget::class,
+            // Row 2: Profit & Loss bar chart (full width)
             RevenueSpendChartWidget::class,
-            SalesMetricsWidget::class,
+            // Row 3: Expenses breakdown (1 col) | Invoice status (1 col)
+            ExpensesBreakdownChartWidget::class,
             InvoiceStatusChartWidget::class,
-            PurchaseMetricsWidget::class,
-            BillStatusChartWidget::class,
+            // Row 4: Net income comparison (1 col) | Aged receivables & payables (1 col)
+            NetIncomeComparisonWidget::class,
+            AgedReceivablesPayablesWidget::class,
         ];
     }
 
