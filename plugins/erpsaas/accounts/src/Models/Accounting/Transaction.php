@@ -8,7 +8,7 @@ use Erpsaas\Core\Enums\Accounting\AccountCategory;
 use Erpsaas\Core\Enums\Accounting\AccountType;
 use Erpsaas\Core\Enums\Accounting\PaymentMethod;
 use Erpsaas\Core\Enums\Accounting\TransactionType;
-use Erpsaas\Accounts\Filament\Company\Resources\Accounting\TransactionResource\Pages\ViewTransaction;
+use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\TransactionResource\Pages\ViewTransaction;
 use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource\Pages\ViewBill;
 use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource\Pages\ViewInvoice;
 use Erpsaas\Accounts\Models\Banking\BankAccount;
@@ -97,7 +97,7 @@ class Transaction extends Model
 
     public function isUncategorized(): bool
     {
-        return $this->journalEntries->contains(fn (JournalEntry $entry) => $entry->account->isUncategorized());
+        return $this->journalEntries->contains(fn(JournalEntry $entry) => $entry->account->isUncategorized());
     }
 
     public function isPayment(): bool
@@ -126,8 +126,8 @@ class Transaction extends Model
                     $query->where('archived', false);
                 }
             }])
-            ->when($excludedAccountId, fn (Builder $query) => $query->where('account_id', '!=', $excludedAccountId))
-            ->when($currentBankAccountId, fn (Builder $query) => $query->orWhere('id', $currentBankAccountId))
+            ->when($excludedAccountId, fn(Builder $query) => $query->where('account_id', '!=', $excludedAccountId))
+            ->when($currentBankAccountId, fn(Builder $query) => $query->orWhere('id', $currentBankAccountId))
             ->get()
             ->pluck('account.name', 'id')
             ->toArray();
@@ -148,11 +148,11 @@ class Transaction extends Model
             }, 'account.subtype' => function ($query) {
                 $query->select(['id', 'name']);
             }])
-            ->when($excludedAccountId, fn (Builder $query) => $query->where('account_id', '!=', $excludedAccountId))
-            ->when($currentBankAccountId, fn (Builder $query) => $query->orWhere('id', $currentBankAccountId))
+            ->when($excludedAccountId, fn(Builder $query) => $query->where('account_id', '!=', $excludedAccountId))
+            ->when($currentBankAccountId, fn(Builder $query) => $query->orWhere('id', $currentBankAccountId))
             ->get()
             ->groupBy('account.subtype.name')
-            ->map(fn (Collection $bankAccounts, string $subtype) => $bankAccounts->pluck('account.name', 'id'))
+            ->map(fn(Collection $bankAccounts, string $subtype) => $bankAccounts->pluck('account.name', 'id'))
             ->toArray();
     }
 
@@ -170,8 +170,8 @@ class Transaction extends Model
                     ->orWhere('id', $currentAccountId);
             })
             ->get()
-            ->groupBy(fn (Account $account) => $account->category->getPluralLabel())
-            ->map(fn (Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
+            ->groupBy(fn(Account $account) => $account->category->getPluralLabel())
+            ->map(fn(Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
             ->toArray();
     }
 
@@ -180,8 +180,8 @@ class Transaction extends Model
         return Account::query()
             ->select(['id', 'name', 'category'])
             ->get()
-            ->groupBy(fn (Account $account) => $account->category->getPluralLabel())
-            ->map(fn (Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
+            ->groupBy(fn(Account $account) => $account->category->getPluralLabel())
+            ->map(fn(Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
             ->toArray();
     }
 
@@ -214,14 +214,14 @@ class Transaction extends Model
         return Account::query()
             ->doesntHave('adjustment')
             ->doesntHave('bankAccount')
-            ->when($associatedAccountTypes, fn (Builder $query) => $query->whereIn('type', $associatedAccountTypes))
+            ->when($associatedAccountTypes, fn(Builder $query) => $query->whereIn('type', $associatedAccountTypes))
             ->where(function (Builder $query) use ($currentAccountId) {
                 $query->where('archived', false)
                     ->orWhere('id', $currentAccountId);
             })
             ->get()
-            ->groupBy(fn (Account $account) => $account->category->getPluralLabel())
-            ->map(fn (Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
+            ->groupBy(fn(Account $account) => $account->category->getPluralLabel())
+            ->map(fn(Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
             ->toArray();
     }
 
@@ -234,8 +234,8 @@ class Transaction extends Model
                     ->orWhere('id', $currentAccountId);
             })
             ->get()
-            ->groupBy(fn (Account $account) => $account->category->getPluralLabel())
-            ->map(fn (Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
+            ->groupBy(fn(Account $account) => $account->category->getPluralLabel())
+            ->map(fn(Collection $accounts, string $category) => $accounts->pluck('name', 'id'))
             ->toArray();
     }
 
@@ -262,7 +262,7 @@ class Transaction extends Model
         $vendors = Vendor::query()
             ->orderBy('name')
             ->pluck('name', 'id')
-            ->mapWithKeys(fn ($name, $id) => [-$id => $name])
+            ->mapWithKeys(fn($name, $id) => [-$id => $name])
             ->toArray();
 
         return [

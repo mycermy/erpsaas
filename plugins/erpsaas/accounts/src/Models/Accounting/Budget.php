@@ -7,7 +7,7 @@ use Erpsaas\Core\Concerns\CompanyOwned;
 use Erpsaas\Core\Enums\Accounting\BudgetIntervalType;
 use Erpsaas\Core\Enums\Accounting\BudgetSourceType;
 use Erpsaas\Core\Enums\Accounting\BudgetStatus;
-use Erpsaas\Accounts\Filament\Company\Resources\Accounting\BudgetResource;
+use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\BudgetResource;
 use Erpsaas\Core\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
