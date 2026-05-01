@@ -125,6 +125,12 @@ class CompanyPanelProvider extends PanelProvider
                     ->label('Purchases')
                     ->icon('heroicon-o-shopping-bag'),
                 NavigationGroup::make()
+                    ->label('Inventory')
+                    ->icon('heroicon-o-cube'),
+                NavigationGroup::make()
+                    ->label('Human Resources')
+                    ->icon('heroicon-o-user-group'),
+                NavigationGroup::make()
                     ->label('Accounting')
                     ->icon('heroicon-o-calculator'),
                 NavigationGroup::make()
