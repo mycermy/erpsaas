@@ -3,7 +3,7 @@
 namespace Tests;
 
 use Erpsaas\Core\Models\Common\Offering;
-use App\Models\Company;
+use Erpsaas\Core\Models\Company;
 use App\Models\User;
 use Erpsaas\Core\Testing\TestsReport;
 use Database\Seeders\TestDatabaseSeeder;

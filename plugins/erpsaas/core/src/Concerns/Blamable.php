@@ -2,22 +2,30 @@
 
 namespace Erpsaas\Core\Concerns;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 use Wallo\FilamentCompanies\FilamentCompanies;
 
+/**
+ * @mixin Model
+ *
+ * @phpstan-require-extends Model
+ *
+ * @method static void registerModelEvent(string $event, callable $callback)
+ */
 trait Blamable
 {
     public static function bootBlamable(): void
     {
-        static::creating(static function ($model) {
+        static::registerModelEvent('creating', static function ($model) {
             if (Auth::check() && $authId = Auth::id()) {
                 $model->created_by = $model->created_by ?? $authId;
                 $model->updated_by = $model->updated_by ?? $authId;
             }
         });
 
-        static::updating(static function ($model) {
+        static::registerModelEvent('updating', static function ($model) {
             if (Auth::check() && $authId = Auth::id()) {
                 $model->updated_by = $authId;
             }

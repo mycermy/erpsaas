@@ -3,7 +3,7 @@
 namespace Erpsaas\Accounts;
 
 use Filament\Panel;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -25,5 +25,9 @@ class AccountsServiceProvider extends PackageServiceProvider
         });
     }
 
-    public function packageBooted(): void {}
+    public function packageBooted(): void
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        View::addLocation(__DIR__ . '/../resources/views');
+    }
 }

@@ -5,12 +5,21 @@ namespace Erpsaas\Core\Concerns;
 use Erpsaas\Core\Models\Notification;
 use Erpsaas\Core\Models\User;
 use Erpsaas\Core\Scopes\CurrentCompanyScope;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Wallo\FilamentCompanies\FilamentCompanies;
 
+/**
+ * @mixin Model
+ *
+ * @phpstan-require-extends Model
+ *
+ * @method static void creating(callable $callback)
+ * @method static void addGlobalScope(\Illuminate\Database\Eloquent\Scope|\Closure|string $scope, ?\Closure $implementation = null)
+ */
 trait CompanyOwned
 {
     public static function bootCompanyOwned(): void

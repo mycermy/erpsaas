@@ -18,6 +18,8 @@
     "autoload": {
         "psr-4": {
             "Erpsaas\\Accounts\\": "src/",
+            "Database\\Factories\\Accounting\\": "database/factories/Accounting/",
+            "Database\\Factories\\Banking\\": "database/factories/Banking/",
             "Erpsaas\\Accounts\\Database\\Factories\\": "database/factories/",
             "Erpsaas\\Accounts\\Database\\Seeders\\": "database/seeders/"
         }

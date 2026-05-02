@@ -3,6 +3,7 @@
 namespace Erpsaas\Purchases;
 
 use Filament\Panel;
+use Illuminate\Support\Facades\View;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -24,5 +25,8 @@ class PurchasesServiceProvider extends PackageServiceProvider
         });
     }
 
-    public function packageBooted(): void {}
+    public function packageBooted(): void
+    {
+        View::addLocation(__DIR__ . '/../resources/views');
+    }
 }

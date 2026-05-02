@@ -6,6 +6,7 @@ use Erpsaas\Core\Filament\Company\Pages\CreateCompany;
 use Erpsaas\Accounts\Models\Accounting\Account;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use App\Models\Company;
+use Illuminate\Support\Facades\Auth;
 
 use function Pest\Livewire\livewire;
 
@@ -23,7 +24,7 @@ function createCompany(string $name): Company
         ->call('register')
         ->assertHasNoErrors();
 
-    return auth()->user()->currentCompany;
+    return Auth::user()->currentCompany;
 }
 
 /**

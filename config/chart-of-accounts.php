@@ -222,13 +222,21 @@ return [
             'Contra Equity' => [
                 'description' => 'Equity that is deducted from gross equity to arrive at net equity. This includes treasury stock, which is stock that has been repurchased by the company.',
                 'multi_currency' => false,
-                'base_code' => '3900',
+                'base_code' => '3800',
                 'inverse_cash_flow' => true,
                 'accounts' => [
                     'Owner\'s Drawings' => [
                         'description' => 'The amount of money withdrawn by the owner(s) or shareholders from the business for personal use, reducing equity.',
                     ],
                 ],
+            ],
+        ],
+        'opening_closing' => [
+            'Opening and Closing Equity' => [
+                'description' => 'Used to record the opening balance of equity at the beginning of a fiscal year and the closing balance at the end of the fiscal year, reflecting changes in equity due to net income, owner contributions, and withdrawals.',
+                'multi_currency' => false,
+                'base_code' => '3900',
+                'inverse_cash_flow' => true,
             ],
         ],
         'operating_revenue' => [

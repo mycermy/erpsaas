@@ -7,6 +7,7 @@ use Erpsaas\Core\Enums\Setting\EntityType;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Models\Locale\Country;
 use Erpsaas\Core\Models\Setting\Localization;
+use Erpsaas\Core\Models\User;
 use Erpsaas\Core\Services\CompanyDefaultService;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Filament\Forms\Components\Select;
@@ -67,8 +68,8 @@ class CreateCompany extends FilamentCreateCompany
                     ->live()
                     ->searchable()
                     ->options(Country::getAvailableCountryOptions())
-                    ->getSearchResultsUsing(fn (string $search): array => Country::getSearchResultsUsing($search))
-                    ->getOptionLabelUsing(fn ($value): ?string => Country::find($value)?->name . ' ' . Country::find($value)?->flag)
+                    ->getSearchResultsUsing(fn(string $search): array => Country::getSearchResultsUsing($search))
+                    ->getOptionLabelUsing(fn($value): ?string => Country::find($value)?->name . ' ' . Country::find($value)?->flag)
                     ->softRequired(),
                 Select::make('locale.language')
                     ->label('Language')
@@ -89,6 +90,7 @@ class CreateCompany extends FilamentCreateCompany
 
     protected function handleRegistration(array $data): Model
     {
+        /** @var User|null $user */
         $user = Auth::user();
 
         Gate::forUser($user)->authorize('create', FilamentCompanies::newCompanyModel());
