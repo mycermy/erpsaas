@@ -9,7 +9,6 @@ use Erpsaas\Core\Filament\Forms\Components\Banner;
 use Erpsaas\Core\Models\Setting\CompanyProfile as CompanyProfileModel;
 use Erpsaas\Core\Utilities\Localization\Timezone;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
@@ -68,7 +67,7 @@ class CompanyProfile extends Page
     public function mount(): void
     {
         $this->record = CompanyProfileModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
+            'company_id' => Auth::user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -98,7 +97,7 @@ class CompanyProfile extends Page
 
     protected function updateTimezone(string $countryCode): void
     {
-        $model = \App\Models\Setting\Localization::firstOrFail();
+        $model = \Erpsaas\Core\Models\Setting\Localization::firstOrFail();
 
         $timezones = Timezone::getTimezonesForCountry($countryCode);
 
@@ -175,7 +174,7 @@ class CompanyProfile extends Page
                     ->uploadButtonPosition('center bottom')
                     ->uploadProgressIndicatorPosition('center bottom')
                     ->getUploadedFileNameForStorageUsing(
-                        static fn(TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
+                        static fn (TemporaryUploadedFile $file): string => (string) str($file->getClientOriginalName())
                             ->prepend(Auth::user()->currentCompany->id . '_'),
                     )
                     ->extraAttributes(['class' => 'w-32 h-32'])
@@ -189,7 +188,7 @@ class CompanyProfile extends Page
             ->warning()
             ->title('Address information incomplete')
             ->description('Please complete the required address information for proper business operations.')
-            ->visible(fn(CompanyProfileModel $record) => $record->address?->isIncomplete() ?? false)
+            ->visible(fn (CompanyProfileModel $record) => $record->address?->isIncomplete() ?? false)
             ->columnSpanFull();
     }
 

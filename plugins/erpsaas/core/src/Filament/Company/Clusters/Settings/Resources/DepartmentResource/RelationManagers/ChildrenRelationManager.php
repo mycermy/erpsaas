@@ -8,6 +8,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ChildrenRelationManager extends RelationManager
 {
@@ -30,7 +31,7 @@ class ChildrenRelationManager extends RelationManager
                         name: 'manager',
                         titleAttribute: 'name',
                         modifyQueryUsing: static function (Builder $query) {
-                            $company = auth()->user()->currentCompany;
+                            $company = Auth::user()->currentCompany;
                             $companyUsers = $company->allUsers()->pluck('id')->toArray();
 
                             return $query->whereIn('id', $companyUsers);

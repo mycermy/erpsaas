@@ -2,9 +2,9 @@
 
 namespace Erpsaas\Core\Filament\Company\Clusters\Settings\Pages;
 
+use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Erpsaas\Core\Events\CompanyDefaultUpdated;
 use Erpsaas\Core\Filament\Company\Clusters\Settings;
-use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Erpsaas\Core\Models\Setting\CompanyDefault as CompanyDefaultModel;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -21,6 +21,7 @@ use Filament\Support\Exceptions\Halt;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Livewire\Attributes\Locked;
 
@@ -65,7 +66,7 @@ class CompanyDefault extends Page
     public function mount(): void
     {
         $this->record = CompanyDefaultModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
+            'company_id' => Auth::user()->current_company_id,
         ]);
 
         abort_unless(static::canView($this->record), 404);
@@ -86,7 +87,6 @@ class CompanyDefault extends Page
             $data = $this->form->getState();
 
             $this->handleRecordUpdate($this->record, $data);
-
         } catch (Halt $exception) {
             return;
         }

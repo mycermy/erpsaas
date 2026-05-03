@@ -9,12 +9,12 @@ use Erpsaas\Core\Enums\Accounting\DocumentDiscountMethod;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
 use Erpsaas\Core\Enums\Accounting\EstimateStatus;
 use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource;
 use Erpsaas\Core\Models\Common\Client;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Erpsaas\Core\Observers\EstimateObserver;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
@@ -231,7 +232,7 @@ class Estimate extends Document
 
     public static function getNextDocumentNumber(?Company $company = null): string
     {
-        $company ??= auth()->user()?->currentCompany;
+        $company ??= Auth::user()?->currentCompany;
 
         if (! $company) {
             throw new \RuntimeException('No current company is set for the user.');
@@ -478,8 +479,8 @@ class Estimate extends Document
             'total' => $this->total,
             'terms' => $this->terms,
             'footer' => $this->footer,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
         ]);
 
         $this->replicateLineItems($invoice);

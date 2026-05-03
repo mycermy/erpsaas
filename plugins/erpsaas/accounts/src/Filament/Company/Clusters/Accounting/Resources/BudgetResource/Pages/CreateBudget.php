@@ -2,15 +2,15 @@
 
 namespace Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\BudgetResource\Pages;
 
-use Erpsaas\Core\Enums\Accounting\BudgetIntervalType;
-use Erpsaas\Core\Enums\Accounting\BudgetSourceType;
-use Erpsaas\Core\Facades\Accounting;
 use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Resources\BudgetResource;
-use Erpsaas\Core\Filament\Forms\Components\CustomSection;
 use Erpsaas\Accounts\Models\Accounting\Account;
 use Erpsaas\Accounts\Models\Accounting\Budget;
 use Erpsaas\Accounts\Models\Accounting\BudgetAllocation;
 use Erpsaas\Accounts\Models\Accounting\BudgetItem;
+use Erpsaas\Core\Enums\Accounting\BudgetIntervalType;
+use Erpsaas\Core\Enums\Accounting\BudgetSourceType;
+use Erpsaas\Core\Facades\Accounting;
+use Erpsaas\Core\Filament\Forms\Components\CustomSection;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class CreateBudget extends CreateRecord
 {
@@ -123,14 +124,14 @@ class CreateBudget extends CreateRecord
                         ->required()
                         ->default(company_today()->endOfYear())
                         ->live()
-                        ->disabled(static fn(Forms\Get $get) => blank($get('start_date')))
-                        ->minDate(fn(Forms\Get $get) => match (BudgetIntervalType::parse($get('interval_type'))) {
+                        ->disabled(static fn (Forms\Get $get) => blank($get('start_date')))
+                        ->minDate(fn (Forms\Get $get) => match (BudgetIntervalType::parse($get('interval_type'))) {
                             BudgetIntervalType::Month => Carbon::parse($get('start_date'))->addMonth(),
                             BudgetIntervalType::Quarter => Carbon::parse($get('start_date'))->addQuarter(),
                             BudgetIntervalType::Year => Carbon::parse($get('start_date'))->addYear(),
                             default => Carbon::parse($get('start_date'))->addDay(),
                         })
-                        ->maxDate(fn(Forms\Get $get) => Carbon::parse($get('start_date'))->endOfYear()),
+                        ->maxDate(fn (Forms\Get $get) => Carbon::parse($get('start_date'))->endOfYear()),
                 ]),
 
             Step::make('Budget Setup & Settings')
@@ -154,19 +155,19 @@ class CreateBudget extends CreateRecord
                             // If user selects to copy a previous budget
                             Forms\Components\Select::make('source_budget_id')
                                 ->label('Source Budget')
-                                ->options(fn() => Budget::query()
+                                ->options(fn () => Budget::query()
                                     ->orderByDesc('end_date')
                                     ->pluck('name', 'id'))
                                 ->searchable()
                                 ->required()
-                                ->visible(fn(Forms\Get $get) => BudgetSourceType::parse($get('source_type'))?->isBudget()),
+                                ->visible(fn (Forms\Get $get) => BudgetSourceType::parse($get('source_type'))?->isBudget()),
 
                             // If user selects to use historical actuals
                             Forms\Components\Select::make('source_fiscal_year')
                                 ->label('Fiscal Year')
                                 ->options(function () {
                                     $options = [];
-                                    $company = auth()->user()->currentCompany;
+                                    $company = Auth::user()->currentCompany;
                                     $earliestDate = Carbon::parse(Accounting::getEarliestTransactionDate());
                                     $fiscalYearStartCurrent = Carbon::parse($company->locale->fiscalYearStartDate());
 
@@ -191,8 +192,8 @@ class CreateBudget extends CreateRecord
                                     // Update the selected_accounts field to exclude accounts without actuals
                                     $set('selected_accounts', $accountIdsWithoutActuals);
                                 })
-                                ->visible(fn(Forms\Get $get) => BudgetSourceType::parse($get('source_type'))?->isActuals()),
-                        ])->visible(fn(Forms\Get $get) => $get('prefill_data') === true),
+                                ->visible(fn (Forms\Get $get) => BudgetSourceType::parse($get('source_type'))?->isActuals()),
+                        ])->visible(fn (Forms\Get $get) => $get('prefill_data') === true),
 
                     CustomSection::make('Account Selection')
                         ->contained(false)
@@ -269,8 +270,8 @@ class CreateBudget extends CreateRecord
                                 ->columns(2) // Display in two columns
                                 ->searchable() // Allow searching for accounts
                                 ->bulkToggleable() // Enable "Select All" / "Deselect All"
-                                ->selectAllAction(fn(Action $action) => $action->label('Exclude all accounts'))
-                                ->deselectAllAction(fn(Action $action) => $action->label('Include all accounts'))
+                                ->selectAllAction(fn (Action $action) => $action->label('Exclude all accounts'))
+                                ->deselectAllAction(fn (Action $action) => $action->label('Include all accounts'))
                                 ->afterStateUpdated(function (Forms\Set $set, $state) {
                                     // Get all accounts without actuals
                                     $accountsWithoutActuals = $this->getAccountsWithoutActuals()->pluck('id')->toArray();
@@ -494,7 +495,7 @@ class CreateBudget extends CreateRecord
         $previousAllocations = BudgetAllocation::query()
             ->whereHas(
                 'budgetItem',
-                fn($query) => $query->where('account_id', $account->id)
+                fn ($query) => $query->where('account_id', $account->id)
                     ->where('budget_id', $sourceBudgetId)
             )
             ->orderBy('start_date')

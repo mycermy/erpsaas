@@ -16,7 +16,6 @@ use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
 use Erpsaas\Core\Enums\Accounting\Month;
 use Erpsaas\Core\Enums\Accounting\RecurringInvoiceStatus;
 use Erpsaas\Core\Enums\Setting\PaymentTerms;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource\Pages\ViewRecurringInvoice;
 use Erpsaas\Core\Filament\Forms\Components\Banner;
 use Erpsaas\Core\Filament\Forms\Components\CustomSection;
 use Erpsaas\Core\Models\Common\Client;
@@ -24,6 +23,7 @@ use Erpsaas\Core\Models\Setting\CompanyProfile;
 use Erpsaas\Core\Observers\RecurringInvoiceObserver;
 use Erpsaas\Core\Support\ScheduleHandler;
 use Erpsaas\Core\Utilities\Localization\Timezone;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource\Pages\ViewRecurringInvoice;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
 use Filament\Forms;
@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
@@ -650,8 +651,8 @@ class RecurringInvoice extends Document
             'total' => $this->total,
             'terms' => $this->terms,
             'footer' => $this->footer,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
         ]);
 
         $this->replicateLineItems($invoice);
