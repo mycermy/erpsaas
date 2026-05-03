@@ -8,6 +8,7 @@ use Erpsaas\Core\Concerns\Blamable;
 use Erpsaas\Core\Concerns\CompanyOwned;
 use Erpsaas\Core\Enums\Accounting\BillStatus;
 use Erpsaas\Core\Enums\Accounting\TransactionType;
+use Erpsaas\Core\Enums\Common\VendorType;
 use Erpsaas\Core\Models\Common\Offering;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Hr\Enums\Hr\SalaryPartBasis;
@@ -161,7 +162,7 @@ class PayrollEntry extends Model
             'payrollLiabilitiesAccount',
         ])->find($data['salary_structure_id']);
 
-        $salaryParts = $salaryStructure->spss->map(fn ($sps) => $sps->salaryPart);
+        $salaryParts = $salaryStructure->spss->map(fn($sps) => $sps->salaryPart);
 
         // Resolve base salary: prefer revision-based, fall back to structure-defined amount
         $baseSalary = static::resolveBaseSalary($data, $salaryParts);
@@ -317,6 +318,7 @@ class PayrollEntry extends Model
                 return Vendor::create([
                     'company_id' => $companyId,
                     'name' => 'Payroll Department',
+                    'type' => VendorType::Regular,
                     'notes' => 'Internal vendor for payroll salary bills.',
                 ]);
             });

@@ -211,9 +211,9 @@ $liabilityAccount = $this->resolveAccount(
 
 ## Implementation Progress Tracker
 
-**Overall Priority 1 Completion: ~14% (5/35 checklist items)**
+**Overall Priority 1 Completion: ~20% (7/35 checklist items)**
 
-### ✅ Completed (5 items)
+### ✅ Completed (7 items)
 1. ✅ HR Plugin Registration - HumanResources cluster created and working
 2. ✅ Plugin Autoloader - `composer dump-autoload` fixed, Erpsaas\Hr namespace now autoloadable  
 3. ✅ Navigation Grid Menu - HR accessible at `/company/1/human-resources` route
@@ -223,20 +223,19 @@ $liabilityAccount = $this->resolveAccount(
    - ✅ Create `employee_salary_revisions` table
    - ✅ Create `employee_advances` table
    - ✅ Create payroll accounts (Payroll Statutory Payable #165, Employee Advances Receivable #166)
+5. ✅ **Phase 2: Seed Data Infrastructure - COMPLETE** (all handled inline in `HrDemoSeeder`)
+   - ✅ "Payroll Department" vendor — created lazily via `ensurePayrollVendorExists()`
+   - ✅ Salary component offerings — created lazily via `getOrCreateOfferingForPart()`
+   - ✅ Payroll liability account resolved via `resolveOrCreatePayrollLiabilityAccount()`
+   - ✅ Seeding order documented — HR seeder runs independently (no upstream changes needed)
 
 ### ⚠️ In Progress / Partially Done (2 items)
 - ⚠️ **Phase 1 Integration** - Payroll accounts created but not yet used by HrDemoSeeder
 - ⚠️ **Model Layer** - `EmployeeSalaryRevision` model exists but not integrated into PayrollEntry workflow
 
-### ❌ Not Yet Started (28 items)
+### ❌ Not Yet Started (24 items)
 
-**Seed Data Infrastructure (4 items)** - Next Phase: Phase 2
-- Create "Payroll Department" vendor
-- Create salary component offerings
-- Fix account mappings and seeding order
-- Verify all seeders reference correct accounts
-
-**Model & Service Layer (7 items)** - Depends on Phase 2
+**Model & Service Layer (7 items)** - Next: Phase 3
 - `PayrollEntry::createWithBill()` method not implemented
 - Helper methods not implemented
 - `EmployeeAdvance` model not created
@@ -261,11 +260,32 @@ $liabilityAccount = $this->resolveAccount(
 - No UI updates for Bill linking
 - Dashboard visibility depends on seeder changes
 
-### 📋 Next Phase: Phase 2 - Seed Data Infrastructure (2-4 hours)
-1. **Create PayrollSeeder** with vendor and offerings
-2. **Update DatabaseSeeder** seeding order
-3. **Verify accounts** are properly mapped
-4. **Test seed:fresh** to ensure no errors
+### 📋 Phase 2 - Seed Data Infrastructure: COMPLETE ✅
+
+The `HrDemoSeeder` handles all seed data inline via `createWithBill()`:
+- `ensurePayrollVendorExists()` — creates "Payroll Department" vendor on first run
+- `getOrCreateOfferingForPart()` — lazily creates offerings per salary part type
+- `resolveOrCreatePayrollLiabilityAccount()` — resolves "Payroll Statutory Payable" account
+- `~70%` of past payroll Bills are marked paid for realistic demo data
+
+#### ⚠️ Seeding Convention — Do NOT modify `database/seeders/DatabaseSeeder.php`
+
+That file is upstream-owned and must not be modified to avoid merge conflicts.
+
+**Run the HR seeder separately after the main seed:**
+
+```bash
+# Initial setup:
+php artisan db:seed
+php artisan db:seed --class="Erpsaas\Hr\Database\Seeders\DatabaseSeeder"
+
+# Fresh database (e.g., local dev reset):
+php artisan migrate:fresh --seed
+php artisan db:seed --class="Erpsaas\Hr\Database\Seeders\DatabaseSeeder"
+
+# HR only (re-run safe — all ops are idempotent):
+php artisan db:seed --class="Erpsaas\Hr\Database\Seeders\HrDemoSeeder"
+```
 
 ---
 

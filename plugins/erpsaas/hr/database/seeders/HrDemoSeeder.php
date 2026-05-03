@@ -6,6 +6,7 @@ use App\Models\User;
 use Erpsaas\Accounts\Models\Accounting\Account;
 use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
 use Erpsaas\Accounts\Models\Accounting\Bill;
+use Erpsaas\Core\Enums\Common\VendorType;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Hr\Enums\Hr\SalaryPartBasis;
@@ -251,9 +252,10 @@ class HrDemoSeeder extends Seeder
         return Vendor::query()
             ->where('company_id', $company->id)
             ->where('name', 'Payroll Department')
-            ->firstOr(fn () => Vendor::create([
+            ->firstOr(fn() => Vendor::create([
                 'company_id' => $company->id,
                 'name' => 'Payroll Department',
+                'type' => VendorType::Regular,
                 'notes' => 'Internal vendor used for payroll salary bills.',
             ]));
     }
@@ -470,7 +472,7 @@ class HrDemoSeeder extends Seeder
     {
         $existing = Employee::query()
             ->where('company_id', $company->id)
-            ->whereHas('contact', fn ($query) => $query->where('email', $employeeData['email']))
+            ->whereHas('contact', fn($query) => $query->where('email', $employeeData['email']))
             ->first();
 
         if ($existing) {
