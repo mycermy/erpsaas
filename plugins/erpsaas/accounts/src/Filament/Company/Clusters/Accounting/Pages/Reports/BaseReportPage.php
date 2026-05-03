@@ -2,11 +2,11 @@
 
 namespace Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports;
 
+use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports;
 use Erpsaas\Core\Contracts\ExportableReport;
 use Erpsaas\Core\DTO\ReportDTO;
 use Erpsaas\Core\Filament\Company\Pages\Concerns\HasDeferredFiltersForm;
 use Erpsaas\Core\Filament\Company\Pages\Concerns\HasTableColumnToggleForm;
-use Erpsaas\Accounts\Filament\Company\Clusters\Accounting\Pages\Reports;
 use Erpsaas\Core\Filament\Forms\Components\DateRangeSelect;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\DateRangeService;
@@ -19,6 +19,7 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\IconPosition;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -57,7 +58,7 @@ abstract class BaseReportPage extends Page
 
     protected function initializeProperties(): void
     {
-        $this->company = auth()->user()->currentCompany;
+        $this->company = Auth::user()->currentCompany;
         $this->fiscalYearStartDate = $this->company->locale->fiscalYearStartDate();
         $this->fiscalYearEndDate = $this->company->locale->fiscalYearEndDate();
     }
