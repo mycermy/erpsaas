@@ -3,8 +3,10 @@
 namespace Erpsaas\Dashboard\Filament\Company\Widgets;
 
 use Erpsaas\Accounts\Models\Accounting\Account;
+use Erpsaas\Accounts\Models\Accounting\JournalEntry;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use Erpsaas\Core\Enums\Accounting\AccountCategory;
+use Erpsaas\Core\Enums\Accounting\JournalEntryType;
 use Erpsaas\Core\Enums\Accounting\TransactionType;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
@@ -48,54 +50,80 @@ class ExpensesBreakdownChartWidget extends ChartWidget
             : 'USD';
 
         $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfYear());
-        $endDate   = Carbon::parse($this->filters['endDate'] ?? now()->endOfYear());
+        $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfYear());
 
-        // Aggregate expense transactions by account
-        $rows = Transaction::query()
+        // Aggregate expense amounts by account from both sources:
+        // 1. Withdrawal transactions (direct expenses without a Bill)
+        // 2. Journal debit entries on expense accounts (Bills + Payroll)
+        $totals = [];
+
+        // Source 1: Withdrawal transactions
+        Transaction::query()
             ->where('type', TransactionType::Withdrawal)
             ->whereBetween('posted_at', [$startDate, $endDate])
-            ->whereHas('account', fn($q) => $q->where('category', AccountCategory::Expense))
+            ->whereHas('account', fn ($q) => $q->where('category', AccountCategory::Expense))
             ->with('account:id,name,currency_code')
             ->get()
-            ->groupBy('account_id')
-            ->map(function ($group) use ($defaultCurrency) {
-                $account = $group->first()->account;
-                $total   = $group->sum(function ($tx) use ($defaultCurrency, $account) {
-                    $amount   = (int) $tx->getRawOriginal('amount');
-                    $currency = $account?->currency_code ?? $defaultCurrency;
+            ->each(function ($tx) use (&$totals, $defaultCurrency) {
+                $account = $tx->account;
+                $amount = (int) $tx->getRawOriginal('amount');
+                $currency = $account?->currency_code ?? $defaultCurrency;
+                $converted = $currency === $defaultCurrency
+                    ? $amount
+                    : CurrencyConverter::convertBalance($amount, $currency, $defaultCurrency);
 
-                    return $currency === $defaultCurrency
-                        ? $amount
-                        : CurrencyConverter::convertBalance($amount, $currency, $defaultCurrency);
-                });
-
-                return [
-                    'name'  => $account?->name ?? __('Unknown'),
-                    'total' => $total,
+                $id = $account?->id ?? 0;
+                $totals[$id] = [
+                    'name' => $account?->name ?? __('Unknown'),
+                    'total' => ($totals[$id]['total'] ?? 0) + $converted,
                 ];
-            })
-            ->sortByDesc('total')
-            ->values();
+            });
+
+        // Source 2: Journal debit entries on expense accounts (Bills, Payroll, etc.)
+        JournalEntry::query()
+            ->where('type', JournalEntryType::Debit)
+            ->whereHas('account', fn ($q) => $q->where('category', AccountCategory::Expense))
+            ->whereHas('transaction', fn ($q) => $q
+                ->where('type', TransactionType::Journal)
+                ->whereBetween('posted_at', [$startDate, $endDate]))
+            ->with('account:id,name,currency_code')
+            ->get()
+            ->each(function ($je) use (&$totals, $defaultCurrency) {
+                $account = $je->account;
+                $amount = (int) $je->getRawOriginal('amount');
+                $currency = $account?->currency_code ?? $defaultCurrency;
+                $converted = $currency === $defaultCurrency
+                    ? $amount
+                    : CurrencyConverter::convertBalance($amount, $currency, $defaultCurrency);
+
+                $id = $account?->id ?? 0;
+                $totals[$id] = [
+                    'name' => $account?->name ?? __('Unknown'),
+                    'total' => ($totals[$id]['total'] ?? 0) + $converted,
+                ];
+            });
+
+        $rows = collect($totals)->sortByDesc('total')->values();
 
         $grandTotal = $rows->sum('total');
 
         $labels = [];
-        $data   = [];
+        $data = [];
         $colors = [];
 
         foreach ($rows as $index => $row) {
-            $pct      = $grandTotal > 0 ? round($row['total'] / $grandTotal * 100) : 0;
+            $pct = $grandTotal > 0 ? round($row['total'] / $grandTotal * 100) : 0;
             $labels[] = $pct . '% ' . $row['name'];
-            $data[]   = round($row['total'] / 100, 2);
+            $data[] = round($row['total'] / 100, 2);
             $colors[] = self::COLORS[$index % count(self::COLORS)];
         }
 
         return [
             'datasets' => [
                 [
-                    'data'            => $data,
+                    'data' => $data,
                     'backgroundColor' => $colors,
-                    'hoverOffset'     => 4,
+                    'hoverOffset' => 4,
                 ],
             ],
             'labels' => $labels,
@@ -112,11 +140,11 @@ class ExpensesBreakdownChartWidget extends ChartWidget
         return [
             'plugins' => [
                 'legend' => [
-                    'display'  => true,
+                    'display' => true,
                     'position' => 'right',
-                    'labels'   => [
+                    'labels' => [
                         'boxWidth' => 12,
-                        'font'     => ['size' => 11],
+                        'font' => ['size' => 11],
                     ],
                 ],
                 'tooltip' => [
