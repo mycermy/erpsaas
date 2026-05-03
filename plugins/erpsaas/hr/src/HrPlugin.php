@@ -2,10 +2,6 @@
 
 namespace Erpsaas\Hr;
 
-use Erpsaas\Hr\Filament\Company\Resources\Hr\EmployeeResource;
-use Erpsaas\Hr\Filament\Company\Resources\Hr\PayrollEntryResource;
-use Erpsaas\Hr\Filament\Company\Resources\Hr\SalaryPartResource;
-use Erpsaas\Hr\Filament\Company\Resources\Hr\SalaryStructureResource;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -24,12 +20,15 @@ class HrPlugin implements Plugin
     public function register(Panel $panel): void
     {
         $panel->when($panel->getId() === 'company', function (Panel $panel): void {
-            $panel->resources([
-                EmployeeResource::class,
-                PayrollEntryResource::class,
-                SalaryPartResource::class,
-                SalaryStructureResource::class,
-            ]);
+            $panel
+                ->discoverClusters(
+                    in: __DIR__ . '/Filament/Company/Clusters',
+                    for: 'Erpsaas\\Hr\\Filament\\Company\\Clusters'
+                )
+                ->discoverResources(
+                    in: __DIR__ . '/Filament/Company/Resources/Hr',
+                    for: 'Erpsaas\\Hr\\Filament\\Company\\Resources\\Hr'
+                );
         });
     }
 

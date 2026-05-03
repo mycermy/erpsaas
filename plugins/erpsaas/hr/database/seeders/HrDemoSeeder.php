@@ -5,10 +5,13 @@ namespace Erpsaas\Hr\Database\Seeders;
 use App\Models\User;
 use Erpsaas\Accounts\Models\Accounting\Account;
 use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
+use Erpsaas\Accounts\Models\Accounting\Bill;
+use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Hr\Enums\Hr\SalaryPartBasis;
 use Erpsaas\Hr\Enums\Hr\SalaryPartType;
 use Erpsaas\Hr\Models\Employee;
+use Erpsaas\Hr\Models\EmployeeSalaryRevision;
 use Erpsaas\Hr\Models\PayrollEntry;
 use Erpsaas\Hr\Models\SalaryPart;
 use Erpsaas\Hr\Models\SalaryStructure;
@@ -50,52 +53,29 @@ class HrDemoSeeder extends Seeder
             ],
         );
 
-        $liabilityAccount = $this->resolveAccount(
+        $liabilityAccount = $this->resolveOrCreatePayrollLiabilityAccount($company);
+
+        $this->ensurePayrollVendorExists($company);
+
+        $structures = $this->buildReusableSalaryStructures(
             company: $company,
-            category: 'liability',
-            fallbackName: 'Payroll Statutory Payable',
-            preferredNames: [
-                'Payroll Statutory Payable',
-                'Accrued Payroll',
-                'Payroll Liabilities',
-                'Accounts Payable',
-            ],
+            salariesAccount: $salariesAccount,
+            employerTaxesAccount: $employerTaxesAccount,
+            liabilityAccount: $liabilityAccount,
         );
 
-        $structures = [
-            $this->buildSalaryStructure(
-                company: $company,
-                name: 'MY Payroll - Operations',
-                basicPay: 3800,
-                salariesAccount: $salariesAccount,
-                employerTaxesAccount: $employerTaxesAccount,
-                liabilityAccount: $liabilityAccount,
-            ),
-            $this->buildSalaryStructure(
-                company: $company,
-                name: 'MY Payroll - Finance',
-                basicPay: 5200,
-                salariesAccount: $salariesAccount,
-                employerTaxesAccount: $employerTaxesAccount,
-                liabilityAccount: $liabilityAccount,
-            ),
-            $this->buildSalaryStructure(
-                company: $company,
-                name: 'MY Payroll - Management',
-                basicPay: 7600,
-                salariesAccount: $salariesAccount,
-                employerTaxesAccount: $employerTaxesAccount,
-                liabilityAccount: $liabilityAccount,
-            ),
-        ];
-
-        $employees = [
+        $employeeDefinitions = [
             [
                 'first_name' => 'Nur',
                 'last_name' => 'Aisyah',
                 'email' => 'nur.aisyah@example.my',
                 'job_title' => 'HR Executive',
                 'department' => 'Human Resources',
+                'structure_key' => 'standard',
+                'salary_revisions' => [
+                    ['amount' => 3500, 'effective_from' => now()->subMonths(9)->startOfMonth()->toDateString(), 'reason' => 'initial'],
+                    ['amount' => 3800, 'effective_from' => now()->subMonths(3)->startOfMonth()->toDateString(), 'reason' => 'kpi_increment'],
+                ],
                 'home_address' => [
                     'address_line_1' => 'No. 18, Jalan Setia 2/1',
                     'city' => 'Shah Alam',
@@ -109,6 +89,11 @@ class HrDemoSeeder extends Seeder
                 'email' => 'muhammad.hafiz@example.my',
                 'job_title' => 'Finance Analyst',
                 'department' => 'Finance',
+                'structure_key' => 'senior',
+                'salary_revisions' => [
+                    ['amount' => 5000, 'effective_from' => now()->subMonths(6)->startOfMonth()->toDateString(), 'reason' => 'initial'],
+                    ['amount' => 5200, 'effective_from' => now()->subMonths(2)->startOfMonth()->toDateString(), 'reason' => 'promotion'],
+                ],
                 'home_address' => [
                     'address_line_1' => 'No. 42, Jalan Ampang Hilir',
                     'city' => 'Kuala Lumpur',
@@ -122,6 +107,11 @@ class HrDemoSeeder extends Seeder
                 'email' => 'siti.zulaikha@example.my',
                 'job_title' => 'Operations Manager',
                 'department' => 'Operations',
+                'structure_key' => 'management',
+                'salary_revisions' => [
+                    ['amount' => 7000, 'effective_from' => now()->subMonths(5)->startOfMonth()->toDateString(), 'reason' => 'initial'],
+                    ['amount' => 7600, 'effective_from' => now()->subMonths(1)->startOfMonth()->toDateString(), 'reason' => 'kpi_increment'],
+                ],
                 'home_address' => [
                     'address_line_1' => 'No. 12, Persiaran Tebrau',
                     'city' => 'Johor Bahru',
@@ -131,9 +121,11 @@ class HrDemoSeeder extends Seeder
             ],
         ];
 
-        foreach ($employees as $index => $employeeData) {
-            $employee = $this->createEmployee($company, $employeeData, $index + 1);
-            $this->seedPayrollEntries($employee, $structures[$index], $index + 2);
+        foreach ($employeeDefinitions as $index => $definition) {
+            $employee = $this->createEmployee($company, $definition, $index + 1);
+            $this->seedSalaryRevisions($company, $employee, $definition['salary_revisions']);
+            $structure = $structures[$definition['structure_key']];
+            $this->seedPayrollEntries($employee, $structure, $index + 2);
         }
 
         Auth::logout();
@@ -166,14 +158,51 @@ class HrDemoSeeder extends Seeder
         return [$company, $owner];
     }
 
+    private function resolveOrCreatePayrollLiabilityAccount(Company $company): Account
+    {
+        $preferredNames = [
+            'Payroll Statutory Payable',
+            'Accrued Payroll',
+            'Payroll Liabilities',
+        ];
+
+        foreach ($preferredNames as $name) {
+            $account = Account::query()
+                ->where('company_id', $company->id)
+                ->where('category', 'liability')
+                ->where('name', $name)
+                ->where('archived', false)
+                ->first();
+
+            if ($account) {
+                return $account;
+            }
+        }
+
+        $subtype = AccountSubtype::query()
+            ->where('company_id', $company->id)
+            ->where('category', 'liability')
+            ->orderBy('id')
+            ->first();
+
+        if (! $subtype) {
+            throw new RuntimeException("No liability account subtype found for company [{$company->id}].");
+        }
+
+        return Account::create([
+            'company_id' => $company->id,
+            'subtype_id' => $subtype->id,
+            'name' => 'Payroll Statutory Payable',
+            'description' => 'Liabilities for employee withholdings and employer statutory contributions (EPF/KWSP, SOCSO, EIS).',
+        ]);
+    }
+
     private function resolveAccount(Company $company, string $category, string $fallbackName, array $preferredNames = []): Account
     {
         $candidateNames = array_values(array_unique(array_filter([
             $fallbackName,
             ...$preferredNames,
         ])));
-
-        $account = null;
 
         foreach ($candidateNames as $candidateName) {
             $account = Account::query()
@@ -184,18 +213,16 @@ class HrDemoSeeder extends Seeder
                 ->first();
 
             if ($account) {
-                break;
+                return $account;
             }
         }
 
-        if (! $account) {
-            $account = Account::query()
-                ->where('company_id', $company->id)
-                ->where('category', $category)
-                ->where('archived', false)
-                ->orderBy('id')
-                ->first();
-        }
+        $account = Account::query()
+            ->where('company_id', $company->id)
+            ->where('category', $category)
+            ->where('archived', false)
+            ->orderBy('id')
+            ->first();
 
         if ($account) {
             return $account;
@@ -219,24 +246,77 @@ class HrDemoSeeder extends Seeder
         ]);
     }
 
-    private function buildSalaryStructure(
+    private function ensurePayrollVendorExists(Company $company): Vendor
+    {
+        return Vendor::query()
+            ->where('company_id', $company->id)
+            ->where('name', 'Payroll Department')
+            ->firstOr(fn () => Vendor::create([
+                'company_id' => $company->id,
+                'name' => 'Payroll Department',
+                'notes' => 'Internal vendor used for payroll salary bills.',
+            ]));
+    }
+
+    /**
+     * @return array<string, SalaryStructure>
+     */
+    private function buildReusableSalaryStructures(
         Company $company,
-        string $name,
-        float $basicPay,
         Account $salariesAccount,
         Account $employerTaxesAccount,
         Account $liabilityAccount,
+    ): array {
+        return [
+            'standard' => $this->buildSalaryStructure(
+                company: $company,
+                name: 'MY Payroll - Standard',
+                baseSalaryPlaceholder: 3500,
+                salariesAccount: $salariesAccount,
+                employerTaxesAccount: $employerTaxesAccount,
+                liabilityAccount: $liabilityAccount,
+                description: 'Malaysia payroll template for standard/junior employees.',
+            ),
+            'senior' => $this->buildSalaryStructure(
+                company: $company,
+                name: 'MY Payroll - Senior',
+                baseSalaryPlaceholder: 5000,
+                salariesAccount: $salariesAccount,
+                employerTaxesAccount: $employerTaxesAccount,
+                liabilityAccount: $liabilityAccount,
+                description: 'Malaysia payroll template for senior/specialist employees.',
+            ),
+            'management' => $this->buildSalaryStructure(
+                company: $company,
+                name: 'MY Payroll - Management',
+                baseSalaryPlaceholder: 7000,
+                salariesAccount: $salariesAccount,
+                employerTaxesAccount: $employerTaxesAccount,
+                liabilityAccount: $liabilityAccount,
+                description: 'Malaysia payroll template for managers and directors.',
+            ),
+        ];
+    }
+
+    private function buildSalaryStructure(
+        Company $company,
+        string $name,
+        float $baseSalaryPlaceholder,
+        Account $salariesAccount,
+        Account $employerTaxesAccount,
+        Account $liabilityAccount,
+        string $description = '',
     ): SalaryStructure {
         $basicPayPart = $this->upsertSalaryPart(
             company: $company,
             name: "Basic Pay ({$name})",
             type: SalaryPartType::BaseSalary,
             basis: SalaryPartBasis::Fixed,
-            amount: $basicPay,
+            amount: $baseSalaryPlaceholder,
             inNetSalary: true,
             debitAccount: $salariesAccount,
             creditAccount: null,
-            description: 'Gross monthly salary.',
+            description: 'Gross monthly salary (overridden by employee salary revision).',
         );
 
         $kwspDeductionPart = $this->upsertSalaryPart(
@@ -248,7 +328,7 @@ class HrDemoSeeder extends Seeder
             inNetSalary: true,
             debitAccount: null,
             creditAccount: $liabilityAccount,
-            description: 'Employee EPF contribution (KWSP).',
+            description: 'Employee EPF contribution (KWSP) — 11% of basic pay.',
         );
 
         $socsoDeductionPart = $this->upsertSalaryPart(
@@ -260,7 +340,7 @@ class HrDemoSeeder extends Seeder
             inNetSalary: true,
             debitAccount: null,
             creditAccount: $liabilityAccount,
-            description: 'Employee SOCSO contribution.',
+            description: 'Employee SOCSO contribution — 0.5% of basic pay.',
         );
 
         $eisDeductionPart = $this->upsertSalaryPart(
@@ -272,7 +352,7 @@ class HrDemoSeeder extends Seeder
             inNetSalary: true,
             debitAccount: null,
             creditAccount: $liabilityAccount,
-            description: 'Employee EIS contribution.',
+            description: 'Employee EIS contribution — 0.2% of basic pay.',
         );
 
         $kwspEmployerPart = $this->upsertSalaryPart(
@@ -284,7 +364,7 @@ class HrDemoSeeder extends Seeder
             inNetSalary: false,
             debitAccount: $employerTaxesAccount,
             creditAccount: $liabilityAccount,
-            description: 'Employer EPF contribution (KWSP).',
+            description: 'Employer EPF contribution (KWSP) — 13% of basic pay.',
         );
 
         $socsoEmployerPart = $this->upsertSalaryPart(
@@ -296,7 +376,7 @@ class HrDemoSeeder extends Seeder
             inNetSalary: false,
             debitAccount: $employerTaxesAccount,
             creditAccount: $liabilityAccount,
-            description: 'Employer SOCSO contribution.',
+            description: 'Employer SOCSO contribution — 1.75% of basic pay.',
         );
 
         $eisEmployerPart = $this->upsertSalaryPart(
@@ -308,7 +388,7 @@ class HrDemoSeeder extends Seeder
             inNetSalary: false,
             debitAccount: $employerTaxesAccount,
             creditAccount: $liabilityAccount,
-            description: 'Employer EIS contribution.',
+            description: 'Employer EIS contribution — 0.2% of basic pay.',
         );
 
         $structure = SalaryStructure::query()->updateOrCreate(
@@ -317,7 +397,7 @@ class HrDemoSeeder extends Seeder
                 'name' => $name,
             ],
             [
-                'description' => 'Malaysia payroll template with statutory deductions and employer costs.',
+                'description' => $description ?: 'Malaysia payroll template with statutory deductions and employer costs.',
                 'effective_date' => now()->startOfYear()->toDateString(),
                 'termination_date' => null,
                 'account_id' => $liabilityAccount->id,
@@ -390,7 +470,7 @@ class HrDemoSeeder extends Seeder
     {
         $existing = Employee::query()
             ->where('company_id', $company->id)
-            ->whereHas('contact', fn($query) => $query->where('email', $employeeData['email']))
+            ->whereHas('contact', fn ($query) => $query->where('email', $employeeData['email']))
             ->first();
 
         if ($existing) {
@@ -432,9 +512,41 @@ class HrDemoSeeder extends Seeder
         ]);
     }
 
+    /**
+     * @param  array<int, array{amount: float, effective_from: string, reason: string}>  $revisions
+     */
+    private function seedSalaryRevisions(Company $company, Employee $employee, array $revisions): void
+    {
+        foreach ($revisions as $revision) {
+            $alreadyExists = EmployeeSalaryRevision::query()
+                ->where('employee_id', $employee->id)
+                ->where('effective_from', $revision['effective_from'])
+                ->exists();
+
+            if ($alreadyExists) {
+                continue;
+            }
+
+            EmployeeSalaryRevision::create([
+                'company_id' => $company->id,
+                'employee_id' => $employee->id,
+                'base_salary_amount' => $revision['amount'],
+                'effective_from' => $revision['effective_from'],
+                'reason' => $revision['reason'],
+            ]);
+        }
+    }
+
+    /**
+     * Seed payroll entries via createWithBill() for full dashboard visibility.
+     * ~70% of past payroll bills are marked as paid for realistic demo data.
+     */
     private function seedPayrollEntries(Employee $employee, SalaryStructure $salaryStructure, int $months): void
     {
         session(['current_company_id' => $employee->company_id]);
+
+        $totalMonths = $months;
+        $paidThreshold = (int) ceil($totalMonths * 0.7);
 
         for ($monthOffset = $months; $monthOffset >= 1; $monthOffset--) {
             $fromDate = now()->subMonths($monthOffset)->startOfMonth()->toDateString();
@@ -452,7 +564,7 @@ class HrDemoSeeder extends Seeder
                 continue;
             }
 
-            PayrollEntry::createWithTransaction([
+            $payrollEntry = PayrollEntry::createWithBill([
                 'company_id' => $employee->company_id,
                 'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
                 'from_date' => $fromDate,
@@ -460,6 +572,20 @@ class HrDemoSeeder extends Seeder
                 'employee_id' => $employee->id,
                 'salary_structure_id' => $salaryStructure->id,
             ]);
+
+            $isPaidMonth = ($totalMonths - $monthOffset + 1) <= $paidThreshold;
+
+            if ($isPaidMonth && $payrollEntry->bill_id) {
+                $billTotal = Bill::query()->where('id', $payrollEntry->bill_id)->value('total');
+
+                Bill::query()
+                    ->where('id', $payrollEntry->bill_id)
+                    ->update([
+                        'status' => 'paid',
+                        'paid_at' => now()->subMonths($monthOffset)->endOfMonth(),
+                        'amount_paid' => $billTotal,
+                    ]);
+            }
         }
     }
 }

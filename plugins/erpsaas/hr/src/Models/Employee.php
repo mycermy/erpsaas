@@ -9,6 +9,8 @@ use Erpsaas\Core\Models\Common\Address;
 use Erpsaas\Core\Models\Common\Contact;
 use Erpsaas\Core\Models\Company;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Arr;
@@ -28,7 +30,17 @@ class Employee extends Model
         'job_title',
         'department',
         'separate_work_address',
+        'base_salary_amount',
+        'salary_effective_from',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'base_salary_amount' => 'decimal:4',
+            'salary_effective_from' => 'date',
+        ];
+    }
 
     public static function createWithRelations(array $data): self
     {
@@ -141,6 +153,23 @@ class Employee extends Model
     {
         return $this->morphOne(Contact::class, 'contactable')
             ->where('is_primary', true);
+    }
+
+    public function salaryRevisions(): HasMany
+    {
+        return $this->hasMany(EmployeeSalaryRevision::class);
+    }
+
+    /**
+     * Get the most recent salary revision effective on or before a given date.
+     */
+    public function currentSalaryRevision(?string $asOfDate = null): HasOne
+    {
+        $asOfDate ??= now()->toDateString();
+
+        return $this->hasOne(EmployeeSalaryRevision::class)
+            ->where('effective_from', '<=', $asOfDate)
+            ->latestOfMany('effective_from');
     }
 
     public static function getNextEmployeeNumber(?Company $company = null): string

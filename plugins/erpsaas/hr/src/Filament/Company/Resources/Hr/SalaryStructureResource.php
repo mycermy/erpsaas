@@ -3,6 +3,7 @@
 namespace Erpsaas\Hr\Filament\Company\Resources\Hr;
 
 use Erpsaas\Hr\Enums\Hr\SalaryPartBasis;
+use Erpsaas\Hr\Filament\Company\Clusters\HumanResources;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\SalaryStructureResource\Pages;
 use Erpsaas\Hr\Models\SalaryPart;
 use Erpsaas\Hr\Models\SalaryStructure;
@@ -17,9 +18,7 @@ class SalaryStructureResource extends Resource
 {
     protected static ?string $model = SalaryStructure::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-
-    protected static ?string $navigationGroup = 'Human Resources';
+    protected static ?string $cluster = HumanResources::class;
 
     public static function form(Form $form): Form
     {
@@ -40,7 +39,7 @@ class SalaryStructureResource extends Resource
                         Forms\Components\DatePicker::make('termination_date'),
                         Forms\Components\Select::make('account_id')
                             ->label('Payroll Liabilities Account')
-                            ->relationship('payrollLiabilitiesAccount', 'name', fn (Builder $query) => $query->where('category', 'liability'))
+                            ->relationship('payrollLiabilitiesAccount', 'name', fn(Builder $query) => $query->where('category', 'liability'))
                             ->searchable()
                             ->preload()
                             ->nullable()

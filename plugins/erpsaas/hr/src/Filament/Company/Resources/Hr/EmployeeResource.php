@@ -6,6 +6,7 @@ use Erpsaas\Core\Filament\Forms\Components\AddressFields;
 use Erpsaas\Core\Filament\Forms\Components\CustomSection;
 use Erpsaas\Core\Filament\Forms\Components\PhoneBuilder;
 use Erpsaas\Core\Filament\Tables\Columns;
+use Erpsaas\Hr\Filament\Company\Clusters\HumanResources;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\EmployeeResource\Pages;
 use Erpsaas\Hr\Models\Employee;
 use Filament\Forms;
@@ -18,9 +19,7 @@ class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
-
-    protected static ?string $navigationGroup = 'Human Resources';
+    protected static ?string $cluster = HumanResources::class;
 
     public static function form(Form $form): Form
     {
@@ -33,7 +32,7 @@ class EmployeeResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('employee_number')
                                     ->maxLength(255)
-                                    ->default(static fn () => Employee::getNextEmployeeNumber())
+                                    ->default(static fn() => Employee::getNextEmployeeNumber())
                                     ->required()
                                     ->columnStart(1),
                                 Forms\Components\TextInput::make('job_title')
@@ -98,7 +97,7 @@ class EmployeeResource extends Resource
                                                     ->maxLength(15),
                                             ])->maxItems(1),
                                     ])
-                                    ->deletable(fn (PhoneBuilder $builder) => $builder->getItemsCount() > 1)
+                                    ->deletable(fn(PhoneBuilder $builder) => $builder->getItemsCount() > 1)
                                     ->reorderable(false)
                                     ->blockNumbers(false)
                                     ->addActionLabel('Add Phone'),
@@ -122,7 +121,7 @@ class EmployeeResource extends Resource
                             ->reactive()
                             ->columnSpanFull(),
                         CustomSection::make('Work Address')
-                            ->visible(fn (callable $get) => $get('separate_work_address'))
+                            ->visible(fn(callable $get) => $get('separate_work_address'))
                             ->relationship('workAddress')
                             ->saveRelationshipsUsing(null)
                             ->saveRelationshipsBeforeChildrenUsing(null)
