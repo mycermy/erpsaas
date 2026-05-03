@@ -36,6 +36,11 @@ class Bill extends Document
 {
     protected $table = 'bills';
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\Accounting\BillFactory::new();
+    }
+
     protected $fillable = [
         'company_id',
         'vendor_id',
@@ -349,7 +354,7 @@ class Bill extends Document
             $adjustmentAmount = abs($imbalance);
 
             // Find last entry of target type and adjust it
-            $lastKey = array_key_last(array_filter($journalEntryData, fn ($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
+            $lastKey = array_key_last(array_filter($journalEntryData, fn($entry) => $entry['type'] === $targetType, ARRAY_FILTER_USE_BOTH));
             $journalEntryData[$lastKey]['amount_in_default_currency'] += $adjustmentAmount;
 
             if ($targetType === JournalEntryType::Debit) {

@@ -46,6 +46,11 @@ class RecurringInvoice extends Document
 {
     protected $table = 'recurring_invoices';
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\Accounting\RecurringInvoiceFactory::new();
+    }
+
     protected $fillable = [
         'company_id',
         'client_id',
@@ -393,7 +398,7 @@ class RecurringInvoice extends Document
     public static function getManageScheduleAction(string $action = Action::class): MountableAction
     {
         return $action::make('manageSchedule')
-            ->label(fn (self $record) => $record->hasSchedule() ? 'Edit schedule' : 'Set schedule')
+            ->label(fn(self $record) => $record->hasSchedule() ? 'Edit schedule' : 'Set schedule')
             ->icon('heroicon-m-calendar-date-range')
             ->slideOver()
             ->successNotificationTitle('Schedule saved')
@@ -467,8 +472,8 @@ class RecurringInvoice extends Document
                                     $daysInMonth = Carbon::createFromDate(null, $month->value)->daysInMonth;
 
                                     return collect(DayOfMonth::cases())
-                                        ->filter(static fn (DayOfMonth $dayOfMonth) => $dayOfMonth->value <= $daysInMonth || $dayOfMonth->isLast())
-                                        ->mapWithKeys(fn (DayOfMonth $dayOfMonth) => [$dayOfMonth->value => $dayOfMonth->getLabel()]);
+                                        ->filter(static fn(DayOfMonth $dayOfMonth) => $dayOfMonth->value <= $daysInMonth || $dayOfMonth->isLast())
+                                        ->mapWithKeys(fn(DayOfMonth $dayOfMonth) => [$dayOfMonth->value => $dayOfMonth->getLabel()]);
                                 })
                                 ->softRequired()
                                 ->visible(in_array($frequency, [Frequency::Monthly, Frequency::Yearly]) || in_array($intervalType, [IntervalType::Month, IntervalType::Year]))

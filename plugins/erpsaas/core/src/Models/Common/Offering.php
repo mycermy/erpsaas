@@ -37,6 +37,11 @@ class Offering extends Model
         'updated_by',
     ];
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\Common\OfferingFactory::new();
+    }
+
     protected $casts = [
         'type' => OfferingType::class,
         'sellable' => 'boolean',

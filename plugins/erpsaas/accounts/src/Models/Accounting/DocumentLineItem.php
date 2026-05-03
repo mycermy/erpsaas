@@ -27,6 +27,11 @@ class DocumentLineItem extends Model
 
     protected $table = 'document_line_items';
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\Accounting\DocumentLineItemFactory::new();
+    }
+
     protected $fillable = [
         'company_id',
         'offering_id',

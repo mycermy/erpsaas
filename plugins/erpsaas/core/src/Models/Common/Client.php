@@ -23,7 +23,10 @@ class Client extends Model
     use CompanyOwned;
     use HasFactory;
 
-    protected $table = 'clients';
+    protected static function newFactory()
+    {
+        return \Database\Factories\Common\ClientFactory::new();
+    }
 
     protected $fillable = [
         'company_id',
