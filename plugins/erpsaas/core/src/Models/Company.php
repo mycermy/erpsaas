@@ -2,7 +2,6 @@
 
 namespace Erpsaas\Core\Models;
 
-use Erpsaas\Core\Enums\Accounting\DocumentType;
 use Erpsaas\Accounts\Models\Accounting\Account;
 use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
 use Erpsaas\Accounts\Models\Accounting\Adjustment;
@@ -16,6 +15,7 @@ use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Erpsaas\Accounts\Models\Banking\ConnectedBankAccount;
+use Erpsaas\Core\Enums\Accounting\DocumentType;
 use Erpsaas\Core\Models\Common\Address;
 use Erpsaas\Core\Models\Common\Client;
 use Erpsaas\Core\Models\Common\Contact;
@@ -39,6 +39,11 @@ use Wallo\FilamentCompanies\Events\CompanyUpdated;
 class Company extends FilamentCompaniesCompany implements HasAvatar
 {
     use HasFactory;
+
+    protected static function newFactory(): \Database\Factories\CompanyFactory
+    {
+        return \Database\Factories\CompanyFactory::new();
+    }
 
     /**
      * The attributes that should be cast.
