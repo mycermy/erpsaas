@@ -35,6 +35,11 @@ use Livewire\Component;
 #[ObservedBy(EstimateObserver::class)]
 class Estimate extends Document
 {
+    protected static function newFactory()
+    {
+        return \Database\Factories\Accounting\EstimateFactory::new();
+    }
+
     protected $fillable = [
         'company_id',
         'client_id',

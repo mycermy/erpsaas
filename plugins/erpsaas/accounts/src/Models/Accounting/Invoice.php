@@ -44,6 +44,11 @@ class Invoice extends Document
 {
     protected $table = 'invoices';
 
+    protected static function newFactory()
+    {
+        return \Database\Factories\Accounting\InvoiceFactory::new();
+    }
+
     protected $fillable = [
         'company_id',
         'client_id',
@@ -548,15 +553,15 @@ class Invoice extends Document
                     }
                 }
 
-                $output = "<p class='text-sm mb-4'>This invoice contains inactive adjustments that need to be addressed before approval:</p>";
-                $output .= "<ul role='list' class='list-disc list-inside space-y-1 text-sm'>";
+                $output = "<p class='mb-4 text-sm'>This invoice contains inactive adjustments that need to be addressed before approval:</p>";
+                $output .= "<ul role='list' class='space-y-1 text-sm list-disc list-inside'>";
 
                 foreach ($inactiveAdjustments as $name) {
                     $output .= "<li class='py-1'><span class='font-medium'>{$name}</span></li>";
                 }
 
                 $output .= '</ul>';
-                $output .= "<p class='text-sm mt-4'>Please update these adjustments before approving the invoice.</p>";
+                $output .= "<p class='mt-4 text-sm'>Please update these adjustments before approving the invoice.</p>";
 
                 return new HtmlString($output);
             })

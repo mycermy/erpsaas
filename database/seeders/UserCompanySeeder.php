@@ -21,14 +21,14 @@ class UserCompanySeeder extends Seeder
                     ->state([
                         'name' => 'ERPSAAS',
                     ])
-                    ->withTransactions(250)
+                    ->withTransactions(25)
                     ->withOfferings()
                     ->withClients()
                     ->withVendors()
-                    ->withInvoices(30)
+                    ->withInvoices(3)
                     ->withRecurringInvoices()
-                    ->withEstimates(30)
-                    ->withBills(30);
+                    ->withEstimates(3)
+                    ->withBills(3);
             })
             ->create([
                 'name' => 'Admin',
@@ -52,14 +52,14 @@ class UserCompanySeeder extends Seeder
                 ])
                 ->withCompanyProfile($companyData['country'])
                 ->withCompanyDefaults($companyData['currency'], $companyData['locale'])
-                ->withTransactions(50)
+                ->withTransactions(5)
                 ->withOfferings()
                 ->withClients()
                 ->withVendors()
-                ->withInvoices()
+                ->withInvoices(2)
                 ->withRecurringInvoices()
                 ->withEstimates()
-                ->withBills()
+                ->withBills(1)
                 ->create();
         }
     }

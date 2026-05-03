@@ -22,7 +22,10 @@ class Vendor extends Model
     use CompanyOwned;
     use HasFactory;
 
-    protected $table = 'vendors';
+    protected static function newFactory()
+    {
+        return \Database\Factories\Common\VendorFactory::new();
+    }
 
     protected $fillable = [
         'company_id',
