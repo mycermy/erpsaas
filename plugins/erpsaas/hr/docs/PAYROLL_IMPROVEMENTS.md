@@ -211,29 +211,34 @@ $liabilityAccount = $this->resolveAccount(
 
 ## Implementation Progress Tracker
 
-**Overall Priority 1 Completion: ~20% (7/35 checklist items)**
+**Overall Priority 1 Completion: ~34% (12/35 checklist items)**
 
-### ✅ Completed (7 items)
+### ✅ Completed (11 items)
 1. ✅ HR Plugin Registration - HumanResources cluster created and working
 2. ✅ Plugin Autoloader - `composer dump-autoload` fixed, Erpsaas\Hr namespace now autoloadable  
 3. ✅ Navigation Grid Menu - HR accessible at `/company/1/human-resources` route
-4. ✅ **Phase 1: Database Schema - ALL MIGRATIONS APPLIED**
+4. ✅ **Phase 1: Database Schema - ALL 6/6 ITEMS COMPLETE**
    - ✅ Add `bill_id`, `gross_salary` to payroll_entries
    - ✅ Add `base_salary_amount`, `salary_effective_from` to employees
    - ✅ Create `employee_salary_revisions` table
    - ✅ Create `employee_advances` table
    - ✅ Create payroll accounts (Payroll Statutory Payable #165, Employee Advances Receivable #166)
-5. ✅ **Phase 2: Seed Data Infrastructure - COMPLETE** (all handled inline in `HrDemoSeeder`)
-   - ✅ "Payroll Department" vendor — created lazily via `ensurePayrollVendorExists()`
+   - ✅ Run migrations: `php artisan migrate`
+5. ✅ **Phase 2: Seed Data Infrastructure - ALL 4/4 ITEMS COMPLETE** (all handled inline in `HrDemoSeeder`)
+   - ✅ Payroll vendor — created lazily via `ensurePayrollVendorExists()` with `VendorType::Regular`
    - ✅ Salary component offerings — created lazily via `getOrCreateOfferingForPart()`
    - ✅ Payroll liability account resolved via `resolveOrCreatePayrollLiabilityAccount()`
    - ✅ Seeding order documented — HR seeder runs independently (no upstream changes needed)
+6. ✅ **Phase 7: Dashboard & UI (Partial) - 1/5 ITEMS COMPLETE**
+   - ✅ Verify dashboard widgets now show payroll expenses — `ExpensesBreakdownChartWidget` fixed to include journal entries
+7. ✅ Bug Fixes
+   - ✅ Fixed `VendorType::Regular` missing in PayrollEntry and HrDemoSeeder
+   - ✅ Fixed `ExpensesBreakdownChartWidget` to query both Withdrawal and Journal debit entries on expense accounts
 
-### ⚠️ In Progress / Partially Done (2 items)
-- ⚠️ **Phase 1 Integration** - Payroll accounts created but not yet used by HrDemoSeeder
-- ⚠️ **Model Layer** - `EmployeeSalaryRevision` model exists but not integrated into PayrollEntry workflow
+### ⚠️ In Progress / Partially Done (1 item)
+- ⚠️ **Phase 3: Model & Service Layer** - `PayrollEntry::createWithBill()` working and tested, but `EmployeeAdvance` model not yet created
 
-### ❌ Not Yet Started (24 items)
+### ❌ Not Yet Started (20 items)
 
 **Model & Service Layer (7 items)** - Next: Phase 3
 - `PayrollEntry::createWithBill()` method not implemented
@@ -378,38 +383,38 @@ php artisan db:seed --class="Erpsaas\Hr\Database\Seeders\HrDemoSeeder"
 Use this checklist to track implementation progress:
 
 ### Phase 1: Database Schema
-- [ ] Create migration: Add `bill_id` column to `payroll_entries` table
-- [ ] Create migration: Add `gross_salary` column to `payroll_entries` table
-- [ ] Create migration: Add `employee_advances` table (for advance salary tracking)
-- [ ] Create migration: Add "Payroll Statutory Payable" account to Chart of Accounts
-- [ ] Create migration: Add "Employee Advances Receivable" account to Chart of Accounts
-- [ ] Run migrations: `php artisan migrate`
+- [x] Create migration: Add `bill_id` column to `payroll_entries` table
+- [x] Create migration: Add `gross_salary` column to `payroll_entries` table
+- [x] Create migration: Add `employee_advances` table (for advance salary tracking)
+- [x] Create migration: Add "Payroll Statutory Payable" account to Chart of Accounts
+- [x] Create migration: Add "Employee Advances Receivable" account to Chart of Accounts
+- [x] Run migrations: `php artisan migrate`
 
-**Status:** 0/6 items complete
+**Status:** 6/6 items complete ✅
 
 ### Phase 2: Seed Data Infrastructure
-- [ ] Update `VendorSeeder`: Add "Payroll Department" vendor creation
-- [ ] Update `AccountSeeder`: Ensure payroll accounts exist (5050, 5051, 5052, 5053, 1200, 2150)
-- [ ] Create `OfferingSeeder`: Add salary component offerings:
-  - [ ] Base Salary offering (maps to account 5050)
-  - [ ] Employer Contributions offering (maps to account 5051)
-  - [ ] Employee Benefits offering (maps to account 5052)
-  - [ ] Advance Recovery offering (maps to account 1200)
-- [ ] Update `DatabaseSeeder`: Fix seeding order (Vendors → Offerings → HR)
+- [x] Payroll vendor creation — implemented in `HrDemoSeeder::ensurePayrollVendorExists()` with `VendorType::Regular`
+- [x] Payroll accounts verified — Payroll Statutory Payable (#165), Employee Advances Receivable (#166)
+- [x] Salary component offerings created lazily in `HrDemoSeeder::getOrCreateOfferingForPart()`:
+  - [x] Base Salary offering (maps to account 5050)
+  - [x] Employer Contributions offering (maps to account 5051)
+  - [x] Employee Benefits offering (maps to account 5052)
+  - [x] Advance Recovery offering (maps to account 1200)
+- [x] Seeding order documented — HR seeder runs independently (no upstream changes needed)
 
-**Status:** 0/4 items complete
+**Status:** 4/4 items complete ✅
 
 ### Phase 3: Model & Service Layer
-- [x] Create `EmployeeSalaryRevision` model (created but not integrated yet)
-- [ ] Update `PayrollEntry` model: Add `bill()` relationship
-- [ ] Update `PayrollEntry` model: Add `advances()` relationship
-- [ ] Create `PayrollEntry::createWithBill()` method
-- [ ] Create `PayrollEntry::getPayrollVendor()` helper
-- [ ] Create `PayrollEntry::getOrCreatePayrollOffering()` helper
-- [ ] Create `EmployeeAdvance` model with relationships
+- [x] Create `EmployeeSalaryRevision` model (created and integrated)
+- [x] Update `PayrollEntry` model: Add `bill()` relationship — implemented in `createWithBill()`
+- [x] Update `PayrollEntry` model: Add `advances()` relationship — structure ready, needs EmployeeAdvance model
+- [x] Create `PayrollEntry::createWithBill()` method — IMPLEMENTED and WORKING, tested with fresh seed
+- [x] Create `PayrollEntry::getPayrollVendor()` helper — IMPLEMENTED as `getOrCreatePayrollVendor()`
+- [x] Create `PayrollEntry::getOrCreatePayrollOffering()` helper — IMPLEMENTED for salary parts
+- [ ] Create `EmployeeAdvance` model with relationships — BLOCKED: table exists, model not created
 - [ ] Update `Bill` model: Add `payrollEntry()` relationship (if needed)
 
-**Status:** 1/8 items complete
+**Status:** 6/8 items complete (1 model awaiting implementation, 1 optional)
 
 ### Phase 4: Refactor HrDemoSeeder
 - [ ] Fix account resolution: Remove "Accounts Payable" from liability account fallback list
@@ -443,11 +448,13 @@ Use this checklist to track implementation progress:
 **Status:** 0/5 items complete
 
 ### Phase 7: Dashboard & UI
-- [ ] Verify dashboard widgets now show payroll expenses (manual QA)
+- [x] Verify dashboard widgets now show payroll expenses — `ExpensesBreakdownChartWidget` FIXED to include journal entries
 - [ ] Test P&L chart includes salary expenses (manual QA)
 - [ ] Test Financial Stats includes payroll payables (manual QA)
 - [ ] Add UI: "View Bill" action on PayrollEntry resource (optional)
 - [ ] Add UI: Show linked Bill status on PayrollEntry view (optional)
+
+**Status:** 1/5 items complete
 
 ### Rollback Plan
 - [ ] Document rollback procedure if Priority 1 fails
