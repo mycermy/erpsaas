@@ -12,6 +12,7 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Hr\Enums\Hr\SalaryPartBasis;
 use Erpsaas\Hr\Enums\Hr\SalaryPartType;
 use Erpsaas\Hr\Models\Employee;
+use Erpsaas\Hr\Models\EmployeeAdvance;
 use Erpsaas\Hr\Models\EmployeeSalaryRevision;
 use Erpsaas\Hr\Models\PayrollEntry;
 use Erpsaas\Hr\Models\SalaryPart;
@@ -127,6 +128,7 @@ class HrDemoSeeder extends Seeder
             $this->seedSalaryRevisions($company, $employee, $definition['salary_revisions']);
             $structure = $structures[$definition['structure_key']];
             $this->seedPayrollEntries($employee, $structure, $index + 2);
+            $this->seedEmployeeAdvances($company, $employee);
         }
 
         Auth::logout();
@@ -588,6 +590,61 @@ class HrDemoSeeder extends Seeder
                         'amount_paid' => $billTotal,
                     ]);
             }
+        }
+    }
+
+    private function seedEmployeeAdvances(Company $company, Employee $employee): void
+    {
+        // Create sample advances for demonstration purposes
+        // Only create advances for employees with base salary >= 5000
+        $currentRevision = $employee->salaryRevisions()
+            ->where('effective_from', '<=', now()->toDateString())
+            ->orderByDesc('effective_from')
+            ->first();
+
+        if (! $currentRevision || $currentRevision->base_salary_amount < 5000) {
+            return; // Skip creating advances for lower-paid employees
+        }
+
+        // Create one pending advance (not yet given) and one recovered advance
+        $alreadyHasAdvances = EmployeeAdvance::query()
+            ->where('employee_id', $employee->id)
+            ->exists();
+
+        if ($alreadyHasAdvances) {
+            return; // Skip if advances already exist
+        }
+
+        // Pending advance: requested but not yet disbursed
+        EmployeeAdvance::create([
+            'company_id' => $company->id,
+            'employee_id' => $employee->id,
+            'amount' => 1500,
+            'given_at' => null, // Pending
+            'recovered_at' => null,
+            'reason' => 'emergency',
+            'notes' => 'Emergency personal expense - pending approval and disbursement',
+        ]);
+
+        // Recovered advance: given 2 months ago, recovered from last month payroll
+        $recoveredFromPayroll = PayrollEntry::query()
+            ->where('company_id', $company->id)
+            ->where('employee_id', $employee->id)
+            ->where('to_date', '<=', now()->subMonths(1)->endOfMonth()->toDateString())
+            ->orderByDesc('to_date')
+            ->first();
+
+        if ($recoveredFromPayroll) {
+            EmployeeAdvance::create([
+                'company_id' => $company->id,
+                'employee_id' => $employee->id,
+                'amount' => 1000,
+                'given_at' => now()->subMonths(3)->startOfMonth(),
+                'recovered_at' => now()->subMonths(1)->endOfMonth(),
+                'recovered_from_payroll_id' => $recoveredFromPayroll->id,
+                'reason' => 'salary_advance',
+                'notes' => 'Salary advance given for personal needs - successfully recovered',
+            ]);
         }
     }
 }

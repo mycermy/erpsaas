@@ -15,6 +15,7 @@ use Erpsaas\Hr\Enums\Hr\SalaryPartBasis;
 use Erpsaas\Hr\Enums\Hr\SalaryPartType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use RuntimeException;
 
@@ -416,6 +417,11 @@ class PayrollEntry extends Model
     public function transaction(): HasOne
     {
         return $this->hasOne(Transaction::class, 'id', 'transaction_id');
+    }
+
+    public function advances(): HasMany
+    {
+        return $this->hasMany(EmployeeAdvance::class, 'recovered_from_payroll_id');
     }
 
     public function getPayslipBreakdown(): array

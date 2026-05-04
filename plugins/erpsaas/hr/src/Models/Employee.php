@@ -160,6 +160,11 @@ class Employee extends Model
         return $this->hasMany(EmployeeSalaryRevision::class);
     }
 
+    public function advances(): HasMany
+    {
+        return $this->hasMany(EmployeeAdvance::class);
+    }
+
     /**
      * Get the most recent salary revision effective on or before a given date.
      */

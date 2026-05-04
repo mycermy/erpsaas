@@ -2,6 +2,7 @@
 
 namespace Erpsaas\Accounts\Models\Accounting;
 
+use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Erpsaas\Core\Casts\RateCast;
 use Erpsaas\Core\Collections\Accounting\DocumentCollection;
 use Erpsaas\Core\Enums\Accounting\AdjustmentComputation;
@@ -10,14 +11,13 @@ use Erpsaas\Core\Enums\Accounting\DocumentDiscountMethod;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
 use Erpsaas\Core\Enums\Accounting\JournalEntryType;
 use Erpsaas\Core\Enums\Accounting\TransactionType;
-use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
-use Erpsaas\Accounts\Models\Banking\BankAccount;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Erpsaas\Core\Observers\BillObserver;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
+use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
 use Filament\Actions\MountableAction;
 use Filament\Actions\ReplicateAction;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
@@ -103,6 +103,11 @@ class Bill extends Document
     {
         return $this->morphOne(Transaction::class, 'transactionable')
             ->where('type', TransactionType::Journal);
+    }
+
+    public function payrollEntry()
+    {
+        return $this->hasOne(\Erpsaas\Hr\Models\PayrollEntry::class, 'bill_id');
     }
 
     public static function documentType(): DocumentType
