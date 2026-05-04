@@ -16,4 +16,12 @@ class EditPayrollEntry extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Ensure bill relationship is loaded
+        $this->record->loadMissing('bill');
+
+        return $data;
+    }
 }

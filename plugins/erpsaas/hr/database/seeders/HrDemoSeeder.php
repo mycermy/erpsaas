@@ -254,7 +254,7 @@ class HrDemoSeeder extends Seeder
         return Vendor::query()
             ->where('company_id', $company->id)
             ->where('name', 'Payroll Department')
-            ->firstOr(fn() => Vendor::create([
+            ->firstOr(fn () => Vendor::create([
                 'company_id' => $company->id,
                 'name' => 'Payroll Department',
                 'type' => VendorType::Regular,
@@ -271,130 +271,145 @@ class HrDemoSeeder extends Seeder
         Account $employerTaxesAccount,
         Account $liabilityAccount,
     ): array {
+        // Create ONE shared set of salary parts for all structures
+        $sharedParts = $this->createSharedSalaryParts(
+            company: $company,
+            salariesAccount: $salariesAccount,
+            employerTaxesAccount: $employerTaxesAccount,
+            liabilityAccount: $liabilityAccount,
+        );
+
         return [
             'standard' => $this->buildSalaryStructure(
                 company: $company,
                 name: 'MY Payroll - Standard',
-                baseSalaryPlaceholder: 3500,
-                salariesAccount: $salariesAccount,
-                employerTaxesAccount: $employerTaxesAccount,
+                sharedParts: $sharedParts,
                 liabilityAccount: $liabilityAccount,
                 description: 'Malaysia payroll template for standard/junior employees.',
             ),
             'senior' => $this->buildSalaryStructure(
                 company: $company,
                 name: 'MY Payroll - Senior',
-                baseSalaryPlaceholder: 5000,
-                salariesAccount: $salariesAccount,
-                employerTaxesAccount: $employerTaxesAccount,
+                sharedParts: $sharedParts,
                 liabilityAccount: $liabilityAccount,
                 description: 'Malaysia payroll template for senior/specialist employees.',
             ),
             'management' => $this->buildSalaryStructure(
                 company: $company,
                 name: 'MY Payroll - Management',
-                baseSalaryPlaceholder: 7000,
-                salariesAccount: $salariesAccount,
-                employerTaxesAccount: $employerTaxesAccount,
+                sharedParts: $sharedParts,
                 liabilityAccount: $liabilityAccount,
                 description: 'Malaysia payroll template for managers and directors.',
             ),
         ];
     }
 
-    private function buildSalaryStructure(
+    /**
+     * Create ONE shared set of salary parts that all structures reference.
+     * Base salary amount is ALWAYS resolved from EmployeeSalaryRevision, not from the part.
+     *
+     * @return array<string, SalaryPart>
+     */
+    private function createSharedSalaryParts(
         Company $company,
-        string $name,
-        float $baseSalaryPlaceholder,
         Account $salariesAccount,
         Account $employerTaxesAccount,
         Account $liabilityAccount,
+    ): array {
+        return [
+            'basicPay' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'Basic Pay',
+                type: SalaryPartType::BaseSalary,
+                basis: SalaryPartBasis::Fixed,
+                amount: 0, // Always resolved from EmployeeSalaryRevision
+                inNetSalary: true,
+                debitAccount: $salariesAccount,
+                creditAccount: null,
+                description: 'Gross monthly salary (resolved from employee salary revision).',
+            ),
+            'kwspEmployee' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'KWSP Employee',
+                type: SalaryPartType::Deduction,
+                basis: SalaryPartBasis::PercentageOfBaseSalary,
+                amount: 11,
+                inNetSalary: true,
+                debitAccount: null,
+                creditAccount: $liabilityAccount,
+                description: 'Employee EPF contribution (KWSP) — 11% of basic pay.',
+            ),
+            'socsoEmployee' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'SOCSO Employee',
+                type: SalaryPartType::Deduction,
+                basis: SalaryPartBasis::PercentageOfBaseSalary,
+                amount: 0.5,
+                inNetSalary: true,
+                debitAccount: null,
+                creditAccount: $liabilityAccount,
+                description: 'Employee SOCSO contribution — 0.5% of basic pay.',
+            ),
+            'eisEmployee' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'EIS Employee',
+                type: SalaryPartType::Deduction,
+                basis: SalaryPartBasis::PercentageOfBaseSalary,
+                amount: 0.2,
+                inNetSalary: true,
+                debitAccount: null,
+                creditAccount: $liabilityAccount,
+                description: 'Employee EIS contribution — 0.2% of basic pay.',
+            ),
+            'kwspEmployer' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'KWSP Employer',
+                type: SalaryPartType::EmployerCost,
+                basis: SalaryPartBasis::PercentageOfBaseSalary,
+                amount: 13,
+                inNetSalary: false,
+                debitAccount: $employerTaxesAccount,
+                creditAccount: $liabilityAccount,
+                description: 'Employer EPF contribution (KWSP) — 13% of basic pay.',
+            ),
+            'socsoEmployer' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'SOCSO Employer',
+                type: SalaryPartType::EmployerCost,
+                basis: SalaryPartBasis::PercentageOfBaseSalary,
+                amount: 1.75,
+                inNetSalary: false,
+                debitAccount: $employerTaxesAccount,
+                creditAccount: $liabilityAccount,
+                description: 'Employer SOCSO contribution — 1.75% of basic pay.',
+            ),
+            'eisEmployer' => $this->upsertSalaryPart(
+                company: $company,
+                name: 'EIS Employer',
+                type: SalaryPartType::EmployerCost,
+                basis: SalaryPartBasis::PercentageOfBaseSalary,
+                amount: 0.2,
+                inNetSalary: false,
+                debitAccount: $employerTaxesAccount,
+                creditAccount: $liabilityAccount,
+                description: 'Employer EIS contribution — 0.2% of basic pay.',
+            ),
+        ];
+    }
+
+    /**
+     * Build a salary structure using shared salary parts.
+     * All structures reference the same parts - only the structure name differs.
+     *
+     * @param  array<string, SalaryPart>  $sharedParts
+     */
+    private function buildSalaryStructure(
+        Company $company,
+        string $name,
+        array $sharedParts,
+        Account $liabilityAccount,
         string $description = '',
     ): SalaryStructure {
-        $basicPayPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "Basic Pay ({$name})",
-            type: SalaryPartType::BaseSalary,
-            basis: SalaryPartBasis::Fixed,
-            amount: $baseSalaryPlaceholder,
-            inNetSalary: true,
-            debitAccount: $salariesAccount,
-            creditAccount: null,
-            description: 'Gross monthly salary (overridden by employee salary revision).',
-        );
-
-        $kwspDeductionPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "KWSP Employee ({$name})",
-            type: SalaryPartType::Deduction,
-            basis: SalaryPartBasis::PercentageOfBaseSalary,
-            amount: 11,
-            inNetSalary: true,
-            debitAccount: null,
-            creditAccount: $liabilityAccount,
-            description: 'Employee EPF contribution (KWSP) — 11% of basic pay.',
-        );
-
-        $socsoDeductionPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "SOCSO Employee ({$name})",
-            type: SalaryPartType::Deduction,
-            basis: SalaryPartBasis::PercentageOfBaseSalary,
-            amount: 0.5,
-            inNetSalary: true,
-            debitAccount: null,
-            creditAccount: $liabilityAccount,
-            description: 'Employee SOCSO contribution — 0.5% of basic pay.',
-        );
-
-        $eisDeductionPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "EIS Employee ({$name})",
-            type: SalaryPartType::Deduction,
-            basis: SalaryPartBasis::PercentageOfBaseSalary,
-            amount: 0.2,
-            inNetSalary: true,
-            debitAccount: null,
-            creditAccount: $liabilityAccount,
-            description: 'Employee EIS contribution — 0.2% of basic pay.',
-        );
-
-        $kwspEmployerPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "KWSP Employer ({$name})",
-            type: SalaryPartType::EmployerCost,
-            basis: SalaryPartBasis::PercentageOfBaseSalary,
-            amount: 13,
-            inNetSalary: false,
-            debitAccount: $employerTaxesAccount,
-            creditAccount: $liabilityAccount,
-            description: 'Employer EPF contribution (KWSP) — 13% of basic pay.',
-        );
-
-        $socsoEmployerPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "SOCSO Employer ({$name})",
-            type: SalaryPartType::EmployerCost,
-            basis: SalaryPartBasis::PercentageOfBaseSalary,
-            amount: 1.75,
-            inNetSalary: false,
-            debitAccount: $employerTaxesAccount,
-            creditAccount: $liabilityAccount,
-            description: 'Employer SOCSO contribution — 1.75% of basic pay.',
-        );
-
-        $eisEmployerPart = $this->upsertSalaryPart(
-            company: $company,
-            name: "EIS Employer ({$name})",
-            type: SalaryPartType::EmployerCost,
-            basis: SalaryPartBasis::PercentageOfBaseSalary,
-            amount: 0.2,
-            inNetSalary: false,
-            debitAccount: $employerTaxesAccount,
-            creditAccount: $liabilityAccount,
-            description: 'Employer EIS contribution — 0.2% of basic pay.',
-        );
-
         $structure = SalaryStructure::query()->updateOrCreate(
             [
                 'company_id' => $company->id,
@@ -410,17 +425,7 @@ class HrDemoSeeder extends Seeder
 
         $structure->spss()->delete();
 
-        foreach (
-            [
-                $basicPayPart,
-                $kwspDeductionPart,
-                $socsoDeductionPart,
-                $eisDeductionPart,
-                $kwspEmployerPart,
-                $socsoEmployerPart,
-                $eisEmployerPart,
-            ] as $part
-        ) {
+        foreach ($sharedParts as $part) {
             $structure->spss()->create([
                 'salary_part_id' => $part->id,
                 'amount' => $part->amount,
@@ -474,7 +479,7 @@ class HrDemoSeeder extends Seeder
     {
         $existing = Employee::query()
             ->where('company_id', $company->id)
-            ->whereHas('contact', fn($query) => $query->where('email', $employeeData['email']))
+            ->whereHas('contact', fn ($query) => $query->where('email', $employeeData['email']))
             ->first();
 
         if ($existing) {

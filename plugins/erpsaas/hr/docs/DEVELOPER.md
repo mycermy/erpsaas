@@ -207,6 +207,151 @@ it('can list employees', function () {
 
 ---
 
+## Bill-Based Payroll Integration (Phase 5+)
+
+### Overview
+
+As of 2026-05-04, payroll entries now integrate with the Bill system for complete invoice tracking and financial reporting. This section covers how the integration works and how to use it in your code.
+
+### Key Changes
+
+**Database:**
+- `payroll_entries` now has `bill_id` column (nullable for legacy entries)
+- `payroll_entries` now has `gross_salary` snapshot column
+- New `employee_advances` table for advance salary tracking
+- New "Payroll Statutory Payable" account (ID 165) for liabilities
+- New "Employee Advances Receivable" account (ID 166) for assets
+
+**Models:**
+- `PayrollEntry::createWithBill()` — creates entry with Bill + Journal Entries
+- `PayrollEntry->bill()` — relationship to Bill
+- `PayrollEntry->advances()` — relationship to advances
+- `EmployeeAdvance` — new model for tracking advances
+- `Bill->payrollEntry()` — inverse relationship
+
+### Creating Payroll with Bills
+
+**Recommended Approach:**
+```php
+use Erpsaas\Hr\Models\PayrollEntry;
+
+$payrollEntry = PayrollEntry::createWithBill(
+    employee: $employee,
+    entryNumber: 'PE-2026-MAR-001',
+    fromDate: now()->startOfMonth(),
+    toDate: now()->endOfMonth(),
+    salaryStructure: $structure,
+    company: $company,
+);
+
+// Automatically:
+// - Creates Bill with bill_number like 'PAY-PE2026-0001'
+// - Creates journal entries with correct accounts
+// - Posts to "Payroll Statutory Payable" (not Accounts Payable)
+// - Ensures all entries are balanced
+```
+
+**Legacy Approach (Still Works):**
+```php
+// Old way still functions but bill_id = NULL
+$entry = PayrollEntry::create([...]);
+```
+
+### Testing Payroll Integration
+
+See `plugins/erpsaas/hr/tests/Feature/PayrollIntegrationTest.php` for comprehensive examples covering:
+- Bill creation and linking
+- Journal entry balance validation
+- Employee advance handling
+- Dashboard integration
+- Backward compatibility with legacy entries
+
+All 33 tests passing (186 assertions).
+
+### Querying Payroll & Bills
+
+```php
+// Find entries with bills
+$withBills = PayrollEntry::whereNotNull('bill_id')->with('bill')->get();
+
+// Find legacy entries (no bills)
+$legacy = PayrollEntry::whereNull('bill_id')->get();
+
+// Query payroll transactions
+$transactions = Transaction::query()
+    ->where('type', 'journal')
+    ->where('description', 'like', 'Payroll for%')
+    ->with('journalEntries.account')
+    ->get();
+
+// Check bill totals
+$payrollBills = Bill::where('bill_number', 'like', 'PAY%')->get();
+$totalPayroll = $payrollBills->sum('total_amount');
+```
+
+### Employee Advances
+
+```php
+// Create advance
+$advance = EmployeeAdvance::create([
+    'employee_id' => $employee->id,
+    'amount' => 1000.00,
+    'given_at' => now(),
+]);
+
+// Mark as recovered during payroll
+$advance->update([
+    'recovered_from_payroll_id' => $payrollEntry->id,
+    'recovered_at' => now(),
+]);
+
+// Query advances
+$pending = $employee->advances()->whereNull('recovered_at')->get();
+$recovered = $employee->advances()->whereNotNull('recovered_at')->get();
+```
+
+### Migration Strategy
+
+**Default:** Option A (Conservative) — no backfill of legacy entries
+- New entries have bills
+- Legacy entries (`bill_id = NULL`) remain untouched
+- Zero risk to existing data
+
+**Optional:** Option B (Aggressive) — backfill Bills for legacy entries
+```bash
+php artisan payroll:backfill-bills
+```
+
+See [MIGRATION_STRATEGY.md](./MIGRATION_STRATEGY.md) for detailed guidance.
+
+### Account Mapping
+
+Payroll journal entries use:
+- **Debits:** 
+  - Account 19 (Salaries and Wages)
+  - Account 20 (Payroll Employer Taxes)
+- **Credits:**
+  - Account 165 (Payroll Statutory Payable) ← **NEW**
+  - NOT Account 7 (Accounts Payable)
+
+This separation ensures clean liability tracking and proper financial reporting.
+
+### Performance Notes
+
+When working with payroll data, eager load relationships:
+```php
+// ✓ GOOD
+$entries = PayrollEntry::with('bill', 'employee', 'transaction.journalEntries')->get();
+
+// ✗ BAD (N+1 queries)
+$entries = PayrollEntry::all();
+foreach ($entries as $entry) {
+    echo $entry->bill->bill_number;
+}
+```
+
+---
+
 ## Known Limitations & Future Work
 
 - **No payroll approval workflow** — payroll entries are created immediately without a draft/approve cycle.
@@ -214,3 +359,4 @@ it('can list employees', function () {
 - **Amount override on pivot not wired in processing** — `SalaryPartSalaryStructure.amount` is stored but `PayrollEntry::createWithTransaction()` reads the base `SalaryPart.amount` instead. A future improvement should prefer the pivot `amount` when it is set.
 - **No leave / attendance integration** — payroll currently assumes full-period pay.
 - **No payslip PDF generation** — referenced in the `add_attachment_capability` branch; not yet implemented in the plugin.
+- **Phase 7:** Dashboard & UI enhancements (view Bill status, optional UI actions) — partially complete, more work possible

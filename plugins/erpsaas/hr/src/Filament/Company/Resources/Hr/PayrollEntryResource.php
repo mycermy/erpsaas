@@ -6,6 +6,7 @@ use Barryvdh\Snappy\Facades\SnappyPdf;
 use Erpsaas\Hr\Filament\Company\Clusters\HumanResources;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\PayrollEntryResource\Pages;
 use Erpsaas\Hr\Models\PayrollEntry;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -29,25 +30,25 @@ class PayrollEntryResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('entry_number')
                             ->required()
-                            ->default(fn() => PayrollEntry::getNextPayrollEntryNumber())
+                            ->default(fn () => PayrollEntry::getNextPayrollEntryNumber())
                             ->maxLength(255),
                         Forms\Components\DatePicker::make('from_date')
                             ->live()
-                            ->default(fn() => now()->day > 10 ? now()->addMonth()->startOfMonth() : now()->startOfMonth())
+                            ->default(fn () => now()->day > 10 ? now()->addMonth()->startOfMonth() : now()->startOfMonth())
                             ->afterStateUpdated(function (callable $set, $state) {
                                 $toDate = \Carbon\Carbon::parse($state)->endOfMonth()->toDateString();
                                 $set('to_date', $toDate);
                             })
                             ->required(),
                         Forms\Components\DatePicker::make('to_date')
-                            ->default(fn() => now()->day > 10 ? now()->addMonth()->endOfMonth() : now()->endOfMonth())
+                            ->default(fn () => now()->day > 10 ? now()->addMonth()->endOfMonth() : now()->endOfMonth())
                             ->required(),
                     ])->columns(),
                 Forms\Components\Section::make('Employee Details')
                     ->schema([
                         Forms\Components\Select::make('employee_id')
                             ->relationship('employee', 'id')
-                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->contact->first_name} {$record->contact->last_name} ({$record->employee_number})")
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->contact->first_name} {$record->contact->last_name} ({$record->employee_number})")
                             ->preload()
                             ->required(),
                         Forms\Components\Select::make('salary_structure_id')
@@ -55,6 +56,22 @@ class PayrollEntryResource extends Resource
                             ->relationship('salaryStructure', 'name')
                             ->required(),
                     ])->columns(),
+                Forms\Components\Section::make('Bill Information')
+                    ->schema([
+                        Forms\Components\Placeholder::make('bill.bill_number')
+                            ->label('Bill Number')
+                            ->content(fn (?PayrollEntry $record) => $record?->bill?->bill_number ?? '—'),
+                        Forms\Components\Placeholder::make('bill.status')
+                            ->label('Bill Status')
+                            ->content(fn (?PayrollEntry $record) => $record?->bill?->status ? ucfirst($record->bill->status->value) : '—'),
+                        Forms\Components\Placeholder::make('bill.total')
+                            ->label('Bill Amount')
+                            ->content(fn (?PayrollEntry $record) => $record?->bill?->total ? money($record->bill->total, $record->bill->currency_code) : '—'),
+                        Forms\Components\Placeholder::make('bill.paid_at')
+                            ->label('Paid Date')
+                            ->content(fn (?PayrollEntry $record) => $record?->bill?->paid_at?->format('M d, Y h:i A') ?? '—'),
+                    ])->columns()
+                    ->hidden(fn (?PayrollEntry $record) => ! $record || $record->bill_id === null),
             ]);
     }
 
@@ -82,6 +99,20 @@ class PayrollEntryResource extends Resource
                     ->label('To')
                     ->date()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('bill.bill_number')
+                    ->label('Bill #')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('—'),
+                Tables\Columns\BadgeColumn::make('bill.status')
+                    ->label('Bill Status')
+                    ->colors([
+                        'gray' => 'null',
+                        'warning' => 'open',
+                        'success' => 'paid',
+                        'danger' => 'cancelled',
+                    ])
+                    ->formatStateUsing(fn ($state) => $state ? ucfirst($state->value) : 'No Bill'),
             ])
             ->defaultSort(function (Builder $query): Builder {
                 return $query
@@ -92,13 +123,24 @@ class PayrollEntryResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('view_bill')
+                    ->label('View Bill')
+                    ->icon('heroicon-o-document-text')
+                    ->visible(fn (PayrollEntry $record) => $record->bill_id !== null)
+                    ->action(function (PayrollEntry $record) {
+                        // Navigate to bill edit page using the URL path
+                        return redirect(route('filament.company.purchases.resources.purchases.bills.edit', [
+                            'tenant' => Filament::getTenant(),
+                            'record' => $record->bill_id,
+                        ]));
+                    }),
                 Tables\Actions\Action::make('preview_payslip')
                     ->label('Preview Payslip')
                     ->icon('heroicon-o-eye')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close')
                     ->modalWidth('5xl')
-                    ->modalHeading(fn(PayrollEntry $record) => 'Payslip ' . $record->entry_number)
+                    ->modalHeading(fn (PayrollEntry $record) => 'Payslip ' . $record->entry_number)
                     ->modalContent(function (PayrollEntry $record): View {
                         return view('erpsaas-hr::filament.company.resources.hr.payroll-entry-resource.modals.payslip-preview', [
                             'record' => $record,
@@ -146,6 +188,12 @@ class PayrollEntryResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['bill', 'employee', 'salaryStructure']);
     }
 
     public static function getPages(): array

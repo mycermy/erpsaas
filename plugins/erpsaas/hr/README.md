@@ -16,7 +16,32 @@ The HR plugin adds employee management and a complete payroll processing workflo
 
 ```
 Employee → Salary Structure → Salary Parts → Payroll Entry → Journal Entries (Transaction)
+                                                          ↓
+                                                    Bill (for tracking)
 ```
+
+### Bill-Based Payroll Integration (Phase 5+)
+
+As of May 2026, payroll entries now automatically create Bills for each payroll run. This provides:
+
+- **Invoice Tracking:** Payroll is tracked just like vendor bills
+- **Dashboard Integration:** Appears in "Open payables" and financial metrics
+- **Liability Segregation:** Uses dedicated "Payroll Statutory Payable" account (not mixed with vendor payables)
+- **Audit Trail:** Full bill history and payment recording
+- **Backward Compatibility:** Existing payroll entries continue to work; Bills are additive
+
+**Architecture:**
+```
+PayrollEntry::createWithBill() 
+  ↓
+Creates Bill (vendor: "Payroll Department", status: Open)
+  ↓
+Creates Journal Entries (debits to expense accounts, credits to liability account)
+  ↓
+Automatically included in all financial reports and dashboard widgets
+```
+
+See [DEVELOPER.md](./docs/DEVELOPER.md) for integration examples and [MIGRATION_STRATEGY.md](./docs/MIGRATION_STRATEGY.md) for legacy data handling.
 
 ---
 
@@ -29,6 +54,9 @@ Employee → Salary Structure → Salary Parts → Payroll Entry → Journal Ent
 | **Salary Structures** | Compose salary structures from salary parts with per-structure amount overrides; each structure is date-bounded and linked to a payroll liabilities account |
 | **Payroll Entries** | Process payroll for an employee against a salary structure for a date range; generates balanced journal entries automatically |
 | **Accounting Integration** | Every payroll entry creates a `Transaction` with individual `JournalEntry` rows — one per salary part — plus a net salary payable credit entry |
+| **Bill Integration** | Payroll entries automatically create Bills for full dashboard integration, tracking, and financial reporting (as of Phase 5+) |
+| **Employee Advances** | Track salary advances with recovery mechanism - advances are deducted from future payroll |
+| **Dashboard Widgets** | Payroll expenses appear in dashboard financial metrics, including "Open payables", "Expenses breakdown", and other accounting reports |
 
 ---
 

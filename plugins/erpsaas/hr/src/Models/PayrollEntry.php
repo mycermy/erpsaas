@@ -163,7 +163,7 @@ class PayrollEntry extends Model
             'payrollLiabilitiesAccount',
         ])->find($data['salary_structure_id']);
 
-        $salaryParts = $salaryStructure->spss->map(fn($sps) => $sps->salaryPart);
+        $salaryParts = $salaryStructure->spss->map(fn ($sps) => $sps->salaryPart);
 
         // Resolve base salary: prefer revision-based, fall back to structure-defined amount
         $baseSalary = static::resolveBaseSalary($data, $salaryParts);
@@ -438,9 +438,14 @@ class PayrollEntry extends Model
             ->pluck('salaryPart')
             ->filter();
 
-        $baseSalary = $parts
-            ->where('type', SalaryPartType::BaseSalary)
-            ->sum('amount');
+        // Use stored gross_salary if available, otherwise resolve from employee salary revision
+        $baseSalary = $this->gross_salary
+            ? (float) $this->gross_salary
+            : static::resolveBaseSalary([
+                'employee_id' => $this->employee_id,
+                'from_date' => $this->from_date,
+                'to_date' => $this->to_date,
+            ], $parts);
 
         $lines = [];
         $gross = 0.0;
@@ -451,7 +456,7 @@ class PayrollEntry extends Model
         foreach ($parts as $part) {
             $amount = $part->basis === SalaryPartBasis::PercentageOfBaseSalary
                 ? ((float) $part->amount / 100) * (float) $baseSalary
-                : (float) $part->amount;
+                : ($part->type === SalaryPartType::BaseSalary ? $baseSalary : (float) $part->amount);
 
             $type = $part->type instanceof SalaryPartType ? $part->type : SalaryPartType::from((string) $part->type);
 

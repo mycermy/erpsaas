@@ -8,6 +8,7 @@ use Erpsaas\Core\Filament\Forms\Components\PhoneBuilder;
 use Erpsaas\Core\Filament\Tables\Columns;
 use Erpsaas\Hr\Filament\Company\Clusters\HumanResources;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\EmployeeResource\Pages;
+use Erpsaas\Hr\Filament\Company\Resources\Hr\EmployeeResource\RelationManagers;
 use Erpsaas\Hr\Models\Employee;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -43,7 +44,47 @@ class EmployeeResource extends Resource
                                     ->maxLength(255)
                                     ->columnStart(1),
                             ]),
-                        CustomSection::make('Contact Details')
+                    ])->columns(1),
+                Forms\Components\Section::make('Salary Information')
+                    ->schema([
+                        Forms\Components\Group::make()
+                            ->columns()
+                            ->schema([
+                                Forms\Components\Placeholder::make('latest_salary.base_salary_amount')
+                                    ->label('Current Base Salary')
+                                    ->content(function (?Employee $record) {
+                                        if (! $record) {
+                                            return '—';
+                                        }
+                                        $latestRevision = $record->salaryRevisions()
+                                            ->orderBy('effective_from', 'desc')
+                                            ->first();
+
+                                        return $latestRevision
+                                            ? 'RM ' . number_format($latestRevision->base_salary_amount, 2)
+                                            : '—';
+                                    })
+                                    ->columnStart(1)
+                                    ->helperText('To update salary, use the "Salary Revisions" tab below'),
+                                Forms\Components\Placeholder::make('latest_salary.effective_from')
+                                    ->label('Effective From')
+                                    ->content(function (?Employee $record) {
+                                        if (! $record) {
+                                            return '—';
+                                        }
+                                        $latestRevision = $record->salaryRevisions()
+                                            ->orderBy('effective_from', 'desc')
+                                            ->first();
+
+                                        return $latestRevision?->effective_from?->format('M d, Y') ?? '—';
+                                    })
+                                    ->columnStart(2),
+                            ]),
+                    ])->columns(1)
+                    ->description('View current salary information. Scroll down to the Salary Revisions tab to manage salary history.'),
+                Forms\Components\Section::make('Contact Details')
+                    ->schema([
+                        CustomSection::make('Contact')
                             ->relationship('contact')
                             ->saveRelationshipsUsing(null)
                             ->saveRelationshipsBeforeChildrenUsing(null)
@@ -153,6 +194,14 @@ class EmployeeResource extends Resource
                     ->label('Last Name')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('base_salary_amount')
+                    ->label('Base Salary')
+                    ->money('MYR')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('salary_effective_from')
+                    ->label('Salary Effective')
+                    ->date()
+                    ->sortable(),
             ])
             ->filters([
                 //
@@ -170,7 +219,7 @@ class EmployeeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\SalaryRevisionsRelationManager::class,
         ];
     }
 
