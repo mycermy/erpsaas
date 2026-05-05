@@ -190,58 +190,60 @@ class PayrollEntryResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('view_bill')
-                    ->label('View Bill')
-                    ->icon('heroicon-o-document-text')
-                    ->visible(fn (PayrollEntry $record) => $record->bill_id !== null)
-                    ->action(function (PayrollEntry $record) {
-                        // Navigate to bill edit page using the URL path
-                        return redirect(route('filament.company.purchases.resources.purchases.bills.edit', [
-                            'tenant' => Filament::getTenant(),
-                            'record' => $record->bill_id,
-                        ]));
-                    }),
-                Tables\Actions\Action::make('preview_payslip')
-                    ->label('Preview Payslip')
-                    ->icon('heroicon-o-eye')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Close')
-                    ->modalWidth('5xl')
-                    ->modalHeading(fn (PayrollEntry $record) => 'Payslip ' . $record->entry_number)
-                    ->modalContent(function (PayrollEntry $record): View {
-                        return view('erpsaas-hr::filament.company.resources.hr.payroll-entry-resource.modals.payslip-preview', [
-                            'record' => $record,
-                            'payslip' => $record->getPayslipBreakdown(),
-                        ]);
-                    }),
-                Tables\Actions\Action::make('export_payslip_pdf')
-                    ->label('Export PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->action(function (PayrollEntry $record) {
-                        $record->loadMissing('employee.contact', 'salaryStructure');
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('view_bill')
+                        ->label('View Bill')
+                        ->icon('heroicon-o-document-text')
+                        ->visible(fn (PayrollEntry $record) => $record->bill_id !== null)
+                        ->action(function (PayrollEntry $record) {
+                            // Navigate to bill edit page using the URL path
+                            return redirect(route('filament.company.purchases.resources.purchases.bills.edit', [
+                                'tenant' => Filament::getTenant(),
+                                'record' => $record->bill_id,
+                            ]));
+                        }),
+                    Tables\Actions\Action::make('preview_payslip')
+                        ->label('Preview Payslip')
+                        ->icon('heroicon-o-eye')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->modalWidth('5xl')
+                        ->modalHeading(fn (PayrollEntry $record) => 'Payslip ' . $record->entry_number)
+                        ->modalContent(function (PayrollEntry $record): View {
+                            return view('erpsaas-hr::filament.company.resources.hr.payroll-entry-resource.modals.payslip-preview', [
+                                'record' => $record,
+                                'payslip' => $record->getPayslipBreakdown(),
+                            ]);
+                        }),
+                    Tables\Actions\Action::make('export_payslip_pdf')
+                        ->label('Export PDF')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->action(function (PayrollEntry $record) {
+                            $record->loadMissing('employee.contact', 'salaryStructure');
 
-                        $payslip = $record->getPayslipBreakdown();
+                            $payslip = $record->getPayslipBreakdown();
 
-                        $employeeName = trim((string) ($record->employee?->contact?->first_name . ' ' . $record->employee?->contact?->last_name));
-                        $employeeSlug = $employeeName !== '' ? Str::slug($employeeName) : 'employee';
+                            $employeeName = trim((string) ($record->employee?->contact?->first_name . ' ' . $record->employee?->contact?->last_name));
+                            $employeeSlug = $employeeName !== '' ? Str::slug($employeeName) : 'employee';
 
-                        $filename = sprintf(
-                            'payslip-%s-%s-%s.pdf',
-                            $record->entry_number,
-                            $employeeSlug,
-                            now()->format('Y-m-d')
-                        );
+                            $filename = sprintf(
+                                'payslip-%s-%s-%s.pdf',
+                                $record->entry_number,
+                                $employeeSlug,
+                                now()->format('Y-m-d')
+                            );
 
-                        $pdf = SnappyPdf::loadView('erpsaas-hr::filament.company.resources.hr.payroll-entry-resource.pdf.payslip', [
-                            'record' => $record,
-                            'payslip' => $payslip,
-                        ]);
+                            $pdf = SnappyPdf::loadView('erpsaas-hr::filament.company.resources.hr.payroll-entry-resource.pdf.payslip', [
+                                'record' => $record,
+                                'payslip' => $payslip,
+                            ]);
 
-                        return response()->streamDownload(function () use ($pdf) {
-                            echo $pdf->inline();
-                        }, $filename);
-                    }),
-                Tables\Actions\EditAction::make(),
+                            return response()->streamDownload(function () use ($pdf) {
+                                echo $pdf->inline();
+                            }, $filename);
+                        }),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -10,8 +10,10 @@ use Erpsaas\Hr\Filament\Company\Clusters\HumanResources;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\EmployeeResource\Pages;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\EmployeeResource\RelationManagers;
 use Erpsaas\Hr\Models\Employee;
+use Erpsaas\Hr\Models\EmployeeAdvance;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -33,7 +35,7 @@ class EmployeeResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('employee_number')
                                     ->maxLength(255)
-                                    ->default(static fn() => Employee::getNextEmployeeNumber())
+                                    ->default(static fn () => Employee::getNextEmployeeNumber())
                                     ->required()
                                     ->columnStart(1),
                                 Forms\Components\TextInput::make('job_title')
@@ -42,6 +44,88 @@ class EmployeeResource extends Resource
                                     ->columnStart(2),
                                 Forms\Components\TextInput::make('department')
                                     ->maxLength(255)
+                                    ->columnStart(1),
+                            ]),
+                    ])->columns(1),
+                Forms\Components\Section::make('Personal Information (PDPA Protected)')
+                    ->schema([
+                        Forms\Components\Group::make()
+                            ->columns()
+                            ->schema([
+                                Forms\Components\TextInput::make('nric')
+                                    ->label('NRIC (MyKad)')
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted - Malaysian IC number')
+                                    ->columnStart(1),
+                                Forms\Components\TextInput::make('passport_number')
+                                    ->label('Passport Number')
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted - For foreign workers')
+                                    ->columnStart(2),
+                            ]),
+                    ])->columns(1)
+                    ->description('Sensitive personal identification data protected under Malaysia PDPA'),
+                Forms\Components\Section::make('Bank Details (Encrypted)')
+                    ->schema([
+                        Forms\Components\Group::make()
+                            ->columns()
+                            ->schema([
+                                Forms\Components\TextInput::make('bank_account_number')
+                                    ->label('Bank Account Number')
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted')
+                                    ->columnStart(1),
+                                Forms\Components\TextInput::make('bank_name')
+                                    ->label('Bank Name')
+                                    ->maxLength(255)
+                                    ->columnStart(2),
+                                Forms\Components\TextInput::make('bank_branch')
+                                    ->label('Bank Branch')
+                                    ->maxLength(255)
+                                    ->columnStart(1),
+                            ]),
+                    ])->columns(1),
+                Forms\Components\Section::make('Malaysian Social Security (Encrypted)')
+                    ->schema([
+                        Forms\Components\Group::make()
+                            ->columns()
+                            ->schema([
+                                Forms\Components\TextInput::make('epf_number')
+                                    ->label('EPF Number (KWSP)')
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted - Employees Provident Fund')
+                                    ->columnStart(1),
+                                Forms\Components\TextInput::make('socso_number')
+                                    ->label('SOCSO Number (PERKESO)')
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted - Social Security Organisation')
+                                    ->columnStart(2),
+                                Forms\Components\TextInput::make('income_tax_number')
+                                    ->label('Income Tax Number (LHDN)')
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted - Inland Revenue Board')
+                                    ->columnStart(1),
+                            ]),
+                    ])->columns(1),
+                Forms\Components\Section::make('Emergency Contact (Encrypted)')
+                    ->schema([
+                        Forms\Components\Group::make()
+                            ->columns()
+                            ->schema([
+                                Forms\Components\TextInput::make('emergency_contact_name')
+                                    ->label('Contact Name')
+                                    ->maxLength(255)
+                                    ->columnStart(1),
+                                Forms\Components\TextInput::make('emergency_contact_phone')
+                                    ->label('Contact Phone')
+                                    ->tel()
+                                    ->maxLength(255)
+                                    ->helperText('Encrypted')
+                                    ->columnStart(2),
+                                Forms\Components\TextInput::make('emergency_contact_relationship')
+                                    ->label('Relationship')
+                                    ->maxLength(255)
+                                    ->placeholder('e.g. Spouse, Parent, Sibling')
                                     ->columnStart(1),
                             ]),
                     ])->columns(1),
@@ -138,7 +222,7 @@ class EmployeeResource extends Resource
                                                     ->maxLength(15),
                                             ])->maxItems(1),
                                     ])
-                                    ->deletable(fn(PhoneBuilder $builder) => $builder->getItemsCount() > 1)
+                                    ->deletable(fn (PhoneBuilder $builder) => $builder->getItemsCount() > 1)
                                     ->reorderable(false)
                                     ->blockNumbers(false)
                                     ->addActionLabel('Add Phone'),
@@ -162,7 +246,7 @@ class EmployeeResource extends Resource
                             ->reactive()
                             ->columnSpanFull(),
                         CustomSection::make('Work Address')
-                            ->visible(fn(callable $get) => $get('separate_work_address'))
+                            ->visible(fn (callable $get) => $get('separate_work_address'))
                             ->relationship('workAddress')
                             ->saveRelationshipsUsing(null)
                             ->saveRelationshipsBeforeChildrenUsing(null)
@@ -194,20 +278,92 @@ class EmployeeResource extends Resource
                     ->label('Last Name')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('base_salary_amount')
+                Tables\Columns\TextColumn::make('job_title')
+                    ->label('Job Title')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('department')
+                    ->label('Department')
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('masked_nric')
+                    ->label('NRIC')
+                    ->getStateUsing(fn (Employee $record) => $record->masked_nric ?? '—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('masked_bank_account')
+                    ->label('Bank Account')
+                    ->getStateUsing(fn (Employee $record) => $record->masked_bank_account ?? '—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('encrypted_base_salary')
                     ->label('Base Salary')
+                    ->getStateUsing(function (Employee $record) {
+                        $latestRevision = $record->salaryRevisions()
+                            ->orderBy('effective_from', 'desc')
+                            ->first();
+
+                        return $latestRevision?->base_salary_amount;
+                    })
                     ->money('MYR')
-                    ->sortable(),
+                    ->sortable(query: function ($query, string $direction) {
+                        return $query->orderBy('encrypted_base_salary', $direction);
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('salary_effective_from')
                     ->label('Salary Effective')
                     ->date()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make('recordAdvance')
+                        ->label('Record Advance')
+                        ->icon('heroicon-o-banknotes')
+                        ->modalHeading(fn (Employee $record) => 'Record Advance — ' . trim($record->contact->first_name . ' ' . $record->contact->last_name))
+                        ->modalWidth('lg')
+                        ->form([
+                            Forms\Components\Grid::make(2)
+                                ->schema([
+                                    Forms\Components\TextInput::make('amount')
+                                        ->required()
+                                        ->numeric()
+                                        ->minValue(0.01)
+                                        ->step(0.01)
+                                        ->prefix('RM')
+                                        ->label('Advance Amount'),
+                                    Forms\Components\DateTimePicker::make('given_at')
+                                        ->label('Date Given')
+                                        ->default(now())
+                                        ->required(),
+                                    Forms\Components\TextInput::make('reason')
+                                        ->maxLength(255)
+                                        ->placeholder('e.g. emergency, medical'),
+                                    Forms\Components\Textarea::make('notes')
+                                        ->rows(3)
+                                        ->columnSpanFull(),
+                                ]),
+                        ])
+                        ->action(function (Employee $record, array $data): void {
+                            EmployeeAdvance::create([
+                                'employee_id' => $record->id,
+                                'amount' => $data['amount'],
+                                'given_at' => $data['given_at'],
+                                'reason' => $data['reason'] ?? null,
+                                'notes' => $data['notes'] ?? null,
+                            ]);
+
+                            Notification::make()
+                                ->title('Advance recorded')
+                                ->body('The advance has been recorded successfully.')
+                                ->success()
+                                ->send();
+                        }),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -1,3 +1,8 @@
+# Seeding command
+```bash
+php artisan migrate:fresh --seed && php artisan db:seed --class="Erpsaas\Hr\Database\Seeders\DatabaseSeeder"
+```
+
 # Payroll Processing
 
 This document explains how `PayrollEntry::createWithBill()` calculates pay, creates Bills with line items, builds balanced journal entries, and persists the result in the accounting system.

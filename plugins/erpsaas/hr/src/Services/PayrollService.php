@@ -39,7 +39,7 @@ class PayrollService
             ])->findOrFail($data['salary_structure_id']);
 
             /** @var Collection<int, SalaryPart> $salaryParts */
-            $salaryParts = $salaryStructure->spss->map(fn($sps) => $sps->salaryPart);
+            $salaryParts = $salaryStructure->spss->map(fn ($sps) => $sps->salaryPart);
 
             $baseSalary = $this->resolveBaseSalary($data, $salaryParts);
 
@@ -279,7 +279,7 @@ class PayrollService
         $payrollLiabilitiesAccount = $salaryStructure->payrollLiabilitiesAccount;
 
         if ($advancesReceivableAccount && $payrollLiabilitiesAccount) {
-            $totalAmountMinor = $advances->sum(fn(EmployeeAdvance $a) => (int) ($a->amount * 100));
+            $totalAmountMinor = $advances->sum(fn (EmployeeAdvance $a) => (int) ($a->amount * 100));
 
             $recoveryTransaction = Transaction::create([
                 'company_id' => $data['company_id'],
@@ -328,7 +328,7 @@ class PayrollService
         return Vendor::query()
             ->where('company_id', $companyId)
             ->where('name', 'Payroll Department')
-            ->firstOr(fn() => Vendor::create([
+            ->firstOr(fn () => Vendor::create([
                 'company_id' => $companyId,
                 'name' => 'Payroll Department',
                 'type' => VendorType::Regular,
@@ -378,7 +378,7 @@ class PayrollService
             ->where('company_id', $companyId)
             ->where('name', $offeringName)
             ->where('purchasable', true)
-            ->firstOr(fn() => Offering::create([
+            ->firstOr(fn () => Offering::create([
                 'company_id' => $companyId,
                 'name' => $offeringName,
                 'type' => 'service',

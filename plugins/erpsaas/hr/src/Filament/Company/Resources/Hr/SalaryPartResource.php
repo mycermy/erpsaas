@@ -30,7 +30,7 @@ class SalaryPartResource extends Resource
                         Forms\Components\TextInput::make('part_number')
                             ->required()
                             ->disabledOn('edit')
-                            ->prefix(fn(callable $get) => gettype($get('type')) == 'object' ? $get('type')->getPrefix() : SalaryPartType::tryFrom($get('type'))->getPrefix())
+                            ->prefix(fn (callable $get) => gettype($get('type')) == 'object' ? $get('type')->getPrefix() : SalaryPartType::tryFrom($get('type'))->getPrefix())
                             ->maxLength(255),
                         Forms\Components\TextInput::make('name')
                             ->autofocus()
@@ -47,7 +47,7 @@ class SalaryPartResource extends Resource
                             ->label('Include in Net Salary')
                             ->default(true)
                             ->live()
-                            ->disabled(fn($record, $get) => $get('type') === SalaryPartType::EmployerCost)
+                            ->disabled(fn ($record, $get) => $get('type') === SalaryPartType::EmployerCost)
                             ->disabledOn('edit')
                             ->columnSpanFull()
                             ->helperText('If enabled, this salary part will be included in the calculation of the net salary.'),
@@ -89,7 +89,7 @@ class SalaryPartResource extends Resource
                         Forms\Components\TextInput::make('amount')
                             ->label('Amount')
                             ->numeric()
-                            ->suffix(fn(callable $get) => $get('basis') === SalaryPartBasis::Fixed ? currency() : '%')
+                            ->suffix(fn (callable $get) => $get('basis') === SalaryPartBasis::Fixed ? currency() : '%')
                             ->required()
                             ->default(0),
                         Forms\Components\Select::make('debit_account_id')
@@ -117,7 +117,7 @@ class SalaryPartResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('part_number')
                     ->label('Part Number')
-                    ->prefix(fn(SalaryPart $record) => $record->type->getPrefix())
+                    ->prefix(fn (SalaryPart $record) => $record->type->getPrefix())
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('name')
@@ -133,7 +133,7 @@ class SalaryPartResource extends Resource
                     ->searchable(),
                 Tables\Columns\IconColumn::make('type')
                     ->label('Type')
-                    ->icon(fn($state): string => match ($state) {
+                    ->icon(fn ($state): string => match ($state) {
                         SalaryPartType::BaseSalary => 'heroicon-o-currency-dollar',
                         SalaryPartType::Deduction => 'heroicon-o-minus-circle',
                         SalaryPartType::Addition => 'heroicon-o-plus-circle',

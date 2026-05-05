@@ -6,6 +6,7 @@ use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use Erpsaas\Core\Concerns\Blamable;
 use Erpsaas\Core\Concerns\CompanyOwned;
+use Erpsaas\Core\Concerns\SearchableEncryption;
 use Erpsaas\Hr\Services\PayrollService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ class PayrollEntry extends Model
 {
     use Blamable;
     use CompanyOwned;
+    use SearchableEncryption;
 
     protected $table = 'payroll_entries';
 
@@ -30,6 +32,30 @@ class PayrollEntry extends Model
         'transaction_id',
         'bill_id',
         'gross_salary',
+    ];
+
+    /**
+     * Define which encrypted fields should be searchable via blind indexing
+     */
+    protected array $searchableEncrypted = [
+        'gross_salary',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'from_date' => 'date',
+            'to_date' => 'date',
+            'gross_salary' => 'encrypted:decimal:4',
+        ];
+    }
+
+    /**
+     * Hidden fields - prevent accidental exposure
+     */
+    protected $hidden = [
+        'gross_salary',
+        'gross_salary_index',
     ];
 
     public static function getNextPayrollEntryNumber(): string
@@ -103,6 +129,21 @@ class PayrollEntry extends Model
                 'to_date' => $this->to_date,
             ], $salaryParts);
 
-        return $service->buildPayslipBreakdown($baseSalary, $salaryParts);
+        $breakdown = $service->buildPayslipBreakdown($baseSalary, $salaryParts);
+
+        // Add recovered advances to the breakdown
+        $advances = $this->advances()->get()->map(fn ($advance) => [
+            'amount' => (float) $advance->amount,
+            'reason' => $advance->reason,
+            'given_at' => $advance->given_at,
+        ]);
+
+        $breakdown['advances'] = $advances->toArray();
+        $breakdown['total_advances'] = $advances->sum('amount');
+
+        // Subtract advances from net salary
+        $breakdown['net'] -= $breakdown['total_advances'];
+
+        return $breakdown;
     }
 }

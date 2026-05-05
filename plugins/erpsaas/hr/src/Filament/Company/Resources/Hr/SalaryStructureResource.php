@@ -39,7 +39,7 @@ class SalaryStructureResource extends Resource
                         Forms\Components\DatePicker::make('termination_date'),
                         Forms\Components\Select::make('account_id')
                             ->label('Payroll Liabilities Account')
-                            ->relationship('payrollLiabilitiesAccount', 'name', fn(Builder $query) => $query->where('category', 'liability'))
+                            ->relationship('payrollLiabilitiesAccount', 'name', fn (Builder $query) => $query->where('category', 'liability'))
                             ->searchable()
                             ->preload()
                             ->nullable()

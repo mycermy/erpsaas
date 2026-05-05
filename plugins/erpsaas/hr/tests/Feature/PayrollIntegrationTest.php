@@ -203,7 +203,7 @@ describe('Journal Entry Balance Validation', function () {
             ->where('description', 'like', 'Payroll for%')
             ->with('journalEntries')
             ->get()
-            ->flatMap(fn($t) => $t->journalEntries()->where('type', 'debit')->get())
+            ->flatMap(fn ($t) => $t->journalEntries()->where('type', 'debit')->get())
             ->sum('amount');
 
         $allCredits = Transaction::query()
@@ -211,7 +211,7 @@ describe('Journal Entry Balance Validation', function () {
             ->where('description', 'like', 'Payroll for%')
             ->with('journalEntries')
             ->get()
-            ->flatMap(fn($t) => $t->journalEntries()->where('type', 'credit')->get())
+            ->flatMap(fn ($t) => $t->journalEntries()->where('type', 'credit')->get())
             ->sum('amount');
 
         expect($allDebits)->toBe($allCredits);
@@ -318,7 +318,7 @@ describe('Dashboard Widget Integration', function () {
             ->where('description', 'like', 'Payroll for%')
             ->with('journalEntries.account')
             ->get()
-            ->flatMap(fn($t) => $t->journalEntries)
+            ->flatMap(fn ($t) => $t->journalEntries)
             ->where('type', 'debit')
             ->pluck('account.category')
             ->unique();

@@ -77,6 +77,16 @@ class HrDemoSeeder extends Seeder
                 'job_title' => 'HR Executive',
                 'department' => 'Human Resources',
                 'structure_key' => 'standard',
+                'nric' => '900123-10-5234',
+                'bank_account_number' => '1122334455667788',
+                'bank_name' => 'Maybank',
+                'bank_branch' => 'Shah Alam',
+                'epf_number' => '12345678',
+                'socso_number' => 'A1234567',
+                'income_tax_number' => 'SG1234567890',
+                'emergency_contact_name' => 'Ahmad Aisyah',
+                'emergency_contact_phone' => '0123456789',
+                'emergency_contact_relationship' => 'Spouse',
                 'salary_revisions' => [
                     ['amount' => 3500, 'effective_from' => now()->subMonths(9)->startOfMonth()->toDateString(), 'reason' => 'initial'],
                     ['amount' => 3800, 'effective_from' => now()->subMonths(3)->startOfMonth()->toDateString(), 'reason' => 'kpi_increment'],
@@ -95,6 +105,16 @@ class HrDemoSeeder extends Seeder
                 'job_title' => 'Finance Analyst',
                 'department' => 'Finance',
                 'structure_key' => 'senior',
+                'nric' => '880615-14-3456',
+                'bank_account_number' => '2233445566778899',
+                'bank_name' => 'CIMB Bank',
+                'bank_branch' => 'Kuala Lumpur',
+                'epf_number' => '23456789',
+                'socso_number' => 'B2345678',
+                'income_tax_number' => 'SG2345678901',
+                'emergency_contact_name' => 'Siti Hafiz',
+                'emergency_contact_phone' => '0129876543',
+                'emergency_contact_relationship' => 'Spouse',
                 'salary_revisions' => [
                     ['amount' => 5000, 'effective_from' => now()->subMonths(6)->startOfMonth()->toDateString(), 'reason' => 'initial'],
                     ['amount' => 5200, 'effective_from' => now()->subMonths(2)->startOfMonth()->toDateString(), 'reason' => 'promotion'],
@@ -113,6 +133,16 @@ class HrDemoSeeder extends Seeder
                 'job_title' => 'Operations Manager',
                 'department' => 'Operations',
                 'structure_key' => 'management',
+                'nric' => '850220-01-6789',
+                'bank_account_number' => '3344556677889900',
+                'bank_name' => 'Public Bank',
+                'bank_branch' => 'Johor Bahru',
+                'epf_number' => '34567890',
+                'socso_number' => 'C3456789',
+                'income_tax_number' => 'SG3456789012',
+                'emergency_contact_name' => 'Ahmad Zulaikha',
+                'emergency_contact_phone' => '0198765432',
+                'emergency_contact_relationship' => 'Spouse',
                 'salary_revisions' => [
                     ['amount' => 7000, 'effective_from' => now()->subMonths(5)->startOfMonth()->toDateString(), 'reason' => 'initial'],
                     ['amount' => 7600, 'effective_from' => now()->subMonths(1)->startOfMonth()->toDateString(), 'reason' => 'kpi_increment'],
@@ -132,6 +162,11 @@ class HrDemoSeeder extends Seeder
             $structure = $structures[$definition['structure_key']];
             $this->seedPayrollEntries($employee, $structure, $index + 2);
             $this->seedEmployeeAdvances($company, $employee);
+
+            // Regenerate blind indexes to ensure searchable encryption works correctly
+            // This is necessary because during initial creation, the encrypted cast
+            // may not have been fully processed when blind indexes were generated
+            $employee->regenerateBlindIndexes();
         }
 
         Auth::logout();
@@ -296,7 +331,7 @@ class HrDemoSeeder extends Seeder
         return Vendor::query()
             ->where('company_id', $company->id)
             ->where('name', 'Payroll Department')
-            ->firstOr(fn() => Vendor::create([
+            ->firstOr(fn () => Vendor::create([
                 'company_id' => $company->id,
                 'name' => 'Payroll Department',
                 'type' => VendorType::Regular,
@@ -521,7 +556,7 @@ class HrDemoSeeder extends Seeder
     {
         $existing = Employee::query()
             ->where('company_id', $company->id)
-            ->whereHas('contact', fn($query) => $query->where('email', $employeeData['email']))
+            ->whereHas('contact', fn ($query) => $query->where('email', $employeeData['email']))
             ->first();
 
         if ($existing) {
@@ -534,6 +569,17 @@ class HrDemoSeeder extends Seeder
             'job_title' => $employeeData['job_title'],
             'department' => $employeeData['department'],
             'separate_work_address' => true,
+            // PDPA-encrypted fields
+            'nric' => $employeeData['nric'] ?? null,
+            'bank_account_number' => $employeeData['bank_account_number'] ?? null,
+            'bank_name' => $employeeData['bank_name'] ?? null,
+            'bank_branch' => $employeeData['bank_branch'] ?? null,
+            'epf_number' => $employeeData['epf_number'] ?? null,
+            'socso_number' => $employeeData['socso_number'] ?? null,
+            'income_tax_number' => $employeeData['income_tax_number'] ?? null,
+            'emergency_contact_name' => $employeeData['emergency_contact_name'] ?? null,
+            'emergency_contact_phone' => $employeeData['emergency_contact_phone'] ?? null,
+            'emergency_contact_relationship' => $employeeData['emergency_contact_relationship'] ?? null,
             'contact' => [
                 'first_name' => $employeeData['first_name'],
                 'last_name' => $employeeData['last_name'],

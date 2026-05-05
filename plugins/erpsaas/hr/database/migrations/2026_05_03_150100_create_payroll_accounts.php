@@ -5,7 +5,6 @@ use Erpsaas\Accounts\Models\Accounting\AccountSubtype;
 use Erpsaas\Core\Models\Company;
 use Illuminate\Database\Migrations\Migration;
 
-
 return new class extends Migration
 {
     /**
@@ -50,7 +49,7 @@ return new class extends Migration
             ->orderBy('id')
             ->first();
 
-        if (!$subtype) {
+        if (! $subtype) {
             throw new \RuntimeException("No liability account subtype found for company [{$company->id}].");
         }
 
@@ -83,7 +82,7 @@ return new class extends Migration
             ->orderBy('id')
             ->first();
 
-        if (!$subtype) {
+        if (! $subtype) {
             throw new \RuntimeException("No asset account subtype found for company [{$company->id}].");
         }
 

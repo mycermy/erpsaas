@@ -118,6 +118,31 @@
         </table>
     @endif
 
+    @if (!empty($payslip['advances']) && count($payslip['advances']) > 0)
+        {{-- Employee Advances Recovered --}}
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px;">
+            <thead>
+                <tr>
+                    <th colspan="2" style="padding: 7px 10px; background: #ea580c; color: #ffffff; text-align: left; border: 1px solid #dc2626;">EMPLOYEE ADVANCES RECOVERED</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($payslip['advances'] as $advance)
+                    <tr>
+                        <td style="padding: 6px 10px; border: 1px solid #e5e7eb; width: 70%;">
+                            Advance ({{ \Carbon\Carbon::parse($advance['given_at'])->format('d M Y') }}){{ !empty($advance['reason']) ? ' - ' . $advance['reason'] : '' }}
+                        </td>
+                        <td style="padding: 6px 10px; border: 1px solid #e5e7eb; text-align: right; width: 30%;">RM {{ number_format($advance['amount'], 2) }}</td>
+                    </tr>
+                @endforeach
+                <tr>
+                    <td style="padding: 7px 10px; border: 1px solid #d1d5db; background: #ffedd5; font-weight: bold;">Total Advances Recovered</td>
+                    <td style="padding: 7px 10px; border: 1px solid #d1d5db; background: #ffedd5; text-align: right; font-weight: bold;">RM {{ number_format($payslip['total_advances'], 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    @endif
+
     {{-- Net Salary Footer --}}
     <table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px;">
         <tr>
