@@ -1,8 +1,39 @@
-# Payroll Improvements Proposal
+# ARCHIVED: Payroll Improvements Proposal
+
+**Status:** ✅ COMPLETE - See [HRM_FEATURES_ROADMAP.md](HRM_FEATURES_ROADMAP.md)
 
 ---
 
-## Current State vs Target State
+This document has been consolidated into the comprehensive **HRM Features Roadmap** which includes:
+
+- **Phase 1: Payroll System** ✅ COMPLETE (with full implementation details in [PAYROLL.md](PAYROLL.md))
+- **Phase 2: Leave Management** (PROPOSED)
+- **Phase 3: Time Clock & Attendance** (PROPOSED)
+- **Phase 4: Other Essential HRM Features** (Backlog)
+
+## What's Different?
+
+The new roadmap:
+- ✅ Archives completed payroll work (no longer in proposal phase)
+- ✅ Adds comprehensive leave management system design
+- ✅ Adds location-aware attendance tracking with geofencing
+- ✅ Drafts 8+ other essential HRM features for startups
+- ✅ Provides implementation priority matrix
+- ✅ Includes recommended rollout schedule
+
+## For Reference
+
+All payroll implementation details have been integrated into:
+- [PAYROLL.md](PAYROLL.md) - Technical documentation
+- [HRM_FEATURES_ROADMAP.md](HRM_FEATURES_ROADMAP.md#phase-1-payroll-system--complete) - Executive summary
+
+**Please refer to [HRM_FEATURES_ROADMAP.md](HRM_FEATURES_ROADMAP.md) for current status and next steps.**
+
+---
+
+## Legacy Content (Archived)
+
+### Current State vs Target State
 
 ### ✅ Current Implementation (As of 2026-05-04 - PHASES 1-4 COMPLETE)
 

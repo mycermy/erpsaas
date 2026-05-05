@@ -9,6 +9,7 @@ use Erpsaas\Hr\Models\Employee;
 use Erpsaas\Hr\Models\EmployeeAdvance;
 use Erpsaas\Hr\Models\PayrollEntry;
 use Erpsaas\Hr\Models\SalaryStructure;
+use Erpsaas\Hr\Services\PayrollService;
 use Illuminate\Support\Facades\Artisan;
 use Tests\PluginTestCase;
 
@@ -19,7 +20,7 @@ uses(PluginTestCase::class);
  *
  * Comprehensive test suite for Bill-based payroll integration.
  * Tests verify:
- * - Bills are created correctly from PayrollEntry::createWithBill()
+ * - Bills are created correctly from PayrollService->createWithBill()
  * - Journal entries are generated with correct account mappings
  * - All journal entries remain balanced
  * - Advance recovery logic functions correctly
@@ -34,7 +35,7 @@ uses(PluginTestCase::class);
 // UNIT TESTS: PayrollEntry Model & Bill Integration
 // ============================================================================
 
-describe('PayrollEntry::createWithBill() Method', function () {
+describe('PayrollService->createWithBill() Method', function () {
     it('creates a payroll entry with all required fields', function () {
         Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
 
@@ -336,9 +337,10 @@ describe('Payment Recording & Bill Status Updates', function () {
             ->where('status', BillStatus::Open)
             ->first();
 
-        if (!$bill) {
+        if (! $bill) {
             // If no open bills, test passes anyway
             expect(true)->toBeTrue();
+
             return;
         }
 
@@ -545,5 +547,163 @@ describe('Backward Compatibility & Legacy Entries', function () {
                 ->toHaveKeys(['base_salary', 'gross', 'deductions', 'employer_cost', 'net', 'lines'])
                 ->and($payslip['net'])->toBeGreaterThan(0);
         }
+    });
+});
+
+// ============================================================================
+// UNIT TESTS: Advance Recovery via createWithBill()
+// ============================================================================
+
+describe('createWithBill() with Advance Recovery', function () {
+    it('marks selected advances as recovered when creating payroll entry', function () {
+        Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
+
+        $employee = Employee::query()->first();
+        $salaryStructure = SalaryStructure::query()->where('company_id', $employee->company_id)->first();
+
+        $advance = EmployeeAdvance::create([
+            'company_id' => $employee->company_id,
+            'employee_id' => $employee->id,
+            'amount' => 500,
+            'given_at' => now()->subMonth(),
+            'recovered_at' => null,
+            'reason' => 'medical',
+        ]);
+
+        $payrollEntry = app(PayrollService::class)->createWithBill([
+            'company_id' => $employee->company_id,
+            'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
+            'from_date' => now()->startOfMonth()->toDateString(),
+            'to_date' => now()->endOfMonth()->toDateString(),
+            'employee_id' => $employee->id,
+            'salary_structure_id' => $salaryStructure->id,
+            'advance_ids' => [$advance->id],
+        ]);
+
+        $advance->refresh();
+
+        expect($advance->recovered_at)->not->toBeNull()
+            ->and($advance->recovered_from_payroll_id)->toBe($payrollEntry->id);
+    });
+
+    it('creates a balanced recovery journal transaction for selected advances', function () {
+        Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
+
+        $employee = Employee::query()->first();
+        $salaryStructure = SalaryStructure::query()->where('company_id', $employee->company_id)->first();
+
+        $advance = EmployeeAdvance::create([
+            'company_id' => $employee->company_id,
+            'employee_id' => $employee->id,
+            'amount' => 800,
+            'given_at' => now()->subMonth(),
+            'recovered_at' => null,
+            'reason' => 'emergency',
+        ]);
+
+        app(PayrollService::class)->createWithBill([
+            'company_id' => $employee->company_id,
+            'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
+            'from_date' => now()->startOfMonth()->toDateString(),
+            'to_date' => now()->endOfMonth()->toDateString(),
+            'employee_id' => $employee->id,
+            'salary_structure_id' => $salaryStructure->id,
+            'advance_ids' => [$advance->id],
+        ]);
+
+        $recoveryTransaction = Transaction::query()
+            ->where('description', 'like', 'Advance recovery%')
+            ->with('journalEntries')
+            ->first();
+
+        expect($recoveryTransaction)->not->toBeNull();
+
+        $totalDebits = $recoveryTransaction->journalEntries()->where('type', 'debit')->sum('amount');
+        $totalCredits = $recoveryTransaction->journalEntries()->where('type', 'credit')->sum('amount');
+
+        expect($totalDebits)->toBe($totalCredits)
+            ->and((int) $totalDebits)->toEqual(80000); // 800.00 * 100 minor units
+    });
+
+    it('ignores advance_ids belonging to a different employee', function () {
+        Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
+
+        $employees = Employee::query()->take(2)->get();
+        $payrollEmployee = $employees->first();
+        $otherEmployee = $employees->last();
+
+        $salaryStructure = SalaryStructure::query()->where('company_id', $payrollEmployee->company_id)->first();
+
+        $otherAdvance = EmployeeAdvance::create([
+            'company_id' => $otherEmployee->company_id,
+            'employee_id' => $otherEmployee->id,
+            'amount' => 300,
+            'given_at' => now()->subMonth(),
+            'recovered_at' => null,
+            'reason' => 'personal',
+        ]);
+
+        app(PayrollService::class)->createWithBill([
+            'company_id' => $payrollEmployee->company_id,
+            'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
+            'from_date' => now()->startOfMonth()->toDateString(),
+            'to_date' => now()->endOfMonth()->toDateString(),
+            'employee_id' => $payrollEmployee->id,
+            'salary_structure_id' => $salaryStructure->id,
+            'advance_ids' => [$otherAdvance->id],
+        ]);
+
+        $otherAdvance->refresh();
+
+        expect($otherAdvance->recovered_at)->toBeNull();
+    });
+
+    it('does not recover advances that have not been disbursed yet', function () {
+        Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
+
+        $employee = Employee::query()->first();
+        $salaryStructure = SalaryStructure::query()->where('company_id', $employee->company_id)->first();
+
+        $pendingAdvance = EmployeeAdvance::create([
+            'company_id' => $employee->company_id,
+            'employee_id' => $employee->id,
+            'amount' => 200,
+            'given_at' => null,
+            'recovered_at' => null,
+            'reason' => 'pending',
+        ]);
+
+        app(PayrollService::class)->createWithBill([
+            'company_id' => $employee->company_id,
+            'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
+            'from_date' => now()->startOfMonth()->toDateString(),
+            'to_date' => now()->endOfMonth()->toDateString(),
+            'employee_id' => $employee->id,
+            'salary_structure_id' => $salaryStructure->id,
+            'advance_ids' => [$pendingAdvance->id],
+        ]);
+
+        $pendingAdvance->refresh();
+
+        expect($pendingAdvance->recovered_at)->toBeNull();
+    });
+
+    it('creates payroll entry normally when no advance_ids are provided', function () {
+        Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
+
+        $employee = Employee::query()->first();
+        $salaryStructure = SalaryStructure::query()->where('company_id', $employee->company_id)->first();
+
+        $payrollEntry = app(PayrollService::class)->createWithBill([
+            'company_id' => $employee->company_id,
+            'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
+            'from_date' => now()->startOfMonth()->toDateString(),
+            'to_date' => now()->endOfMonth()->toDateString(),
+            'employee_id' => $employee->id,
+            'salary_structure_id' => $salaryStructure->id,
+        ]);
+
+        expect($payrollEntry->id)->not->toBeNull()
+            ->and($payrollEntry->bill_id)->not->toBeNull();
     });
 });

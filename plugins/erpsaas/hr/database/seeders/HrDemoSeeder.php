@@ -17,6 +17,7 @@ use Erpsaas\Hr\Models\EmployeeSalaryRevision;
 use Erpsaas\Hr\Models\PayrollEntry;
 use Erpsaas\Hr\Models\SalaryPart;
 use Erpsaas\Hr\Models\SalaryStructure;
+use Erpsaas\Hr\Services\PayrollService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use RuntimeException;
@@ -56,6 +57,8 @@ class HrDemoSeeder extends Seeder
         );
 
         $liabilityAccount = $this->resolveOrCreatePayrollLiabilityAccount($company);
+
+        $this->resolveOrCreateAdvancesReceivableAccount($company);
 
         $this->ensurePayrollVendorExists($company);
 
@@ -200,6 +203,45 @@ class HrDemoSeeder extends Seeder
         ]);
     }
 
+    private function resolveOrCreateAdvancesReceivableAccount(Company $company): Account
+    {
+        $preferredNames = [
+            'Employee Advances Receivable',
+            'Employee Loans Receivable',
+            'Staff Advances',
+        ];
+
+        foreach ($preferredNames as $name) {
+            $account = Account::query()
+                ->where('company_id', $company->id)
+                ->where('category', 'asset')
+                ->where('name', $name)
+                ->where('archived', false)
+                ->first();
+
+            if ($account) {
+                return $account;
+            }
+        }
+
+        $subtype = AccountSubtype::query()
+            ->where('company_id', $company->id)
+            ->where('category', 'asset')
+            ->orderBy('id')
+            ->first();
+
+        if (! $subtype) {
+            throw new RuntimeException("No asset account subtype found for company [{$company->id}].");
+        }
+
+        return Account::create([
+            'company_id' => $company->id,
+            'subtype_id' => $subtype->id,
+            'name' => 'Employee Advances Receivable',
+            'description' => 'Short-term loans given to employees, recovered from future salary payments.',
+        ]);
+    }
+
     private function resolveAccount(Company $company, string $category, string $fallbackName, array $preferredNames = []): Account
     {
         $candidateNames = array_values(array_unique(array_filter([
@@ -254,7 +296,7 @@ class HrDemoSeeder extends Seeder
         return Vendor::query()
             ->where('company_id', $company->id)
             ->where('name', 'Payroll Department')
-            ->firstOr(fn () => Vendor::create([
+            ->firstOr(fn() => Vendor::create([
                 'company_id' => $company->id,
                 'name' => 'Payroll Department',
                 'type' => VendorType::Regular,
@@ -479,7 +521,7 @@ class HrDemoSeeder extends Seeder
     {
         $existing = Employee::query()
             ->where('company_id', $company->id)
-            ->whereHas('contact', fn ($query) => $query->where('email', $employeeData['email']))
+            ->whereHas('contact', fn($query) => $query->where('email', $employeeData['email']))
             ->first();
 
         if ($existing) {
@@ -573,7 +615,7 @@ class HrDemoSeeder extends Seeder
                 continue;
             }
 
-            $payrollEntry = PayrollEntry::createWithBill([
+            $payrollEntry = app(PayrollService::class)->createWithBill([
                 'company_id' => $employee->company_id,
                 'entry_number' => PayrollEntry::getNextPayrollEntryNumber(),
                 'from_date' => $fromDate,

@@ -5,6 +5,7 @@ namespace Erpsaas\Hr\Filament\Company\Resources\Hr;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 use Erpsaas\Hr\Filament\Company\Clusters\HumanResources;
 use Erpsaas\Hr\Filament\Company\Resources\Hr\PayrollEntryResource\Pages;
+use Erpsaas\Hr\Models\EmployeeAdvance;
 use Erpsaas\Hr\Models\PayrollEntry;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -14,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class PayrollEntryResource extends Resource
@@ -50,12 +52,77 @@ class PayrollEntryResource extends Resource
                             ->relationship('employee', 'id')
                             ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->contact->first_name} {$record->contact->last_name} ({$record->employee_number})")
                             ->preload()
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('advance_ids', []))
                             ->required(),
                         Forms\Components\Select::make('salary_structure_id')
                             ->label('Salary Structure')
                             ->relationship('salaryStructure', 'name')
                             ->required(),
                     ])->columns(),
+                Forms\Components\Section::make('Advance Recovery')
+                    ->schema([
+                        Forms\Components\CheckboxList::make('advance_ids')
+                            ->label('Recover Outstanding Advances')
+                            ->helperText('Select any outstanding advances to deduct from this payroll payment.')
+                            ->options(function (Forms\Get $get): array {
+                                $employeeId = $get('employee_id');
+
+                                if (! $employeeId) {
+                                    return [];
+                                }
+
+                                return EmployeeAdvance::query()
+                                    ->where('employee_id', $employeeId)
+                                    ->whereNull('recovered_at')
+                                    ->whereNotNull('given_at')
+                                    ->get()
+                                    ->mapWithKeys(fn (EmployeeAdvance $advance) => [
+                                        $advance->id => sprintf(
+                                            '%s — %s (given %s)',
+                                            number_format((float) $advance->amount, 2),
+                                            ucfirst($advance->reason ?? 'advance'),
+                                            $advance->given_at->format('M j, Y')
+                                        ),
+                                    ])
+                                    ->all();
+                            })
+                            ->columns(1)
+                            ->dehydrated(),
+                    ])
+                    ->hidden(function (?PayrollEntry $record, Forms\Get $get): bool {
+                        if ($record !== null) {
+                            return true;
+                        }
+
+                        return ! filled($get('employee_id'));
+                    }),
+                Forms\Components\Section::make('Recovered Advances')
+                    ->schema([
+                        Forms\Components\Placeholder::make('advances_recovered')
+                            ->label('Advances recovered in this payroll')
+                            ->content(function (?PayrollEntry $record): HtmlString {
+                                if (! $record) {
+                                    return new HtmlString('—');
+                                }
+
+                                $advances = $record->advances;
+
+                                if ($advances->isEmpty()) {
+                                    return new HtmlString('None');
+                                }
+
+                                $lines = $advances->map(fn (EmployeeAdvance $advance) => sprintf(
+                                    '%s — %s (recovered %s)',
+                                    number_format((float) $advance->amount, 2),
+                                    ucfirst($advance->reason ?? 'advance'),
+                                    $advance->recovered_at?->format('M j, Y') ?? '?'
+                                ))->join('<br>');
+
+                                return new HtmlString($lines);
+                            }),
+                    ])
+                    ->hidden(fn (?PayrollEntry $record): bool => ! $record || $record->advances->isEmpty()),
                 Forms\Components\Section::make('Bill Information')
                     ->schema([
                         Forms\Components\Placeholder::make('bill.bill_number')
