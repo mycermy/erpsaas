@@ -2,6 +2,13 @@
 
 **Status:** ✅ COMPLETE - See [HRM_FEATURES_ROADMAP.md](HRM_FEATURES_ROADMAP.md)
 
+# References
+- https://www.businessgo.hsbc.com/en/article/payroll-processing-and-administration-guide-in-malaysia
+- https://www.deel.com/resources/guide-to-running-payroll-in-malaysia/
+- https://dataon.com/en-my/blog/malaysia-payroll-guide/
+- https://bosssolutions.com.my/wp-content/uploads/2025/03/A-Comprehensive-Guide-to-Payroll-in-Malaysia.pdf
+- https://www.swingvy.com/blog-my/mastering-payroll-in-malaysia
+
 ---
 
 This document has been consolidated into the comprehensive **HRM Features Roadmap** which includes:
