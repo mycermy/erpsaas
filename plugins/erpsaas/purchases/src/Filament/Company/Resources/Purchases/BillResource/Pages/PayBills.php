@@ -2,17 +2,17 @@
 
 namespace Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource\Pages;
 
-use Erpsaas\Core\Enums\Accounting\BillStatus;
-use Erpsaas\Core\Enums\Accounting\PaymentMethod;
-use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
-use Erpsaas\Core\Filament\Tables\Columns\CustomTextInputColumn;
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use Erpsaas\Accounts\Models\Banking\BankAccount;
+use Erpsaas\Core\Enums\Accounting\BillStatus;
+use Erpsaas\Core\Enums\Accounting\PaymentMethod;
+use Erpsaas\Core\Filament\Tables\Columns\CustomTextInputColumn;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Models\Setting\Currency;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
+use Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -69,7 +69,7 @@ class PayBills extends ListRecords
                 ->requiresConfirmation()
                 ->modalHeading('Confirm payments')
                 ->modalDescription(function () {
-                    $billCount = collect($this->paymentAmounts)->filter(fn ($amount) => $amount > 0)->count();
+                    $billCount = collect($this->paymentAmounts)->filter(fn($amount) => $amount > 0)->count();
                     $totalAmount = array_sum($this->paymentAmounts);
                     $currencyCode = $this->getTableFilterState('currency_code')['value'];
                     $totalFormatted = CurrencyConverter::formatCentsToMoney($totalAmount, $currencyCode, true);
@@ -145,7 +145,7 @@ class PayBills extends ListRecords
                             ->options(static function () {
                                 return Transaction::getBankAccountOptionsFlat();
                             })
-                            ->default(fn () => BankAccount::where('enabled', true)->first()?->id)
+                            ->default(fn() => BankAccount::where('enabled', true)->first()?->id)
                             ->selectablePlaceholder(false)
                             ->searchable()
                             ->softRequired(),
@@ -190,7 +190,7 @@ class PayBills extends ListRecords
                     ->sortable(),
                 TextColumn::make('amount_due')
                     ->label('Amount due')
-                    ->currency(static fn (Bill $record) => $record->currency_code)
+                    ->currency(static fn(Bill $record) => $record->currency_code)
                     ->alignEnd()
                     ->sortable()
                     ->summarize([
@@ -240,13 +240,13 @@ class PayBills extends ListRecords
                     ->navigable()
                     ->mask(RawJs::make('$money($input)'))
                     ->updateStateUsing(function (Bill $record, $state) {
-                        if (! CurrencyConverter::isValidAmount($state, 'USD')) {
+                        if (! CurrencyConverter::isValidAmount($state, $record->currency_code)) {
                             $this->paymentAmounts[$record->id] = 0;
 
                             return '0.00';
                         }
 
-                        $paymentCents = CurrencyConverter::convertToCents($state, 'USD');
+                        $paymentCents = CurrencyConverter::convertToCents($state, $record->currency_code);
 
                         if ($paymentCents > $record->amount_due) {
                             $paymentCents = $record->amount_due;
@@ -259,7 +259,7 @@ class PayBills extends ListRecords
                     ->getStateUsing(function (Bill $record) {
                         $paymentAmount = $this->paymentAmounts[$record->id] ?? 0;
 
-                        return CurrencyConverter::convertCentsToFormatSimple($paymentAmount, 'USD');
+                        return CurrencyConverter::convertCentsToFormatSimple($paymentAmount, $record->currency_code);
                     })
                     ->summarize([
                         Summarizer::make()
@@ -275,7 +275,7 @@ class PayBills extends ListRecords
                                 return CurrencyConverter::formatCentsToMoney($total, $defaultCurrency, true);
                             }),
                         Summarizer::make()
-                            ->using(fn () => $this->totalPaymentAmount)
+                            ->using(fn() => $this->totalPaymentAmount)
                             ->visible(function () {
                                 $activeCurrency = $this->getTableFilterState('currency_code')['value'] ?? null;
                                 $defaultCurrency = CurrencyAccessor::getDefaultCurrency();
@@ -322,7 +322,7 @@ class PayBills extends ListRecords
                         }
 
                         $label = collect($filter->getOptions())
-                            ->mapWithKeys(fn (string | array $label, string $value): array => is_array($label) ? $label : [$value => $label])
+                            ->mapWithKeys(fn(string | array $label, string $value): array => is_array($label) ? $label : [$value => $label])
                             ->get($state['value']);
 
                         if (blank($label)) {
@@ -335,7 +335,7 @@ class PayBills extends ListRecords
                     }),
                 Tables\Filters\SelectFilter::make('vendor_id')
                     ->label('Vendor')
-                    ->options(fn () => Vendor::query()->pluck('name', 'id')->toArray())
+                    ->options(fn() => Vendor::query()->pluck('name', 'id')->toArray())
                     ->searchable(),
                 Tables\Filters\SelectFilter::make('status')
                     ->multiple()

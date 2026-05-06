@@ -52,13 +52,16 @@ class CompanyFactory extends Factory
     /**
      * Set up default settings for the company after creation.
      */
-    public function withCompanyDefaults(string $currencyCode = 'USD', string $locale = 'en'): self
+    public function withCompanyDefaults(?string $currencyCode = null, ?string $locale = null): self
     {
         return $this->afterCreating(function (Company $company) use ($currencyCode, $locale) {
             // Refresh to ensure profile relationship is loaded from database
             $company = $company->fresh(['profile.address']);
 
             $countryCode = $company->profile?->address?->country_code ?? 'US';
+            $currencyCode = $currencyCode ?? config('money.defaults.currency', 'USD');
+            $locale = $locale ?? config('app.locale', 'en');
+
             $companyDefaultService = app(CompanyDefaultService::class);
             $companyDefaultService->createCompanyDefaults($company, $company->owner, $currencyCode, $countryCode, $locale);
         });

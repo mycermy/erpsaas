@@ -2,14 +2,14 @@
 
 namespace Erpsaas\Purchases\Filament\Company\Resources\Purchases\BillResource\RelationManagers;
 
-use Erpsaas\Core\Enums\Accounting\PaymentMethod;
-use Erpsaas\Core\Enums\Accounting\TransactionType;
+use Closure;
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Accounts\Models\Accounting\Transaction;
 use Erpsaas\Accounts\Models\Banking\BankAccount;
+use Erpsaas\Core\Enums\Accounting\PaymentMethod;
+use Erpsaas\Core\Enums\Accounting\TransactionType;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
-use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -79,13 +79,13 @@ class PaymentsRelationManager extends RelationManager
 
                                 $billCurrency = $ownerRecord->currency_code;
 
-                                if (! CurrencyConverter::isValidAmount($state, 'USD')) {
+                                if (! CurrencyConverter::isValidAmount($state, $billCurrency)) {
                                     return null;
                                 }
 
                                 $amountDue = $ownerRecord->amount_due;
 
-                                $amount = CurrencyConverter::convertToCents($state, 'USD');
+                                $amount = CurrencyConverter::convertToCents($state, $billCurrency);
 
                                 if ($amount <= 0) {
                                     return 'Please enter a valid positive amount';
@@ -102,8 +102,10 @@ class PaymentsRelationManager extends RelationManager
                                 };
                             })
                             ->rules([
-                                static fn (): Closure => static function (string $attribute, $value, Closure $fail) {
-                                    if (! CurrencyConverter::isValidAmount($value, 'USD')) {
+                                static fn(RelationManager $livewire): Closure => static function (string $attribute, $value, Closure $fail) use ($livewire) {
+                                    /** @var Bill $bill */
+                                    $bill = $livewire->getOwnerRecord();
+                                    if (! CurrencyConverter::isValidAmount($value, $bill->currency_code)) {
                                         $fail('Please enter a valid amount');
                                     }
                                 },
@@ -119,7 +121,7 @@ class PaymentsRelationManager extends RelationManager
                         $bill = $livewire->getOwnerRecord();
                         $billCurrency = $bill->currency_code;
 
-                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, 'USD')) {
+                        if (empty($amount) || empty($bankAccountId) || ! CurrencyConverter::isValidAmount($amount, $billCurrency)) {
                             return null;
                         }
 
@@ -136,7 +138,7 @@ class PaymentsRelationManager extends RelationManager
                         }
 
                         // Convert amount from bill currency to bank currency
-                        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($amount, 'USD');
+                        $amountInBillCurrencyCents = CurrencyConverter::convertToCents($amount, $billCurrency);
                         $amountInBankCurrencyCents = CurrencyConverter::convertBalance(
                             $amountInBillCurrencyCents,
                             $billCurrency,
@@ -198,16 +200,16 @@ class PaymentsRelationManager extends RelationManager
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Amount')
-                    ->weight(static fn (Transaction $transaction) => $transaction->reviewed ? null : FontWeight::SemiBold)
+                    ->weight(static fn(Transaction $transaction) => $transaction->reviewed ? null : FontWeight::SemiBold)
                     ->color(
-                        static fn (Transaction $transaction) => match ($transaction->type) {
+                        static fn(Transaction $transaction) => match ($transaction->type) {
                             TransactionType::Deposit => Color::rgb('rgb(' . Color::Green[700] . ')'),
                             TransactionType::Journal => 'primary',
                             default => null,
                         }
                     )
                     ->sortable()
-                    ->currency(static fn (Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency()),
+                    ->currency(static fn(Transaction $transaction) => $transaction->bankAccount?->account->currency_code ?? CurrencyAccessor::getDefaultCurrency()),
             ])
             ->filters([
                 //
@@ -215,7 +217,7 @@ class PaymentsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Record payment')
-                    ->modalHeading(fn (Tables\Actions\CreateAction $action) => $action->getLabel())
+                    ->modalHeading(fn(Tables\Actions\CreateAction $action) => $action->getLabel())
                     ->slideOver()
                     ->modalWidth(MaxWidth::TwoExtraLarge)
                     ->visible(function () {
@@ -243,7 +245,7 @@ class PaymentsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\DeleteAction::make()
-                    ->after(fn () => $this->dispatch('refresh')),
+                    ->after(fn() => $this->dispatch('refresh')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

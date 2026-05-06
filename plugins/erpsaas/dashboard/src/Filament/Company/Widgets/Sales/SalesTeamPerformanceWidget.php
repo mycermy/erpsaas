@@ -12,9 +12,7 @@ use Filament\Support\Enums\IconPosition;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Number;
 
 class SalesTeamPerformanceWidget extends BaseWidget
 {
@@ -23,6 +21,11 @@ class SalesTeamPerformanceWidget extends BaseWidget
     protected static ?string $heading = 'Sales Team Performance';
 
     public ?array $filters = null;
+
+    public function getTableRecordKey($record): string
+    {
+        return (string) $record->created_by;
+    }
 
     public function table(Table $table): Table
     {
@@ -64,7 +67,7 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
                 TextColumn::make('total_revenue')
                     ->label('Revenue Generated')
-                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoney((int) $state, $defaultCurrency))
+                    ->formatStateUsing(fn ($state) => CurrencyConverter::formatCentsToMoney((int) $state, $defaultCurrency))
                     ->sortable()
                     ->icon('heroicon-m-banknotes')
                     ->iconPosition(IconPosition::After),
