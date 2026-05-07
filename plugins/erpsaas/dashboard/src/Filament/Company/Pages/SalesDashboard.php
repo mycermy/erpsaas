@@ -7,6 +7,7 @@ use Erpsaas\Dashboard\Filament\Company\Clusters\DashboardCluster;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\ConversionFunnelWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\DealStageChartWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesForecastChartWidget;
+use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesForecastTableWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesPipelineWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesTeamPerformanceWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesTeamPerformanceWidgetSimple;
@@ -84,6 +85,7 @@ class SalesDashboard extends Page
     {
         return [
             SalesForecastChartWidget::class,
+            // SalesForecastTableWidget::class,
             ConversionFunnelWidget::class,
             DealStageChartWidget::class,
             SalesTeamPerformanceWidget::class,
