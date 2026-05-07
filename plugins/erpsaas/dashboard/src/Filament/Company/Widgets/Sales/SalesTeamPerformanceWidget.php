@@ -23,6 +23,17 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
     protected static ?string $heading = 'Sales Team Performance';
 
+    // #[Reactive]
+    // public ?array $filters = null;
+
+    public function rendering(): void
+    {
+        // Ensure table is initialized before view renders
+        if (! isset($this->table)) {
+            $this->table = $this->table($this->makeTable());
+        }
+    }
+
     public function table(Table $table): Table
     {
         $company = Filament::getTenant();
