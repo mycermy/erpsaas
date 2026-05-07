@@ -35,19 +35,23 @@ class SalesPipelineWidget extends EnhancedStatsOverviewWidget
 
         $activeEstimateStatuses = [EstimateStatus::Unsent, EstimateStatus::Sent, EstimateStatus::Viewed];
         $activeEstimates = Estimate::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereIn('status', $activeEstimateStatuses)
             ->get();
 
         $allEstimates = Estimate::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
         $wonDeals = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $lostEstimates = Estimate::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->whereIn('status', [EstimateStatus::Declined, EstimateStatus::Expired])
             ->get();
@@ -67,6 +71,7 @@ class SalesPipelineWidget extends EnhancedStatsOverviewWidget
 
         // Sales cycle calculation (days from estimate to invoice)
         $cycleData = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get()
@@ -78,8 +83,8 @@ class SalesPipelineWidget extends EnhancedStatsOverviewWidget
         $avgSalesCycle = $cycleData->isNotEmpty() ? round($cycleData->average()) : 0;
 
         return [
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Pipeline Value', CurrencyConverter::formatCentsToMoney($pipelineValue, $defaultCurrency))
-                ->description(Number::format($activeEstimates->count()) . ' active opportunities')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Pipeline Value', CurrencyConverter::formatCentsToMoneyAbbreviated($pipelineValue, $defaultCurrency))
+                ->description(Number::abbreviate($activeEstimates->count(), maxPrecision: 1) . ' active opportunities')
                 ->descriptionIcon('heroicon-m-funnel')
                 ->color('info'),
 
@@ -88,8 +93,8 @@ class SalesPipelineWidget extends EnhancedStatsOverviewWidget
                 ->descriptionIcon($winRate >= 30 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($winRate >= 30 ? 'success' : 'warning'),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Avg Deal Size', CurrencyConverter::formatCentsToMoney((int) $averageDealSize, $defaultCurrency))
-                ->description('Based on ' . Number::format($wonCount) . ' closed deals')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Avg Deal Size', CurrencyConverter::formatCentsToMoneyAbbreviated((int) $averageDealSize, $defaultCurrency))
+                ->description('Based on ' . Number::abbreviate($wonCount, maxPrecision: 1) . ' closed deals')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
 

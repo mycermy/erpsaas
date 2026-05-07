@@ -41,26 +41,26 @@ class PurchaseMetricsWidget extends EnhancedStatsOverviewWidget
                 && $bill->due_date->betweenIncluded(today(), today()->copy()->addDays(7));
         });
 
-        $overdueBills = $unpaidBills->filter(fn(Bill $bill): bool => $bill->status === BillStatus::Overdue);
+        $overdueBills = $unpaidBills->filter(fn (Bill $bill): bool => $bill->status === BillStatus::Overdue);
 
         return [
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Bills logged', Number::format($billsThisMonth->count()))
-                ->description(CurrencyConverter::formatCentsToMoney($billsThisMonth->sumMoneyInDefaultCurrency('total'), $defaultCurrency) . ' committed')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Bills logged', Number::abbreviate($billsThisMonth->count(), maxPrecision: 1))
+                ->description(CurrencyConverter::formatCentsToMoneyAbbreviated($billsThisMonth->sumMoneyInDefaultCurrency('total'), $defaultCurrency) . ' committed')
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('info'),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Total unpaid', CurrencyConverter::formatCentsToMoney($unpaidBills->sumMoneyInDefaultCurrency('amount_due'), $defaultCurrency))
-                ->description(Number::format($unpaidBills->count()) . ' bills outstanding')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Total unpaid', CurrencyConverter::formatCentsToMoneyAbbreviated($unpaidBills->sumMoneyInDefaultCurrency('amount_due'), $defaultCurrency))
+                ->description(Number::abbreviate($unpaidBills->count(), maxPrecision: 1) . ' bills outstanding')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Due this week', CurrencyConverter::formatCentsToMoney($dueSoon->sumMoneyInDefaultCurrency('amount_due'), $defaultCurrency))
-                ->description(Number::format($dueSoon->count()) . ' bills due in 7 days')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Due this week', CurrencyConverter::formatCentsToMoneyAbbreviated($dueSoon->sumMoneyInDefaultCurrency('amount_due'), $defaultCurrency))
+                ->description(Number::abbreviate($dueSoon->count(), maxPrecision: 1) . ' bills due in 7 days')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('danger'),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Overdue', CurrencyConverter::formatCentsToMoney($overdueBills->sumMoneyInDefaultCurrency('amount_due'), $defaultCurrency))
-                ->description(Number::format($overdueBills->count()) . ' vendor payments late')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Overdue', CurrencyConverter::formatCentsToMoneyAbbreviated($overdueBills->sumMoneyInDefaultCurrency('amount_due'), $defaultCurrency))
+                ->description(Number::abbreviate($overdueBills->count(), maxPrecision: 1) . ' vendor payments late')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger'),
         ];

@@ -2,6 +2,7 @@
 
 namespace Erpsaas\Core\Models;
 
+use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Models\Common\Contact;
 use Erpsaas\Core\Models\Core\Department;
 use Filament\Models\Contracts\FilamentUser;
@@ -38,7 +39,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasDefaul
      * @var array<int, string>
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name',
+        'email',
+        'password',
     ];
 
     /**
@@ -101,6 +104,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasDefaul
     public function contacts(): MorphMany
     {
         return $this->morphMany(Contact::class, 'contactable');
+    }
+
+    public function createdInvoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'created_by');
     }
 
     public function managerOf(): HasMany

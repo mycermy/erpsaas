@@ -4,7 +4,6 @@ namespace Erpsaas\Dashboard\Filament\Company\Widgets;
 
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Accounts\Models\Accounting\Invoice;
-use Erpsaas\Core\Enums\Accounting\BillStatus;
 use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
 use Erpsaas\Core\Filament\Company\Widgets\EnhancedStatsOverviewWidget;
 use Erpsaas\Core\Models\Company;
@@ -66,30 +65,30 @@ class FinancialStatsWidget extends EnhancedStatsOverviewWidget
         $netCashFlow = $cashIn - $cashOut;
 
         return [
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Revenue', CurrencyConverter::formatCentsToMoney($revenue, $defaultCurrency))
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Revenue', CurrencyConverter::formatCentsToMoneyAbbreviated($revenue, $defaultCurrency))
                 ->description($this->getChangeDescription($revenue, $revenueLastMonth))
                 ->descriptionIcon($revenue >= $revenueLastMonth ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenue >= $revenueLastMonth ? 'success' : 'warning')
                 ->chart($this->generateMiniChart($invoicesThisMonth, 'total', $startDate, $endDate)),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Collected', CurrencyConverter::formatCentsToMoney($cashIn, $defaultCurrency))
-                ->description(Number::format($collectionsThisMonth->count()) . ' invoices paid')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Collected', CurrencyConverter::formatCentsToMoneyAbbreviated($cashIn, $defaultCurrency))
+                ->description(Number::abbreviate($collectionsThisMonth->count(), maxPrecision: 1) . ' invoices paid')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
                 ->chart($this->generateMiniChart($collectionsThisMonth, 'amount_paid', $startDate, $endDate)),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Open receivables', CurrencyConverter::formatCentsToMoney($receivables, $defaultCurrency))
-                ->description(Number::format($openReceivables->count()) . ' unpaid invoices')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Open receivables', CurrencyConverter::formatCentsToMoneyAbbreviated($receivables, $defaultCurrency))
+                ->description(Number::abbreviate($openReceivables->count(), maxPrecision: 1) . ' unpaid invoices')
                 ->descriptionIcon('heroicon-m-wallet')
                 ->color('warning'),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Open payables', CurrencyConverter::formatCentsToMoney($payables, $defaultCurrency))
-                ->description(Number::format($openPayables->count()) . ' bills to settle')
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Open payables', CurrencyConverter::formatCentsToMoneyAbbreviated($payables, $defaultCurrency))
+                ->description(Number::abbreviate($openPayables->count(), maxPrecision: 1) . ' bills to settle')
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->color('danger'),
 
-            EnhancedStatsOverviewWidget\EnhancedStat::make('Net cash flow', CurrencyConverter::formatCentsToMoney($netCashFlow, $defaultCurrency))
-                ->description('In ' . CurrencyConverter::formatCentsToMoney($cashIn, $defaultCurrency) . ' · Out ' . CurrencyConverter::formatCentsToMoney($cashOut, $defaultCurrency))
+            EnhancedStatsOverviewWidget\EnhancedStat::make('Net cash flow', CurrencyConverter::formatCentsToMoneyAbbreviated($netCashFlow, $defaultCurrency))
+                ->description('In ' . CurrencyConverter::formatCentsToMoneyAbbreviated($cashIn, $defaultCurrency) . ' · Out ' . CurrencyConverter::formatCentsToMoneyAbbreviated($cashOut, $defaultCurrency))
                 ->descriptionIcon($netCashFlow >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($netCashFlow >= 0 ? 'success' : 'danger'),
         ];

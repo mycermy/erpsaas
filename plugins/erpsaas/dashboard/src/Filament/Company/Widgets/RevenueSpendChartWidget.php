@@ -13,7 +13,6 @@ use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 class RevenueSpendChartWidget extends ChartWidget
 {
@@ -39,11 +38,13 @@ class RevenueSpendChartWidget extends ChartWidget
         $endMonth = $endDate->copy()->endOfMonth();
 
         $invoices = Invoice::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startMonth, $endMonth])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $bills = Bill::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startMonth, $endMonth])
             ->where('status', '!=', BillStatus::Void)
             ->get();
@@ -71,18 +72,18 @@ class RevenueSpendChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label'           => __('Income'),
-                    'data'            => $revenueData,
+                    'label' => __('Income'),
+                    'data' => $revenueData,
                     'backgroundColor' => 'rgba(34, 197, 94, 0.7)',
-                    'borderColor'     => 'rgb(34, 197, 94)',
-                    'borderWidth'     => 0,
+                    'borderColor' => 'rgb(34, 197, 94)',
+                    'borderWidth' => 0,
                 ],
                 [
-                    'label'           => __('Expenses'),
-                    'data'            => $spendData,
+                    'label' => __('Expenses'),
+                    'data' => $spendData,
                     'backgroundColor' => 'rgba(239, 68, 68, 0.7)',
-                    'borderColor'     => 'rgb(239, 68, 68)',
-                    'borderWidth'     => 0,
+                    'borderColor' => 'rgb(239, 68, 68)',
+                    'borderWidth' => 0,
                 ],
             ],
             'labels' => $labels,

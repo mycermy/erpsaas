@@ -2,13 +2,14 @@
 
 namespace Erpsaas\Dashboard\Filament\Company\Pages;
 
+use Erpsaas\Core\Filament\Forms\Components\DateRangeSelect;
 use Erpsaas\Dashboard\Filament\Company\Clusters\DashboardCluster;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\ConversionFunnelWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\DealStageChartWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesForecastChartWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesPipelineWidget;
 use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesTeamPerformanceWidget;
-use Erpsaas\Core\Filament\Forms\Components\DateRangeSelect;
+use Erpsaas\Dashboard\Filament\Company\Widgets\Sales\SalesTeamPerformanceWidgetSimple;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -57,11 +58,11 @@ class SalesDashboard extends Page
             DatePicker::make('startDate')
                 ->label('Start Date')
                 ->default(now()->startOfMonth()->toDateString())
-                ->visible(fn(Get $get) => $get('dateRange') === 'Custom'),
+                ->visible(fn (Get $get) => $get('dateRange') === 'Custom'),
             DatePicker::make('endDate')
                 ->label('End Date')
                 ->default(now()->endOfMonth()->toDateString())
-                ->visible(fn(Get $get) => $get('dateRange') === 'Custom'),
+                ->visible(fn (Get $get) => $get('dateRange') === 'Custom'),
         ]);
     }
 
@@ -86,6 +87,7 @@ class SalesDashboard extends Page
             ConversionFunnelWidget::class,
             DealStageChartWidget::class,
             SalesTeamPerformanceWidget::class,
+            SalesTeamPerformanceWidgetSimple::class,
         ];
     }
 

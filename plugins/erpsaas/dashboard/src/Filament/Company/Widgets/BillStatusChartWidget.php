@@ -4,6 +4,8 @@ namespace Erpsaas\Dashboard\Filament\Company\Widgets;
 
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Core\Enums\Accounting\BillStatus;
+use Erpsaas\Core\Models\Company;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
@@ -18,16 +20,18 @@ class BillStatusChartWidget extends ChartWidget
 
     protected function getData(): array
     {
+        $company = Filament::getTenant();
         $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
         $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
         $bills = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', '!=', BillStatus::Void)
             ->get();
 
         $breakdown = $bills->groupBy('status')
-            ->map(fn($group) => $group->count());
+            ->map(fn ($group) => $group->count());
 
         $labels = [];
         $data = [];

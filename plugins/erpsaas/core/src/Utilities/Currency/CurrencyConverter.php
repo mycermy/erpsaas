@@ -4,6 +4,7 @@ namespace Erpsaas\Core\Utilities\Currency;
 
 use Erpsaas\Core\Facades\Forex;
 use Filament\Forms\Set;
+use Illuminate\Support\Number;
 
 class CurrencyConverter
 {
@@ -66,6 +67,16 @@ class CurrencyConverter
         }
 
         return $money->format();
+    }
+
+    public static function formatCentsToMoneyAbbreviated(int $amount, ?string $currency = null, ?int $maxPrecision = 1): string
+    {
+        $currency ??= CurrencyAccessor::getDefaultCurrency();
+
+        $symbol = currency($currency)->getSymbol();
+        $abbreviated = Number::abbreviate($amount / 100, maxPrecision: $maxPrecision);
+
+        return $symbol . $abbreviated;
     }
 
     public static function formatToMoney(string | float $amount, ?string $currency = null, bool $withCode = false): string

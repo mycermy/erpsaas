@@ -35,23 +35,25 @@ class ConversionFunnelWidget extends EnhancedStatsOverviewWidget
 
         // Funnel stages
         $allEstimates = Estimate::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        $sentEstimates = $allEstimates->filter(fn($e) => in_array($e->status, [
+        $sentEstimates = $allEstimates->filter(fn ($e) => in_array($e->status, [
             EstimateStatus::Sent,
             EstimateStatus::Viewed,
             EstimateStatus::Accepted,
         ]));
 
-        $viewedEstimates = $allEstimates->filter(fn($e) => in_array($e->status, [
+        $viewedEstimates = $allEstimates->filter(fn ($e) => in_array($e->status, [
             EstimateStatus::Viewed,
             EstimateStatus::Accepted,
         ]));
 
-        $acceptedEstimates = $allEstimates->filter(fn($e) => $e->status === EstimateStatus::Accepted);
+        $acceptedEstimates = $allEstimates->filter(fn ($e) => $e->status === EstimateStatus::Accepted);
 
         $convertedToInvoice = Invoice::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();

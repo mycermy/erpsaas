@@ -30,70 +30,72 @@ class CashFlowChartWidget extends ChartWidget
             ? CompanySettingsService::getDefaultCurrency($company->getKey())
             : 'USD';
 
-        $endDate   = now()->endOfMonth();
+        $endDate = now()->endOfMonth();
         $startDate = $endDate->copy()->subMonths(11)->startOfMonth();
 
         $invoices = Invoice::query()
+            ->where('company_id', $company->getKey())
             ->whereNotNull('paid_at')
             ->whereBetween('paid_at', [$startDate, $endDate])
             ->get();
 
         $bills = Bill::query()
+            ->where('company_id', $company->getKey())
             ->whereNotNull('paid_at')
             ->whereBetween('paid_at', [$startDate, $endDate])
             ->get();
 
-        $labels      = [];
-        $inflowData  = [];
+        $labels = [];
+        $inflowData = [];
         $outflowData = [];
-        $netData     = [];
+        $netData = [];
 
         for ($i = 0; $i < 12; $i++) {
-            $month   = $startDate->copy()->addMonths($i);
+            $month = $startDate->copy()->addMonths($i);
             $labels[] = $month->format("M'y");
 
             $monthlyInflow = $invoices
-                ->filter(fn($inv) => $inv->paid_at?->isSameMonth($month))
-                ->sum(fn($inv) => $this->toDefaultCurrency($inv, 'amount_paid', $defaultCurrency));
+                ->filter(fn ($inv) => $inv->paid_at?->isSameMonth($month))
+                ->sum(fn ($inv) => $this->toDefaultCurrency($inv, 'amount_paid', $defaultCurrency));
 
             $monthlyOutflow = $bills
-                ->filter(fn($bill) => $bill->paid_at?->isSameMonth($month))
-                ->sum(fn($bill) => $this->toDefaultCurrency($bill, 'amount_paid', $defaultCurrency));
+                ->filter(fn ($bill) => $bill->paid_at?->isSameMonth($month))
+                ->sum(fn ($bill) => $this->toDefaultCurrency($bill, 'amount_paid', $defaultCurrency));
 
-            $inflow  = round($monthlyInflow / 100, 2);
+            $inflow = round($monthlyInflow / 100, 2);
             $outflow = round($monthlyOutflow / 100, 2);
 
-            $inflowData[]  = $inflow;
+            $inflowData[] = $inflow;
             $outflowData[] = $outflow;
-            $netData[]     = round($inflow - $outflow, 2);
+            $netData[] = round($inflow - $outflow, 2);
         }
 
         return [
             'datasets' => [
                 [
-                    'label'           => __('Inflow'),
-                    'data'            => $inflowData,
+                    'label' => __('Inflow'),
+                    'data' => $inflowData,
                     'backgroundColor' => 'rgba(34, 197, 94, 0.15)',
-                    'borderColor'     => 'rgb(34, 197, 94)',
-                    'fill'            => true,
-                    'tension'         => 0.4,
+                    'borderColor' => 'rgb(34, 197, 94)',
+                    'fill' => true,
+                    'tension' => 0.4,
                 ],
                 [
-                    'label'           => __('Outflow'),
-                    'data'            => $outflowData,
+                    'label' => __('Outflow'),
+                    'data' => $outflowData,
                     'backgroundColor' => 'rgba(239, 68, 68, 0.15)',
-                    'borderColor'     => 'rgb(239, 68, 68)',
-                    'fill'            => true,
-                    'tension'         => 0.4,
+                    'borderColor' => 'rgb(239, 68, 68)',
+                    'fill' => true,
+                    'tension' => 0.4,
                 ],
                 [
-                    'label'           => __('Net change'),
-                    'data'            => $netData,
+                    'label' => __('Net change'),
+                    'data' => $netData,
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
-                    'borderColor'     => 'rgb(59, 130, 246)',
-                    'fill'            => false,
-                    'tension'         => 0.4,
-                    'borderDash'      => [5, 5],
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'fill' => false,
+                    'tension' => 0.4,
+                    'borderDash' => [5, 5],
                 ],
             ],
             'labels' => $labels,
@@ -110,7 +112,7 @@ class CashFlowChartWidget extends ChartWidget
         return [
             'plugins' => [
                 'legend' => [
-                    'display'  => true,
+                    'display' => true,
                     'position' => 'top',
                 ],
             ],
@@ -124,7 +126,7 @@ class CashFlowChartWidget extends ChartWidget
 
     protected function toDefaultCurrency($document, string $column, string $defaultCurrency): int
     {
-        $amount   = (int) $document->getRawOriginal($column);
+        $amount = (int) $document->getRawOriginal($column);
         $currency = $document->currency_code ?? $defaultCurrency;
 
         if ($currency === $defaultCurrency) {

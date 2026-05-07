@@ -2,30 +2,28 @@
 
 namespace Erpsaas\Dashboard\Filament\Company\Widgets\Sales;
 
-use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
 use Erpsaas\Core\Models\Company;
+use Erpsaas\Core\Models\User;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
 use Filament\Support\Enums\IconPosition;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Carbon;
 
 class SalesTeamPerformanceWidget extends BaseWidget
 {
+    use InteractsWithPageFilters;
+
     protected int | string | array $columnSpan = 'full';
 
     protected static ?string $heading = 'Sales Team Performance';
 
-    public ?array $filters = null;
-
-    public function getTableRecordKey($record): string
-    {
-        return (string) $record->created_by;
-    }
+    // public ?array $filters = null;
 
     public function table(Table $table): Table
     {
@@ -39,13 +37,20 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
         return $table
             ->query(
-                Invoice::query()
-                    ->with('createdBy:id,name')
-                    ->whereBetween('date', [$startDate, $endDate])
-                    ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
-                    ->selectRaw('created_by, COUNT(*) as invoice_count, SUM(total) as total_revenue')
-                    ->groupBy('created_by')
+                User::query()
+                    ->withCount(['createdInvoices as invoice_count' => function ($query) use ($startDate, $endDate, $company) {
+                        $query->where('company_id', $company->getKey())
+                            ->whereBetween('date', [$startDate, $endDate])
+                            ->whereNotIn('status', [InvoiceStatus::Draft->value, InvoiceStatus::Void->value]);
+                    }])
+                    ->withSum(['createdInvoices as total_revenue' => function ($query) use ($startDate, $endDate, $company) {
+                        $query->where('company_id', $company->getKey())
+                            ->whereBetween('date', [$startDate, $endDate])
+                            ->whereNotIn('status', [InvoiceStatus::Draft->value, InvoiceStatus::Void->value]);
+                    }], 'total')
+                    ->having('invoice_count', '>', 0)
                     ->orderByDesc('total_revenue')
+                    ->limit(10)
             )
             ->columns([
                 TextColumn::make('rank')
@@ -53,7 +58,7 @@ class SalesTeamPerformanceWidget extends BaseWidget
                     ->rowIndex()
                     ->sortable(false),
 
-                TextColumn::make('createdBy.name')
+                TextColumn::make('name')
                     ->label('Sales Rep')
                     ->searchable()
                     ->sortable(),
@@ -67,7 +72,7 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
                 TextColumn::make('total_revenue')
                     ->label('Revenue Generated')
-                    ->formatStateUsing(fn ($state) => CurrencyConverter::formatCentsToMoney((int) $state, $defaultCurrency))
+                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoney((int) $state, $defaultCurrency))
                     ->sortable()
                     ->icon('heroicon-m-banknotes')
                     ->iconPosition(IconPosition::After),

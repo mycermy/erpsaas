@@ -37,6 +37,7 @@ class ProcurementTrendsWidget extends ChartWidget
         $startMonth = $endMonth->copy()->startOfMonth()->subMonths(5);
 
         $bills = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startMonth, $endMonth])
             ->where('status', '!=', BillStatus::Void)
             ->get();

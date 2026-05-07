@@ -4,6 +4,8 @@ namespace Erpsaas\Dashboard\Filament\Company\Widgets;
 
 use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Enums\Accounting\InvoiceStatus;
+use Erpsaas\Core\Models\Company;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
@@ -18,16 +20,18 @@ class InvoiceStatusChartWidget extends ChartWidget
 
     protected function getData(): array
     {
+        $company = Filament::getTenant();
         $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
         $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
         $invoices = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $breakdown = $invoices->groupBy('status')
-            ->map(fn($group) => $group->count());
+            ->map(fn ($group) => $group->count());
 
         $labels = [];
         $data = [];
@@ -81,6 +85,10 @@ class InvoiceStatusChartWidget extends ChartWidget
                     'display' => true,
                     'position' => 'bottom',
                 ],
+            ],
+            'scales' => [
+                'x' => ['display' => false],
+                'y' => ['display' => false],
             ],
         ];
     }

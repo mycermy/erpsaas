@@ -4,6 +4,8 @@ namespace Erpsaas\Dashboard\Filament\Company\Widgets\Purchases;
 
 use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Core\Enums\Accounting\BillStatus;
+use Erpsaas\Core\Models\Company;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
@@ -22,10 +24,12 @@ class OrderStatusWidget extends ChartWidget
 
     protected function getData(): array
     {
+        $company = Filament::getTenant();
         $startDate = Carbon::parse($this->filters['startDate'] ?? now()->startOfMonth());
         $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
         $counts = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->whereNotIn('status', [BillStatus::Void])
             ->selectRaw('status, COUNT(*) as count')
@@ -57,6 +61,10 @@ class OrderStatusWidget extends ChartWidget
     protected function getOptions(): array
     {
         return [
+            'scales' => [
+                'x' => ['display' => false],
+                'y' => ['display' => false],
+            ],
             'plugins' => [
                 'legend' => ['display' => true, 'position' => 'bottom'],
             ],

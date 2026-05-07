@@ -32,6 +32,7 @@ class ComplianceSavingsWidget extends EnhancedStatsOverviewWidget
         $endDate = Carbon::parse($this->filters['endDate'] ?? now()->endOfMonth());
 
         $bills = Bill::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', '!=', BillStatus::Void)
             ->get();
@@ -42,6 +43,7 @@ class ComplianceSavingsWidget extends EnhancedStatsOverviewWidget
         // Maverick spend = bills with no vendor (uncontracted)
         $totalSpend = $bills->sum('total');
         $maverickSpend = Bill::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', '!=', BillStatus::Void)
             ->whereNull('vendor_id')
@@ -50,6 +52,7 @@ class ComplianceSavingsWidget extends EnhancedStatsOverviewWidget
         $maverickPct = $totalSpend > 0 ? ($maverickSpend / $totalSpend) * 100 : 0;
 
         $overdueCount = Bill::query()
+            ->where('company_id', $company->getKey())
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', BillStatus::Overdue)
             ->count();
@@ -57,7 +60,7 @@ class ComplianceSavingsWidget extends EnhancedStatsOverviewWidget
         return [
             EnhancedStatsOverviewWidget\EnhancedStat::make(
                 'Cost Savings',
-                CurrencyConverter::formatCentsToMoney($savingsRealized, $defaultCurrency)
+                CurrencyConverter::formatCentsToMoneyAbbreviated($savingsRealized, $defaultCurrency)
             )
                 ->description('Discounts & negotiated savings')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')

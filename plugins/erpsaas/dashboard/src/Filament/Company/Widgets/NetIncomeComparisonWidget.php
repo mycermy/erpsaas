@@ -29,60 +29,64 @@ class NetIncomeComparisonWidget extends Widget
             : 'USD';
 
         $currentYearStart = now()->startOfYear();
-        $currentYearEnd   = now()->endOfYear();
-        $prevYearStart    = now()->subYear()->startOfYear();
-        $prevYearEnd      = now()->subYear()->endOfYear();
+        $currentYearEnd = now()->endOfYear();
+        $prevYearStart = now()->subYear()->startOfYear();
+        $prevYearEnd = now()->subYear()->endOfYear();
 
         $currentInvoices = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$currentYearStart, $currentYearEnd])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $currentBills = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$currentYearStart, $currentYearEnd])
             ->where('status', '!=', BillStatus::Void)
             ->get();
 
         $prevInvoices = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$prevYearStart, $prevYearEnd])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();
 
         $prevBills = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$prevYearStart, $prevYearEnd])
             ->where('status', '!=', BillStatus::Void)
             ->get();
 
-        $currentIncome  = $currentInvoices->sumMoneyInDefaultCurrency('total');
+        $currentIncome = $currentInvoices->sumMoneyInDefaultCurrency('total');
         $currentExpense = $currentBills->sumMoneyInDefaultCurrency('total');
-        $currentNet     = $currentIncome - $currentExpense;
+        $currentNet = $currentIncome - $currentExpense;
 
-        $prevIncome     = $prevInvoices->sumMoneyInDefaultCurrency('total');
-        $prevExpense    = $prevBills->sumMoneyInDefaultCurrency('total');
-        $prevNet        = $prevIncome - $prevExpense;
+        $prevIncome = $prevInvoices->sumMoneyInDefaultCurrency('total');
+        $prevExpense = $prevBills->sumMoneyInDefaultCurrency('total');
+        $prevNet = $prevIncome - $prevExpense;
 
-        $fmt = fn(int $v) => CurrencyConverter::formatCentsToMoney($v, $defaultCurrency);
+        $fmt = fn (int $v) => CurrencyConverter::formatCentsToMoney($v, $defaultCurrency);
 
         return [
             'previousYear' => now()->subYear()->year,
-            'currentYear'  => now()->year,
-            'rows'         => [
+            'currentYear' => now()->year,
+            'rows' => [
                 [
-                    'label'    => __('Income'),
+                    'label' => __('Income'),
                     'previous' => $fmt($prevIncome),
-                    'current'  => $fmt($currentIncome),
+                    'current' => $fmt($currentIncome),
                     'is_total' => false,
                 ],
                 [
-                    'label'    => __('Expense'),
+                    'label' => __('Expense'),
                     'previous' => $fmt($prevExpense),
-                    'current'  => $fmt($currentExpense),
+                    'current' => $fmt($currentExpense),
                     'is_total' => false,
                 ],
                 [
-                    'label'    => __('Net Income'),
+                    'label' => __('Net Income'),
                     'previous' => $fmt($prevNet),
-                    'current'  => $fmt($currentNet),
+                    'current' => $fmt($currentNet),
                     'is_total' => true,
                 ],
             ],

@@ -37,6 +37,7 @@ class SalesForecastChartWidget extends ChartWidget
         $endMonth = $endDate->copy()->endOfMonth();
 
         $invoices = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startMonth, $endMonth])
             ->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Void])
             ->get();

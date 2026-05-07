@@ -37,11 +37,13 @@ class PurchasesKpiSummaryWidget extends EnhancedStatsOverviewWidget
         $prevEnd = $startDate->copy()->subDay();
 
         $bills = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', '!=', BillStatus::Void)
             ->get();
 
         $prevBills = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->whereBetween('date', [$prevStart, $prevEnd])
             ->where('status', '!=', BillStatus::Void)
             ->get();
@@ -58,7 +60,7 @@ class PurchasesKpiSummaryWidget extends EnhancedStatsOverviewWidget
         return [
             EnhancedStatsOverviewWidget\EnhancedStat::make(
                 'Total Spend',
-                CurrencyConverter::formatCentsToMoney($totalSpend, $defaultCurrency)
+                CurrencyConverter::formatCentsToMoneyAbbreviated($totalSpend, $defaultCurrency)
             )
                 ->description($this->getDeltaDescription($totalSpend, $prevTotalSpend))
                 ->descriptionIcon($totalSpend <= $prevTotalSpend ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
@@ -67,7 +69,7 @@ class PurchasesKpiSummaryWidget extends EnhancedStatsOverviewWidget
 
             EnhancedStatsOverviewWidget\EnhancedStat::make(
                 'Purchase Invoices',
-                Number::format($invoiceCount)
+                Number::abbreviate($invoiceCount, maxPrecision: 1)
             )
                 ->description($this->getDeltaDescription($invoiceCount, $prevInvoiceCount, false))
                 ->descriptionIcon($invoiceCount <= $prevInvoiceCount ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
@@ -75,7 +77,7 @@ class PurchasesKpiSummaryWidget extends EnhancedStatsOverviewWidget
 
             EnhancedStatsOverviewWidget\EnhancedStat::make(
                 'Avg Invoice Value',
-                CurrencyConverter::formatCentsToMoney($avgValue, $defaultCurrency)
+                CurrencyConverter::formatCentsToMoneyAbbreviated($avgValue, $defaultCurrency)
             )
                 ->description($this->getDeltaDescription($avgValue, $prevAvgValue))
                 ->descriptionIcon('heroicon-m-calculator')
@@ -83,15 +85,15 @@ class PurchasesKpiSummaryWidget extends EnhancedStatsOverviewWidget
 
             EnhancedStatsOverviewWidget\EnhancedStat::make(
                 'Outstanding Payables',
-                CurrencyConverter::formatCentsToMoney($totalDue, $defaultCurrency)
+                CurrencyConverter::formatCentsToMoneyAbbreviated($totalDue, $defaultCurrency)
             )
-                ->description(CurrencyConverter::formatCentsToMoney($totalPaid, $defaultCurrency) . ' paid of ' . CurrencyConverter::formatCentsToMoney($totalSpend, $defaultCurrency))
+                ->description(CurrencyConverter::formatCentsToMoneyAbbreviated($totalPaid, $defaultCurrency) . ' paid of ' . CurrencyConverter::formatCentsToMoneyAbbreviated($totalSpend, $defaultCurrency))
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->color($totalDue > 0 ? 'warning' : 'success'),
         ];
     }
 
-    protected function getDeltaDescription(int|float $current, int|float $previous, bool $lowerIsBetter = true): string
+    protected function getDeltaDescription(int | float $current, int | float $previous, bool $lowerIsBetter = true): string
     {
         if ($previous == 0) {
             return 'No prior period data';

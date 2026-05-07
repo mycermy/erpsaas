@@ -29,44 +29,46 @@ class OverdueInvoicesBillsWidget extends Widget
             : 'USD';
 
         $overdueInvoiceRecords = Invoice::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->where('status', InvoiceStatus::Overdue)
             ->with('client')
             ->orderBy('due_date')
             ->get();
 
         $overdueBillRecords = Bill::query()
+            ->where('company_id', $company instanceof Company ? $company->getKey() : null)
             ->where('status', BillStatus::Overdue)
             ->with('vendor')
             ->orderBy('due_date')
             ->get();
 
-        $overdueInvoices = $overdueInvoiceRecords->map(fn(Invoice $invoice) => [
-            'name'         => $invoice->client?->name ?? __('Unknown client'),
+        $overdueInvoices = $overdueInvoiceRecords->map(fn (Invoice $invoice) => [
+            'name' => $invoice->client?->name ?? __('Unknown client'),
             'overdue_text' => $invoice->due_date
                 ? $invoice->due_date->diffForHumans(null, true) . ' ' . __('ago')
                 : __('No due date'),
-            'amount'       => CurrencyConverter::formatCentsToMoney(
+            'amount' => CurrencyConverter::formatCentsToMoney(
                 (int) $invoice->getRawOriginal('amount_due'),
                 $defaultCurrency
             ),
         ]);
 
-        $overdueBills = $overdueBillRecords->map(fn(Bill $bill) => [
-            'name'         => $bill->vendor?->name ?? __('Unknown vendor'),
+        $overdueBills = $overdueBillRecords->map(fn (Bill $bill) => [
+            'name' => $bill->vendor?->name ?? __('Unknown vendor'),
             'overdue_text' => $bill->due_date
                 ? $bill->due_date->diffForHumans(null, true) . ' ' . __('ago')
                 : __('No due date'),
-            'amount'       => CurrencyConverter::formatCentsToMoney(
+            'amount' => CurrencyConverter::formatCentsToMoney(
                 (int) $bill->getRawOriginal('amount_due'),
                 $defaultCurrency
             ),
         ]);
 
         return [
-            'overdueInvoices'      => $overdueInvoices,
-            'overdueInvoiceCount'  => $overdueInvoiceRecords->count(),
-            'overdueBills'         => $overdueBills,
-            'overdueBillCount'     => $overdueBillRecords->count(),
+            'overdueInvoices' => $overdueInvoices,
+            'overdueInvoiceCount' => $overdueInvoiceRecords->count(),
+            'overdueBills' => $overdueBills,
+            'overdueBillCount' => $overdueBillRecords->count(),
         ];
     }
 }

@@ -32,16 +32,18 @@ class AgedReceivablesPayablesWidget extends Widget
         $today = Carbon::today();
 
         $unpaidInvoices = Invoice::query()
+            ->where('company_id', $company->getKey())
             ->whereNotIn('status', [InvoiceStatus::Paid, InvoiceStatus::Void, InvoiceStatus::Draft])
             ->get();
 
         $unpaidBills = Bill::query()
+            ->where('company_id', $company->getKey())
             ->whereNotIn('status', [BillStatus::Paid, BillStatus::Void])
             ->get();
 
         return [
             'receivables' => $this->buildAgingBuckets($unpaidInvoices, $today, $defaultCurrency),
-            'payables'    => $this->buildAgingBuckets($unpaidBills, $today, $defaultCurrency),
+            'payables' => $this->buildAgingBuckets($unpaidBills, $today, $defaultCurrency),
         ];
     }
 
@@ -49,14 +51,14 @@ class AgedReceivablesPayablesWidget extends Widget
     {
         $buckets = [
             'coming_due' => 0,
-            '1_30'       => 0,
-            '31_60'      => 0,
-            '61_90'      => 0,
-            'over_90'    => 0,
+            '1_30' => 0,
+            '31_60' => 0,
+            '61_90' => 0,
+            'over_90' => 0,
         ];
 
         foreach ($documents as $doc) {
-            $amount   = (int) $doc->getRawOriginal('amount_due');
+            $amount = (int) $doc->getRawOriginal('amount_due');
             $currency = $doc->currency_code ?? $defaultCurrency;
 
             if ($currency !== $defaultCurrency) {
@@ -76,7 +78,7 @@ class AgedReceivablesPayablesWidget extends Widget
             }
         }
 
-        $fmt = fn(int $v) => CurrencyConverter::formatCentsToMoney($v, $defaultCurrency);
+        $fmt = fn (int $v) => CurrencyConverter::formatCentsToMoney($v, $defaultCurrency);
 
         return [
             ['label' => __('Coming due'),         'amount' => $fmt($buckets['coming_due'])],

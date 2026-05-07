@@ -151,6 +151,10 @@ class ExpensesBreakdownChartWidget extends ChartWidget
                     'callbacks' => [],
                 ],
             ],
+            'scales' => [
+                'x' => ['display' => false],
+                'y' => ['display' => false],
+            ],
             'cutout' => '65%',
         ];
     }
