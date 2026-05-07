@@ -23,8 +23,6 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
     protected static ?string $heading = 'Sales Team Performance';
 
-    // public ?array $filters = null;
-
     public function table(Table $table): Table
     {
         $company = Filament::getTenant();
@@ -72,17 +70,17 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
                 TextColumn::make('total_revenue')
                     ->label('Revenue Generated')
-                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoney((int) $state, $defaultCurrency))
+                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
                     ->sortable()
                     ->icon('heroicon-m-banknotes')
                     ->iconPosition(IconPosition::After),
 
                 TextColumn::make('avg_deal_size')
                     ->label('Avg Deal Size')
-                    ->formatStateUsing(function ($record) use ($defaultCurrency) {
+                    ->getStateUsing(function ($record) use ($defaultCurrency) {
                         $avg = $record->invoice_count > 0 ? (int) ($record->total_revenue / $record->invoice_count) : 0;
 
-                        return CurrencyConverter::formatCentsToMoney($avg, $defaultCurrency);
+                        return CurrencyConverter::formatCentsToMoneyAbbreviated($avg, $defaultCurrency);
                     }),
             ])
             ->defaultSort('total_revenue', 'desc')

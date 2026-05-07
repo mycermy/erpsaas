@@ -58,11 +58,11 @@ class SalesDashboard extends Page
             DatePicker::make('startDate')
                 ->label('Start Date')
                 ->default(now()->startOfMonth()->toDateString())
-                ->visible(fn (Get $get) => $get('dateRange') === 'Custom'),
+                ->visible(fn(Get $get) => $get('dateRange') === 'Custom'),
             DatePicker::make('endDate')
                 ->label('End Date')
                 ->default(now()->endOfMonth()->toDateString())
-                ->visible(fn (Get $get) => $get('dateRange') === 'Custom'),
+                ->visible(fn(Get $get) => $get('dateRange') === 'Custom'),
         ]);
     }
 
@@ -87,7 +87,7 @@ class SalesDashboard extends Page
             ConversionFunnelWidget::class,
             DealStageChartWidget::class,
             SalesTeamPerformanceWidget::class,
-            SalesTeamPerformanceWidgetSimple::class,
+            // SalesTeamPerformanceWidgetSimple::class,
         ];
     }
 
