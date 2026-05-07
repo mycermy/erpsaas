@@ -2,12 +2,10 @@
 
 namespace Erpsaas\Dashboard\Filament\Company\Widgets\Purchases;
 
-use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Core\Enums\Accounting\BillStatus;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
-use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -49,7 +47,7 @@ class ProductCategoryAnalysisWidget extends ChartWidget
             'datasets' => [
                 [
                     'label' => 'Total Spend',
-                    'data' => $topVendors->map(fn($v) => (int) ($v->total_spend / 100))->values()->toArray(),
+                    'data' => $topVendors->map(fn ($v) => (int) ($v->total_spend / 100))->values()->toArray(),
                     'backgroundColor' => [
                         'rgba(59, 130, 246, 0.8)',
                         'rgba(16, 185, 129, 0.8)',

@@ -83,7 +83,7 @@ class InvoiceStatusChartWidget extends ChartWidget
             'plugins' => [
                 'legend' => [
                     'display' => true,
-                    'position' => 'bottom',
+                    'position' => 'right',
                 ],
             ],
             'scales' => [

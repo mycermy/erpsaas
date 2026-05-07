@@ -68,12 +68,12 @@ class SupplierPerformanceWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('total_spend')
                     ->label('Total Spend')
-                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
+                    ->formatStateUsing(fn ($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('amount_paid_sum')
                     ->label('Paid')
-                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
+                    ->formatStateUsing(fn ($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('payment_rate')

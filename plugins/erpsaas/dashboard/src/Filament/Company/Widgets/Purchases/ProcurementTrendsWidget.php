@@ -8,6 +8,7 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
@@ -83,25 +84,44 @@ class ProcurementTrendsWidget extends ChartWidget
         ];
     }
 
-    protected function getOptions(): array
+    protected function getOptions(): RawJs
     {
-        return [
-            'plugins' => [
-                'legend' => ['display' => true, 'position' => 'top'],
-            ],
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'position' => 'left',
-                    'grid' => ['drawOnChartArea' => true],
-                ],
-                'y1' => [
-                    'beginAtZero' => true,
-                    'position' => 'right',
-                    'grid' => ['drawOnChartArea' => false],
-                ],
-            ],
-        ];
+        return RawJs::make(<<<'JS'
+            {
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        grid: { drawOnChartArea: true },
+                        ticks: {
+                            callback: (value) => {
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+                                return value;
+                            },
+                        },
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            callback: (value) => {
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+                                return value;
+                            },
+                        },
+                    },
+                },
+            }
+        JS);
     }
 
     protected function getType(): string

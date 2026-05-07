@@ -8,6 +8,7 @@ use Erpsaas\Core\Models\Company;
 use Erpsaas\Core\Services\CompanySettingsService;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
 use Filament\Facades\Filament;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
@@ -55,12 +56,12 @@ class CashFlowChartWidget extends ChartWidget
             $labels[] = $month->format("M'y");
 
             $monthlyInflow = $invoices
-                ->filter(fn ($inv) => $inv->paid_at?->isSameMonth($month))
-                ->sum(fn ($inv) => $this->toDefaultCurrency($inv, 'amount_paid', $defaultCurrency));
+                ->filter(fn($inv) => $inv->paid_at?->isSameMonth($month))
+                ->sum(fn($inv) => $this->toDefaultCurrency($inv, 'amount_paid', $defaultCurrency));
 
             $monthlyOutflow = $bills
-                ->filter(fn ($bill) => $bill->paid_at?->isSameMonth($month))
-                ->sum(fn ($bill) => $this->toDefaultCurrency($bill, 'amount_paid', $defaultCurrency));
+                ->filter(fn($bill) => $bill->paid_at?->isSameMonth($month))
+                ->sum(fn($bill) => $this->toDefaultCurrency($bill, 'amount_paid', $defaultCurrency));
 
             $inflow = round($monthlyInflow / 100, 2);
             $outflow = round($monthlyOutflow / 100, 2);
@@ -107,21 +108,33 @@ class CashFlowChartWidget extends ChartWidget
         return 'line';
     }
 
-    protected function getOptions(): array
+    protected function getOptions(): RawJs
     {
-        return [
-            'plugins' => [
-                'legend' => [
-                    'display' => true,
-                    'position' => 'top',
-                ],
-            ],
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => false,
-                ],
-            ],
-        ];
+        return RawJs::make(<<<'JS'
+            {
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: (value) => {
+                                const absValue = Math.abs(value);
+                                const sign = value < 0 ? '-' : '';
+
+                                if (absValue >= 1000000) return sign + (absValue / 1000000).toFixed(1) + 'M';
+                                if (absValue >= 1000) return sign + (absValue / 1000).toFixed(1) + 'K';
+                                return value;
+                            },
+                        },
+                    },
+                },
+            }
+        JS);
     }
 
     protected function toDefaultCurrency($document, string $column, string $defaultCurrency): int

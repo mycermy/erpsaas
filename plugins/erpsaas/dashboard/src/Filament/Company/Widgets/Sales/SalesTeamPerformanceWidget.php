@@ -81,7 +81,7 @@ class SalesTeamPerformanceWidget extends BaseWidget
 
                 TextColumn::make('total_revenue')
                     ->label('Revenue Generated')
-                    ->formatStateUsing(fn($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
+                    ->formatStateUsing(fn ($state) => CurrencyConverter::formatCentsToMoneyAbbreviated((int) $state, $defaultCurrency))
                     ->sortable()
                     ->icon('heroicon-m-banknotes')
                     ->iconPosition(IconPosition::After),
