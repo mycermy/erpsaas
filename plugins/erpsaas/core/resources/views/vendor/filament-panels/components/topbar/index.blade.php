@@ -98,7 +98,7 @@
                                 >
                                     <x-filament::icon
                                         :icon="$groupIcon"
-                                        class="w-12 h-12 text-gray-600 dark:text-gray-400"
+                                        class="w-8 h-8 text-gray-600 dark:text-gray-400"
                                     />
 
                                     <span class="text-gray-700 dark:text-gray-300">{{ $groupLabel }}</span>
