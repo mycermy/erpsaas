@@ -23,3 +23,8 @@
 .fi-topbar .fi-icon-btn-badge-ctn {
     @apply bg-transparent !important;
 }
+
+/* Reduce icon size in dropdown triggers in topbar */
+.fi-topbar .fi-dropdown-trigger .fi-icon-btn-icon {
+    @apply h-5 w-5 !important;
+}

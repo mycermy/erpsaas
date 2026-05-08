@@ -17,6 +17,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Set;
 use Filament\Pages\Page;
 use Filament\Support\Enums\IconPosition;
+use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -93,7 +94,7 @@ abstract class BaseReportPage extends Page
         $flatFields = $this->getFiltersForm()->getFlatFields();
 
         /** @var DateRangeSelect|null $dateRangeField */
-        $dateRangeField = Arr::first($flatFields, static fn ($field) => $field instanceof DateRangeSelect);
+        $dateRangeField = Arr::first($flatFields, static fn($field) => $field instanceof DateRangeSelect);
 
         if (! $dateRangeField) {
             return;
@@ -225,16 +226,16 @@ abstract class BaseReportPage extends Page
             ActionGroup::make([
                 Action::make('exportCSV')
                     ->label('CSV')
-                    ->action(fn () => $this->exportCSV()),
+                    ->action(fn() => $this->exportCSV()),
                 Action::make('exportPDF')
                     ->label('PDF')
                     ->hidden(is_demo_environment())
-                    ->action(fn () => $this->exportPDF()),
+                    ->action(fn() => $this->exportPDF()),
             ])
                 ->label('Export')
                 ->button()
                 ->outlined()
-                ->dropdownWidth('max-w-[7rem]')
+                ->dropdownWidth(MaxWidth::ExtraSmall)
                 ->dropdownPlacement('bottom-end')
                 ->icon('heroicon-m-chevron-down')
                 ->iconPosition(IconPosition::After),

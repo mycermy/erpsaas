@@ -11,16 +11,10 @@
 <div>
     <x-filament::section>
         @if($reportLoaded)
-            <div @class([
-                'grid grid-cols-1 gap-1 place-content-center items-end text-center max-w-fit mx-auto',
-                'md:grid-cols-[repeat(1,minmax(0,1fr)_minmax(0,4rem))_minmax(0,1fr)]' => count($summaryData) === 2,
-                'md:grid-cols-[repeat(2,minmax(0,1fr)_minmax(0,4rem))_minmax(0,1fr)]' => count($summaryData) === 3,
-                'md:grid-cols-[repeat(3,minmax(0,1fr)_minmax(0,4rem))_minmax(0,1fr)]' => count($summaryData) === 4,
-                'md:grid-cols-[repeat(4,minmax(0,1fr)_minmax(0,4rem))_minmax(0,1fr)]' => count($summaryData) === 5,
-            ])>
+            <div class="flex flex-wrap items-end gap-4 mx-auto text-center place-content-center max-w-fit">
                 @foreach($summaryData as $summary)
                     <div class="text-sm">
-                        <div class="text-gray-600 dark:text-gray-200 font-medium mb-2">{{ $summary['label'] }}</div>
+                        <div class="mb-2 font-medium text-gray-600 dark:text-gray-200">{{ $summary['label'] }}</div>
 
                         @php
                             $isTargetLabel = $summary['label'] === $targetLabel;
