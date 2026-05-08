@@ -1,0 +1,19 @@
+<?php
+
+namespace Zrm\Hr\Filament\Company\Resources\Hr\EmployeeAdvanceResource\Pages;
+
+use Zrm\Hr\Filament\Company\Resources\Hr\EmployeeAdvanceResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ListRecords;
+
+class ListEmployeeAdvances extends ListRecords
+{
+    protected static string $resource = EmployeeAdvanceResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make(),
+        ];
+    }
+}

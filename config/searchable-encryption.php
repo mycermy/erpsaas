@@ -203,9 +203,9 @@ return [
     */
     'models' => [
         'User' => \App\Models\User::class,
-        'Employee' => \Erpsaas\Hr\Models\Employee::class,
-        'EmployeeSalaryRevision' => \Erpsaas\Hr\Models\EmployeeSalaryRevision::class,
-        'PayrollEntry' => \Erpsaas\Hr\Models\PayrollEntry::class,
+        'Employee' => \Zrm\Hr\Models\Employee::class,
+        'EmployeeSalaryRevision' => \Zrm\Hr\Models\EmployeeSalaryRevision::class,
+        'PayrollEntry' => \Zrm\Hr\Models\PayrollEntry::class,
         // Add your models here
     ],
 

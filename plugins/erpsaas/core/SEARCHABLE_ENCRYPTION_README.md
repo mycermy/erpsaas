@@ -39,7 +39,7 @@ php artisan migrate
 For example, in HR plugin's user migration:
 
 ```php
-// plugins/erpsaas/hr/database/migrations/add_sensitive_fields_to_users.php
+// plugins/zrm/hr/database/migrations/add_sensitive_fields_to_users.php
 Schema::table('users', function (Blueprint $table) {
     // NRIC
     $table->text('nric')->nullable();
@@ -60,7 +60,7 @@ Schema::table('users', function (Blueprint $table) {
 ```php
 <?php
 
-namespace Erpsaas\Hr\Models;
+namespace Zrm\Hr\Models;
 
 use Erpsaas\Core\Concerns\SearchableEncryption;
 use Illuminate\Database\Eloquent\Model;
@@ -151,7 +151,7 @@ Register your models in `config/searchable-encryption.php`:
 ```php
 'models' => [
     'User' => \Erpsaas\Core\Models\User::class,
-    'Employee' => \Erpsaas\Hr\Models\Employee::class,
+    'Employee' => \Zrm\Hr\Models\Employee::class,
 ],
 ```
 

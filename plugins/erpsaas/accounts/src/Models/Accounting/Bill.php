@@ -107,7 +107,7 @@ class Bill extends Document
 
     public function payrollEntry()
     {
-        return $this->hasOne(\Erpsaas\Hr\Models\PayrollEntry::class, 'bill_id');
+        return $this->hasOne(\Zrm\Hr\Models\PayrollEntry::class, 'bill_id');
     }
 
     public static function documentType(): DocumentType

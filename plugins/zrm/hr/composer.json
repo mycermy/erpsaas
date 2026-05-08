@@ -1,0 +1,39 @@
+{
+    "name": "zrm/hr",
+    "description": "HR plugin for ERPSAAS — employees, salary structures, salary parts, and payroll entries.",
+    "authors": [
+        {
+            "name": "NR-Anna-Rosenwasser",
+            "homepage": "https://github.com/NR-Anna-Rosenwasser/erpsaas",
+            "role": "Original Author"
+        },
+        {
+            "name": "zrm",
+            "email": "support@zrm.com"
+        }
+    ],
+    "require": {
+        "sprain/swiss-qr-bill": "^4.20"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Zrm\\Hr\\HrServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Zrm\\Hr\\": "src/",
+            "Zrm\\Hr\\Database\\Factories\\": "database/factories/",
+            "Zrm\\Hr\\Database\\Seeders\\": "database/seeders/",
+            "Database\\Factories\\Erpsaas\\Core\\Models\\": "database/factories/Aliases/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Zrm\\Hr\\Tests\\": "tests/"
+        }
+    }
+}

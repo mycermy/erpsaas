@@ -1,17 +1,31 @@
 <?php
 
+use App\Models\User;
+use Erpsaas\Core\Models\Company;
 use Zrm\Hr\Database\Seeders\HrDemoSeeder;
 use Zrm\Hr\Filament\Company\Resources\Hr\EmployeeAdvanceResource\Pages\CreateEmployeeAdvance;
 use Zrm\Hr\Filament\Company\Resources\Hr\EmployeeAdvanceResource\Pages\EditEmployeeAdvance;
 use Zrm\Hr\Filament\Company\Resources\Hr\EmployeeAdvanceResource\Pages\ListEmployeeAdvances;
+use Zrm\Hr\Filament\Company\Resources\Hr\EmployeeResource\Pages\ListEmployees;
 use Zrm\Hr\Models\Employee;
 use Zrm\Hr\Models\EmployeeAdvance;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Artisan;
+use Tests\PluginTestCase;
+
+uses(PluginTestCase::class);
 
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {
     Artisan::call('db:seed', ['--class' => HrDemoSeeder::class]);
+
+    $user = User::first();
+    $company = Company::first();
+
+    $user->switchCompany($company);
+    $this->actingAs($user);
+    Filament::setTenant($company);
 });
 
 it('can list employee advances', function () {
@@ -79,4 +93,28 @@ it('keeps fields enabled for a pending advance', function () {
     livewire(EditEmployeeAdvance::class, ['record' => $pendingAdvance->id])
         ->assertFormFieldIsEnabled('employee_id')
         ->assertFormFieldIsEnabled('amount');
+});
+
+it('can record an advance from the employee list action', function () {
+    $employee = Employee::query()->first();
+    $countBefore = EmployeeAdvance::query()->where('employee_id', $employee->id)->count();
+
+    livewire(ListEmployees::class)
+        ->callTableAction('recordAdvance', $employee, data: [
+            'amount' => '750.00',
+            'given_at' => now()->toDateTimeString(),
+            'reason' => 'medical',
+            'notes' => 'Recorded from employee list',
+        ])
+        ->assertHasNoTableActionErrors();
+
+    expect(EmployeeAdvance::query()->where('employee_id', $employee->id)->count())
+        ->toBe($countBefore + 1);
+
+    expect(
+        EmployeeAdvance::query()
+            ->where('employee_id', $employee->id)
+            ->where('reason', 'medical')
+            ->exists()
+    )->toBeTrue();
 });
