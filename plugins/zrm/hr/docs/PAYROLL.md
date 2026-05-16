@@ -1,6 +1,6 @@
 # Seeding command
 ```bash
-php artisan migrate:fresh --seed && php artisan db:seed --class="Zrm\Hr\Database\Seeders\DatabaseSeeder"
+php artisan migrate:fresh --seed && php artisan db:seed --class="Zrm\Hr\Database\Seeders\DatabaseSeeder" && php artisan db:seed --class="Zrm\Inventory\Database\Seeders\DatabaseSeeder"
 ```
 
 # Payroll Processing
