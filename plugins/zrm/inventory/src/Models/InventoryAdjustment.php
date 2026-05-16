@@ -188,7 +188,7 @@ class InventoryAdjustment extends Model
                     referenceType: static::class,
                     referenceId: $this->id,
                     notes: "REVERSAL: {$adjustmentItem->reason} (Adjustment #{$this->adjustment_number} cancelled)",
-                    movementDate: now(),
+                    movementDate: now()->toDateTime(),
                     createdBy: Auth::id(),
                     batchAllocations: $batchAllocations
                 );

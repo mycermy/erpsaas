@@ -37,15 +37,12 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom($basePath . '/database/migrations');
         $this->mergeConfigFrom($basePath . '/config/config.php', 'inventory');
 
-        // Register views both the Laravel-recommended way and directly on the view finder
-        // (defensive: some packages rebind the finder later). This is idempotent.
+        // Register views
         $this->loadViewsFrom($basePath . '/resources/views', 'inventory');
-        $this->app['view.finder']->addNamespace('inventory', $basePath . '/resources/views');
 
-        // Register translations similarly and log a helpful warning if the paths are missing.
+        // Register translations and log a helpful warning if the paths are missing.
         if (is_dir($basePath . '/resources/lang')) {
             $this->loadTranslationsFrom($basePath . '/resources/lang', 'inventory');
-            $this->app['translator']->addNamespace('inventory', $basePath . '/resources/lang');
         } else {
             logger()->warning('Inventory plugin: translations directory not found', ['path' => $basePath . '/resources/lang']);
         }
