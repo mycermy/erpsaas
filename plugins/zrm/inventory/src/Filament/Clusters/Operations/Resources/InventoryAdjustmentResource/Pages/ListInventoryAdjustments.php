@@ -8,12 +8,15 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Validation\ValidationException;
+use Zrm\Inventory\Filament\Clusters\Operations\Resources\Concerns\HasOperationsTopSubNavigation;
 use Zrm\Inventory\Filament\Clusters\Operations\Resources\InventoryAdjustmentResource;
 use Zrm\Inventory\Models\Warehouse;
 use Zrm\Inventory\Services\InventoryAdjustmentImportService;
 
 class ListInventoryAdjustments extends ListRecords
 {
+    use HasOperationsTopSubNavigation;
+
     protected static string $resource = InventoryAdjustmentResource::class;
 
     protected function getHeaderActions(): array

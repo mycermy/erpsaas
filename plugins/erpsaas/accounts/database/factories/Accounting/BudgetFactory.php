@@ -2,10 +2,11 @@
 
 namespace Database\Factories\Accounting;
 
+use Erpsaas\Accounts\Models\Accounting\Budget;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Accounting\Budget>
+ * @extends Factory<Budget>
  */
 class BudgetFactory extends Factory
 {

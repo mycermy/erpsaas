@@ -17,7 +17,7 @@ class InventoryPlugin implements Plugin
 
     public function getId(): string
     {
-        return 'inventory';
+        return 'zrm-inventory';
     }
 
     public static function make(): static

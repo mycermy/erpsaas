@@ -11,7 +11,7 @@ class HrServiceProvider extends PackageServiceProvider
     public function configurePackage(Package $package): void
     {
         $package
-            ->name('erpsaas-hr')
+            ->name('zrm-hr')
             ->hasViews()
             ->hasTranslations()
             ->hasMigrations([]);
