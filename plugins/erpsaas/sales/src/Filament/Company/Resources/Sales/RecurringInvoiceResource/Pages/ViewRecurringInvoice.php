@@ -2,13 +2,13 @@
 
 namespace Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource\Pages;
 
+use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
+use Erpsaas\Core\Filament\Infolists\Components\BannerEntry;
+use Erpsaas\Core\Filament\Infolists\Components\DocumentPreview;
 use Erpsaas\Sales\Filament\Company\Resources\Sales\ClientResource;
 use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource\Pages\ListInvoices;
 use Erpsaas\Sales\Filament\Company\Resources\Sales\RecurringInvoiceResource;
-use Erpsaas\Core\Filament\Infolists\Components\BannerEntry;
-use Erpsaas\Core\Filament\Infolists\Components\DocumentPreview;
-use Erpsaas\Accounts\Models\Accounting\RecurringInvoice;
 use Filament\Actions;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\Grid;
@@ -149,7 +149,8 @@ class ViewRecurringInvoice extends ViewRecord
                                     ->visible(static fn (RecurringInvoice $record) => $record->ended_at),
                             ])->columnSpan(1),
                         DocumentPreview::make()
-                            ->type(DocumentType::RecurringInvoice),
+                            ->type(DocumentType::RecurringInvoice)
+                            ->preview(),
                     ]),
             ]);
     }

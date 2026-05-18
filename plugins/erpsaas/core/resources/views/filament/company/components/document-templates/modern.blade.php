@@ -29,11 +29,11 @@
         <div class="flex justify-between items-end">
             <!-- Billing Details -->
             <div class="text-sm">
-                <h3 class="text-gray-600 font-medium mb-1">BILL TO</h3>
+                <h3 class="text-gray-600 font-medium mb-1">{{ $document->documentType === \Erpsaas\Core\Enums\Accounting\DocumentType::Bill ? 'BILL FROM' : 'BILL TO' }}</h3>
                 <p class="text-sm font-bold"
-                   style="color: {{ $document->accentColor }}">{{ $document->client?->name ?? 'Client Not Found' }}</p>
+                   style="color: {{ $document->accentColor }}">{{ $document->vendor?->name ?? $document->client?->name ?? 'Not Found' }}</p>
 
-                @if($document->client && ($formattedAddress = $document->client->getFormattedAddressHtml()))
+                @if(($entity = $document->vendor ?? $document->client) && ($formattedAddress = $entity->getFormattedAddressHtml()))
                     {!! $formattedAddress !!}
                 @endif
             </div>

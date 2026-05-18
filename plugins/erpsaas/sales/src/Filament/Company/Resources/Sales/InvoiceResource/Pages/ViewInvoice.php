@@ -2,12 +2,12 @@
 
 namespace Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource\Pages;
 
+use Erpsaas\Accounts\Models\Accounting\Invoice;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\ClientResource;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource;
 use Erpsaas\Core\Filament\Infolists\Components\BannerEntry;
 use Erpsaas\Core\Filament\Infolists\Components\DocumentPreview;
-use Erpsaas\Accounts\Models\Accounting\Invoice;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\ClientResource;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\InvoiceResource;
 use Filament\Actions;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
@@ -36,6 +36,7 @@ class ViewInvoice extends ViewRecord
                     Invoice::getApproveDraftAction(),
                     Invoice::getMarkAsSentAction(),
                     Invoice::getPrintDocumentAction(),
+                    Invoice::getPdfDocumentAction(),
                     Invoice::getReplicateAction(),
                 ])->dropdown(false),
                 Actions\DeleteAction::make(),
@@ -108,7 +109,8 @@ class ViewInvoice extends ViewRecord
                                     ->date(),
                             ])->columnSpan(1),
                         DocumentPreview::make()
-                            ->type(DocumentType::Invoice),
+                            ->type(DocumentType::Invoice)
+                            ->preview(),
                     ]),
             ]);
     }

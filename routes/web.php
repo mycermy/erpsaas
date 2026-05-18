@@ -13,4 +13,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('documents/{documentType}/{id}/print', [DocumentPrintController::class, 'show'])
         ->middleware(AllowSameOriginFrame::class)
         ->name('documents.print');
+
+    Route::get('documents/{documentType}/{id}/pdf', [DocumentPrintController::class, 'pdf'])
+        ->name('documents.pdf');
 });

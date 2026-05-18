@@ -29,9 +29,9 @@
         <div class="flex justify-between items-end">
             <!-- Billing Details -->
             <div class="text-sm">
-                <h3 class="text-gray-600 font-medium mb-1">BILL TO</h3>
-                <p class="text-sm font-bold">{{ $document->client?->name ?? 'Client Not Found' }}</p>
-                @if($document->client && ($formattedAddress = $document->client->getFormattedAddressHtml()))
+                <h3 class="text-gray-600 font-medium mb-1">{{ $document->documentType === \Erpsaas\Core\Enums\Accounting\DocumentType::Bill ? 'BILL FROM' : 'BILL TO' }}</h3>
+                <p class="text-sm font-bold">{{ $document->vendor?->name ?? $document->client?->name ?? 'Not Found' }}</p>
+                @if(($entity = $document->vendor ?? $document->client) && ($formattedAddress = $entity->getFormattedAddressHtml()))
                     {!! $formattedAddress !!}
                 @endif
             </div>

@@ -2,12 +2,12 @@
 
 namespace Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource\Pages;
 
+use Erpsaas\Accounts\Models\Accounting\Estimate;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\ClientResource;
-use Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource;
 use Erpsaas\Core\Filament\Infolists\Components\BannerEntry;
 use Erpsaas\Core\Filament\Infolists\Components\DocumentPreview;
-use Erpsaas\Accounts\Models\Accounting\Estimate;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\ClientResource;
+use Erpsaas\Sales\Filament\Company\Resources\Sales\EstimateResource;
 use Filament\Actions;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
@@ -108,7 +108,8 @@ class ViewEstimate extends ViewRecord
                                     ->date(),
                             ])->columnSpan(1),
                         DocumentPreview::make()
-                            ->type(DocumentType::Estimate),
+                            ->type(DocumentType::Estimate)
+                            ->preview(),
                     ]),
             ]);
     }

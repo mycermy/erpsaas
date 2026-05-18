@@ -37,7 +37,9 @@ readonly class DocumentPreviewDTO extends DocumentDTO
             total: self::formatToMoney(95000, null), // $950.00
             amountDue: $amountDue, // $950.00 or null for estimates
             company: CompanyDTO::fromModel($company),
-            client: ClientPreviewDTO::fake(),
+            client: $settings->type !== DocumentType::Bill ? ClientPreviewDTO::fake() : null,
+            vendor: $settings->type === DocumentType::Bill ? VendorPreviewDTO::fake() : null,
+            documentType: $settings->type,
             lineItems: LineItemPreviewDTO::fakeItems(),
             label: $settings->type->getLabels(),
             columnLabel: self::generateColumnLabels($settings, $data),

@@ -9,6 +9,9 @@ use Erpsaas\Accounts\Models\Accounting\Bill;
 use Erpsaas\Core\Enums\Common\VendorType;
 use Erpsaas\Core\Models\Common\Vendor;
 use Erpsaas\Core\Models\Company;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Auth;
+use RuntimeException;
 use Zrm\Hr\Enums\Hr\SalaryPartBasis;
 use Zrm\Hr\Enums\Hr\SalaryPartType;
 use Zrm\Hr\Models\Employee;
@@ -18,9 +21,6 @@ use Zrm\Hr\Models\PayrollEntry;
 use Zrm\Hr\Models\SalaryPart;
 use Zrm\Hr\Models\SalaryStructure;
 use Zrm\Hr\Services\PayrollService;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Auth;
-use RuntimeException;
 
 class HrDemoSeeder extends Seeder
 {
@@ -331,7 +331,7 @@ class HrDemoSeeder extends Seeder
         return Vendor::query()
             ->where('company_id', $company->id)
             ->where('name', 'Payroll Department')
-            ->firstOr(fn() => Vendor::create([
+            ->firstOr(fn () => Vendor::create([
                 'company_id' => $company->id,
                 'name' => 'Payroll Department',
                 'type' => VendorType::Regular,
@@ -556,7 +556,7 @@ class HrDemoSeeder extends Seeder
     {
         $existing = Employee::query()
             ->where('company_id', $company->id)
-            ->whereHas('contact', fn($query) => $query->where('email', $employeeData['email']))
+            ->whereHas('contact', fn ($query) => $query->where('email', $employeeData['email']))
             ->first();
 
         if ($existing) {
@@ -565,6 +565,7 @@ class HrDemoSeeder extends Seeder
 
         return Employee::createWithRelations([
             'company_id' => $company->id,
+            'name' => trim($employeeData['first_name'] . ' ' . $employeeData['last_name']),
             'employee_number' => 'EMP-' . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT),
             'job_title' => $employeeData['job_title'],
             'department' => $employeeData['department'],

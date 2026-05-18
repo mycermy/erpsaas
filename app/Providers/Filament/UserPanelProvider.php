@@ -48,6 +48,7 @@ class UserPanelProvider extends PanelProvider
                                     ->label('Company Dashboard')
                                     ->icon('heroicon-s-building-office-2')
                                     ->url(static function (): ?string {
+                                        /** @var \App\Models\User $user */
                                         $user = Auth::user();
                                         $companyPanel = FilamentCompanies::getCompanyPanel();
 

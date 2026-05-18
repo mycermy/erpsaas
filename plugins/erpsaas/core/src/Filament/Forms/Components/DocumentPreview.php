@@ -2,8 +2,8 @@
 
 namespace Erpsaas\Core\Filament\Forms\Components;
 
-use Erpsaas\Core\Enums\Setting\Template;
 use Closure;
+use Erpsaas\Core\Enums\Setting\Template;
 use Filament\Forms\Components\Grid;
 
 class DocumentPreview extends Grid
@@ -40,6 +40,6 @@ class DocumentPreview extends Grid
 
     public function getTemplate(): Template
     {
-        return $this->evaluate($this->template);
+        return $this->evaluate($this->template) ?? Template::Default;
     }
 }

@@ -45,17 +45,12 @@ class DocumentDefaultFactory extends Factory
             'unit_name' => ['option' => 'quantity', 'custom' => null],
             'price_name' => ['option' => 'price', 'custom' => null],
             'amount_name' => ['option' => 'amount', 'custom' => null],
+            'header' => $type->getLabel(),
+            'show_logo' => false,
+            'accent_color' => '#4F46E5',
+            'font' => Font::Inter,
+            'template' => Template::Default,
         ];
-
-        if ($type !== DocumentType::Bill) {
-            $state = [...$state,
-                'header' => $type->getLabel(),
-                'show_logo' => false,
-                'accent_color' => '#4F46E5',
-                'font' => Font::Inter,
-                'template' => Template::Default,
-            ];
-        }
 
         return $state;
     }

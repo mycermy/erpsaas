@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('employee_number');
             $table->string('job_title')->nullable();
             $table->string('department')->nullable();
+            $table->string('name')->nullable();
             $table->boolean('separate_work_address')->default(false);
 
             // NRIC (Malaysian IC) - Highly Sensitive under PDPA

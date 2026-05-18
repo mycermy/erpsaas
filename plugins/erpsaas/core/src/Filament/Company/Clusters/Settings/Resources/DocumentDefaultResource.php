@@ -36,11 +36,10 @@ class DocumentDefaultResource extends Resource
                 self::getGeneralSection(),
                 self::getContentSection(),
                 self::getTemplateSection(),
-                self::getBillColumnLabelsSection(),
             ]);
     }
 
-    public static function getGeneralSection(): Forms\Components\Component
+    public static function getGeneralSection(): Component
     {
         return Forms\Components\Section::make('General')
             ->schema([
@@ -57,10 +56,9 @@ class DocumentDefaultResource extends Resource
             ])->columns();
     }
 
-    public static function getContentSection(): Forms\Components\Component
+    public static function getContentSection(): Component
     {
         return Forms\Components\Section::make('Content')
-            ->hidden(static fn (DocumentDefault $record) => $record->type === DocumentType::Bill)
             ->schema([
                 Forms\Components\TextInput::make('header')
                     ->localizeLabel()
@@ -81,7 +79,6 @@ class DocumentDefaultResource extends Resource
     {
         return Forms\Components\Section::make('Template')
             ->description('Choose the template and edit the column names.')
-            ->hidden(static fn (DocumentDefault $record) => $record->type === DocumentType::Bill)
             ->schema([
                 Forms\Components\Grid::make(1)
                     ->schema([
@@ -127,13 +124,6 @@ class DocumentDefaultResource extends Resource
                         'lg' => 2,
                     ]),
             ])->columns(3);
-    }
-
-    public static function getBillColumnLabelsSection(): Component
-    {
-        return Forms\Components\Section::make('Column Labels')
-            ->visible(static fn (DocumentDefault $record) => $record->type === DocumentType::Bill)
-            ->schema(static::getColumnLabelsSchema())->columns();
     }
 
     public static function getColumnLabelsSchema(): array

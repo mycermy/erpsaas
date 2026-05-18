@@ -2,9 +2,9 @@
 
 namespace Erpsaas\Core\DTO;
 
+use Erpsaas\Accounts\Models\Accounting\Document;
 use Erpsaas\Core\Enums\Accounting\DocumentType;
 use Erpsaas\Core\Enums\Setting\Font;
-use Erpsaas\Accounts\Models\Accounting\Document;
 use Erpsaas\Core\Models\Setting\DocumentDefault;
 use Erpsaas\Core\Utilities\Currency\CurrencyAccessor;
 use Erpsaas\Core\Utilities\Currency\CurrencyConverter;
@@ -34,6 +34,8 @@ readonly class DocumentDTO
         public ?string $amountDue,
         public CompanyDTO $company,
         public ?ClientDTO $client,
+        public ?VendorDTO $vendor,
+        public DocumentType $documentType,
         public iterable $lineItems,
         public DocumentLabelDTO $label,
         public DocumentColumnLabelDTO $columnLabel,
@@ -85,7 +87,9 @@ readonly class DocumentDTO
             amountDue: $amountDue,
             company: CompanyDTO::fromModel($document->company),
             client: $document->client ? ClientDTO::fromModel($document->client) : null,
-            lineItems: $document->lineItems->map(fn($item) => LineItemDTO::fromModel($item)),
+            vendor: $document->vendor ? VendorDTO::fromModel($document->vendor) : null,
+            documentType: $document::documentType(),
+            lineItems: $document->lineItems->map(fn ($item) => LineItemDTO::fromModel($item)),
             label: $document::documentType()->getLabels(),
             columnLabel: DocumentColumnLabelDTO::fromModel($settings),
             accentColor: $settings->accent_color ?? '#000000',
